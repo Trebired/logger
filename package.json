@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "0.1.1",
+  "version": "1.1.2",
   "description": "Structured backend logger with async JSONL storage, group-based log directories, custom weighted levels, redaction, retention, and local query helpers.",
   "license": "MIT",
   "keywords": [
