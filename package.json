@@ -1,0 +1,51 @@
+{
+  "name": "@trebired/logger",
+  "version": "0.1.0",
+  "description": "Structured backend logger with async JSONL storage, group-based log directories, custom weighted levels, redaction, retention, and local query helpers.",
+  "license": "MIT",
+  "keywords": [
+    "logger",
+    "logging",
+    "structured-logging",
+    "jsonl",
+    "backend",
+    "node",
+    "bun"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=18",
+    "bun": ">=1.0.0"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "bun@1.3.12",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "bench": "bun bench/logger_bench.ts",
+    "prepublishOnly": "bun run typecheck && bun test && bun run build",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.4",
+    "@types/node": "^24.10.1",
+    "typescript": "^6.0.2"
+  }
+}
