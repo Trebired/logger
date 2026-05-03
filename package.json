@@ -12,6 +12,14 @@
     "node",
     "bun"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trebired/logger.git"
+  },
+  "bugs": {
+    "url": "https://github.com/trebired/logger/issues"
+  },
+  "homepage": "https://github.com/trebired/logger#readme",
   "type": "module",
   "engines": {
     "node": ">=18",
