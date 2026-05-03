@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import zlib from "node:zlib";
 
-import type { LogEntry, LogQueryOptions } from "../types.js";
+import { normalizeLevels } from "../levels/index.js";
+import type { LogEntry, LogQueryOptions, LogQueryResult } from "../types.js";
 import { toString } from "../utils/values.js";
 import { walkLogFiles } from "./walk.js";
 
@@ -36,9 +37,29 @@ function sortByRecordedAtAsc(entries: LogEntry[]): LogEntry[] {
   return entries;
 }
 
-async function getEntriesForDir(dir: string, options?: LogQueryOptions): Promise<LogEntry[]> {
+function buildQueryResult(dir: string, logs: LogEntry[], options?: LogQueryOptions): LogQueryResult {
+  const opts = options || {};
+  const limit = Number(opts.limit) || 0;
+  return {
+    logs,
+    levels: normalizeLevels(opts.levels),
+    metadata: {
+      dir,
+      count: logs.length,
+      query: {
+        level: toString(opts.level || "all").toLowerCase() || "all",
+        groupKey: toString(opts.groupKey || "all") || "all",
+        day: toString(opts.day),
+        hour: toString(opts.hour),
+        limit: Number.isFinite(limit) ? limit : 0,
+      },
+    },
+  };
+}
+
+async function getEntriesForDir(dir: string, options?: LogQueryOptions): Promise<LogQueryResult> {
   const baseDir = toString(dir);
-  if (!baseDir) return [];
+  if (!baseDir) return buildQueryResult("", [], options);
   const opts = options || {};
   const level = toString(opts.level || "all").toLowerCase() || "all";
   const groupKey = toString(opts.groupKey || "all") || "all";
@@ -64,8 +85,8 @@ async function getEntriesForDir(dir: string, options?: LogQueryOptions): Promise
   sortByRecordedAtAsc(logs);
 
   const limit = Number(opts.limit) || 0;
-  if (limit > 0 && Number.isFinite(limit)) return logs.slice(Math.max(0, logs.length - limit));
-  return logs;
+  const limitedLogs = limit > 0 && Number.isFinite(limit) ? logs.slice(Math.max(0, logs.length - limit)) : logs;
+  return buildQueryResult(baseDir, limitedLogs, options);
 }
 
-export { getEntriesForDir, readLogRows, sortByRecordedAtAsc };
+export { buildQueryResult, getEntriesForDir, readLogRows, sortByRecordedAtAsc };

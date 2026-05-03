@@ -70,6 +70,26 @@ afterEach(() => {
 });
 
 describe("@trebired/logger", () => {
+  test("uses the configured success level for the package greeting", () => {
+    const output = captureStdout(() => {
+      createLog({
+        save: false,
+        console: {
+          colors: true,
+          timestamp: false,
+          group: false,
+          metadata: false,
+        },
+        levels: {
+          success: { weight: 25, label: "YAY", color: "#123456" },
+        },
+      });
+    });
+
+    expect(output).toContain("@trebired/logger initialized");
+    expect(output).toContain("\x1b[38;2;18;52;86mYAY\x1b[0m");
+  });
+
   test("logs without saving when save is false", async () => {
     const event = captureNextLog((log) => {
       log.info("worker.step", "complete", {
@@ -103,10 +123,16 @@ describe("@trebired/logger", () => {
     log.success("billing.invoice", "created", { invoiceId: "inv-1" });
     await log.flush();
 
-    const rows = await getEntriesForDir(dir, { level: "success", groupKey: "billing.invoice", limit: 10 });
-    expect(rows).toHaveLength(1);
-    expect(rows[0].message).toBe("created");
-    expect(rows[0].metadata).toEqual({ invoiceId: "inv-1" });
+    const result = await getEntriesForDir(dir, { level: "success", groupKey: "billing.invoice", limit: 10 });
+    expect(result.logs).toHaveLength(1);
+    expect(result.logs[0].message).toBe("created");
+    expect(result.logs[0].metadata).toEqual({ invoiceId: "inv-1" });
+    expect(result.levels.success.color).toBe("#51b300");
+    expect(result.metadata).toEqual({
+      dir,
+      count: 1,
+      query: { level: "success", groupKey: "billing.invoice", day: "", hour: "", limit: 10 },
+    });
     expect(fs.existsSync(path.join(dir, "billing", "invoice"))).toBe(true);
     await log.close();
   });
@@ -119,8 +145,8 @@ describe("@trebired/logger", () => {
     log.info("queue.test", "second");
     await log.flush();
 
-    const rows = await log.getAll({ groupKey: "queue.test", limit: 10 });
-    expect(rows.map((row) => row.message)).toEqual(["first", "second"]);
+    const result = await log.getAll({ groupKey: "queue.test", limit: 10 });
+    expect(result.logs.map((row) => row.message)).toEqual(["first", "second"]);
     expect(log.getStats().written).toBe(2);
     await log.close();
   });
@@ -131,8 +157,8 @@ describe("@trebired/logger", () => {
 
     log.info("sync.test", "written");
 
-    const rows = await getEntriesForDir(dir, { groupKey: "sync.test", limit: 10 });
-    expect(rows.map((row) => row.message)).toEqual(["written"]);
+    const result = await getEntriesForDir(dir, { groupKey: "sync.test", limit: 10 });
+    expect(result.logs.map((row) => row.message)).toEqual(["written"]);
     expect(log.getStats().mode).toBe("sync");
     await log.close();
   });
@@ -174,8 +200,8 @@ describe("@trebired/logger", () => {
       await log.flush();
 
       expect(fs.existsSync(path.join(dir, "timezone", "saved", item.expected))).toBe(true);
-      const rows = await log.getAll({ groupKey: "timezone.saved", limit: 1 });
-      expect(rows[0].recorded_at).toBe(instant);
+      const result = await log.getAll({ groupKey: "timezone.saved", limit: 1 });
+      expect(result.logs[0].recorded_at).toBe(instant);
       await log.close();
     }
   });
@@ -267,8 +293,8 @@ describe("@trebired/logger", () => {
     log.info("overflow.test", "dropped");
     await log.flush();
 
-    const rows = await log.getAll({ groupKey: "overflow.test", limit: 10 });
-    expect(rows.map((row) => row.message)).toEqual(["kept"]);
+    const result = await log.getAll({ groupKey: "overflow.test", limit: 10 });
+    expect(result.logs.map((row) => row.message)).toEqual(["kept"]);
     expect(log.getStats().dropped).toBe(1);
     await log.close();
   });
@@ -324,8 +350,8 @@ describe("@trebired/logger", () => {
     await sleep(50);
 
     expect(fs.existsSync(`${oldFile}.gz`)).toBe(true);
-    const rows = await getEntriesForDir(dir, { groupKey: "compress.logs", limit: 10 });
-    expect(rows.map((row) => row.message)).toEqual(["old"]);
+    const result = await getEntriesForDir(dir, { groupKey: "compress.logs", limit: 10 });
+    expect(result.logs.map((row) => row.message)).toEqual(["old"]);
     await log.close();
   });
 
@@ -349,8 +375,8 @@ describe("@trebired/logger", () => {
     });
     await log.flush();
 
-    const rows = await log.getAll({ groupKey: "metadata.test", limit: 10 });
-    expect(rows[0].metadata).toEqual({
+    const result = await log.getAll({ groupKey: "metadata.test", limit: 10 });
+    expect(result.logs[0].metadata).toEqual({
       userId: "user:42",
       password: "[REDACTED]",
       nested: { private: "[REDACTED]", visible: "show" },
@@ -365,8 +391,8 @@ describe("@trebired/logger", () => {
     log.info("sample.test", "hidden");
     await log.flush();
 
-    const rows = await log.getAll({ groupKey: "sample.test", limit: 10 });
-    expect(rows).toHaveLength(0);
+    const result = await log.getAll({ groupKey: "sample.test", limit: 10 });
+    expect(result.logs).toHaveLength(0);
     await log.close();
   });
 
@@ -387,8 +413,17 @@ describe("@trebired/logger", () => {
     log.panic("runtime", "unrecoverable");
     await log.flush();
 
-    const rows = await getEntriesForDir(dir, { level: "all", groupKey: "all", limit: 10 });
-    expect(rows.map((row) => row.level)).toEqual(["audit", "panic"]);
+    const result = await log.getAll({ level: "all", groupKey: "all", limit: 10 });
+    expect(result.logs.map((row) => row.level)).toEqual(["audit", "panic"]);
+    expect(result.levels.audit).toEqual({
+      weight: 35,
+      label: "AUDIT",
+      color: "#ffffff",
+      stream: "stdout",
+      showStack: false,
+      bold: false,
+    });
+    expect(result.levels.panic.label).toBe("PANIC");
     await log.close();
   });
 
@@ -407,8 +442,10 @@ describe("@trebired/logger", () => {
     log.info("runtime", "filtered");
     log.warn("runtime", "kept");
 
-    const rows = await log.getAll({ limit: 10 });
-    expect(rows.map((row) => row.message)).toEqual(["kept"]);
+    const result = await log.getAll({ limit: 10 });
+    expect(result.logs.map((row) => row.message)).toEqual(["kept"]);
+    expect(result.levels.info.label).toBe("LOWINFO");
+    expect(result.levels.warn.weight).toBe(60);
     await log.close();
   });
 
@@ -429,11 +466,11 @@ describe("@trebired/logger", () => {
 
     expect(log.getDir()).toBe(path.resolve(secondDir));
 
-    const firstRows = await getEntriesForDir(firstDir, { limit: 10 });
-    const secondRows = await getEntriesForDir(secondDir, { limit: 10 });
-    expect(firstRows[0].origin).toEqual({ source: "service", instance: null });
-    expect(firstRows[0].metadata).toEqual({ jobId: "42" });
-    expect(secondRows[0].origin).toEqual({ source: "worker", instance: "2" });
+    const firstResult = await getEntriesForDir(firstDir, { limit: 10 });
+    const secondResult = await getEntriesForDir(secondDir, { limit: 10 });
+    expect(firstResult.logs[0].origin).toEqual({ source: "service", instance: null });
+    expect(firstResult.logs[0].metadata).toEqual({ jobId: "42" });
+    expect(secondResult.logs[0].origin).toEqual({ source: "worker", instance: "2" });
     await log.close();
   });
 
@@ -464,7 +501,7 @@ describe("@trebired/logger", () => {
     await log.close();
     log.info("close.test", "after");
 
-    const rows = await getEntriesForDir(dir, { groupKey: "close.test", limit: 10 });
-    expect(rows.map((row) => row.message)).toEqual(["before"]);
+    const result = await getEntriesForDir(dir, { groupKey: "close.test", limit: 10 });
+    expect(result.logs.map((row) => row.message)).toEqual(["before"]);
   });
 });

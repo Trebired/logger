@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Structured backend logger with async JSONL storage, group-based log directories, custom weighted levels, redaction, retention, and local query helpers.",
   "license": "MIT",
   "keywords": [
@@ -47,6 +47,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "bench": "bun bench/logger_bench.ts",
+    "demo": "bun run examples/dummy.ts",
     "prepublishOnly": "bun run typecheck && bun test && bun run build",
     "test": "bun test",
     "typecheck": "tsc --noEmit"

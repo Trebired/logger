@@ -12,6 +12,7 @@ export type {
   LogLevelConfig,
   LogOrigin,
   LogQueryOptions,
+  LogQueryResult,
   LogStats,
   LogStreamName,
   RedactOptions,

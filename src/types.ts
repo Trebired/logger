@@ -90,6 +90,23 @@ type LogQueryOptions = {
   day?: string;
   hour?: string;
   limit?: number;
+  levels?: Record<string, LogLevelConfig>;
+};
+
+type LogQueryResult = {
+  logs: LogEntry[];
+  levels: Record<string, LogLevelConfig>;
+  metadata: {
+    dir: string;
+    count: number;
+    query: {
+      level: string;
+      groupKey: string;
+      day: string;
+      hour: string;
+      limit: number;
+    };
+  };
 };
 
 type LogStats = {
@@ -110,7 +127,7 @@ type LogInstance = Record<string, any> & {
   setDir(nextDir: string): void;
   requestLogger(options?: RequestLoggerOptions): (req: any, res: any, next: () => void) => void;
   logError(error: unknown, metadata?: Record<string, unknown>, source?: string): void;
-  getAll(options?: LogQueryOptions): Promise<LogEntry[]>;
+  getAll(options?: LogQueryOptions): Promise<LogQueryResult>;
   flush(): Promise<void>;
   close(): Promise<void>;
   getStats(): LogStats;
@@ -147,6 +164,7 @@ export type {
   LogLevelConfig,
   LogOrigin,
   LogQueryOptions,
+  LogQueryResult,
   LogStats,
   LogStreamName,
   NormalizedConsoleOptions,

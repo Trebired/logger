@@ -9,7 +9,7 @@ import { logStream } from "../stream/index.js";
 import { getEntriesForDir } from "../storage/query.js";
 import { normalizeRetentionOptions, normalizeWriteOptions } from "../storage/options.js";
 import { FileWriter } from "../storage/write.js";
-import type { CreateLogOptions, LogEntry, LogInstance, LogOrigin, LogLevelConfig, NormalizedConsoleOptions } from "../types.js";
+import type { CreateLogOptions, LogEntry, LogInstance, LogOrigin } from "../types.js";
 import { normalizeTimeZone } from "../utils/datetime.js";
 import { maybeShowNodeRuntimeNotice } from "../utils/runtime.js";
 import { asObject, toString } from "../utils/values.js";
@@ -59,27 +59,6 @@ function shouldKeepSample(entry: LogEntry, sample: CreateLogOptions["sample"]): 
   return true;
 }
 
-function maybeShowPackageGreeting(quiet: unknown, consoleOptions: NormalizedConsoleOptions, timeZone: string): void {
-  if (quiet === true || packageGreetingShown) return;
-  packageGreetingShown = true;
-
-  const entry: LogEntry = {
-    recorded_at: new Date().toISOString(),
-    level: "success",
-    group: "logger.loader",
-    message: "@trebired/logger initialized",
-    origin: buildOrigin("@trebired/logger"),
-  };
-  const levelConfig: LogLevelConfig = {
-    weight: 25,
-    label: "SUCCESS",
-    color: "#22c55e",
-    bold: true,
-  };
-
-  writeConsole("stdout", formatConsole(entry, levelConfig, { ...consoleOptions, enabled: true }, timeZone));
-}
-
 function createLog(options: CreateLogOptions = {}): LogInstance {
   const cfg = options && typeof options === "object" ? options : {};
   maybeShowNodeRuntimeNotice(cfg.quiet);
@@ -87,7 +66,6 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
   const threshold = minLevelWeight(cfg.minLevel, levels);
   const consoleOptions = normalizeConsoleOptions(cfg.console);
   const timeZone = normalizeTimeZone(cfg.timeZone);
-  maybeShowPackageGreeting(cfg.quiet, consoleOptions, timeZone);
   const defaultSource = toString(cfg.source) || "app";
   const defaultGroup = toString(cfg.defaultGroup) || "default";
   let loggingEnabled = true;
@@ -195,7 +173,7 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     },
     async getAll(options) {
       await writer.flush();
-      return getEntriesForDir(writer.getDir(), options);
+      return getEntriesForDir(writer.getDir(), { ...(options || {}), levels });
     },
     flush() {
       return writer.flush();
@@ -213,6 +191,11 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
   api.requestLogger = buildRequestMiddleware(api, cfg.request);
 
   for (const level of Object.keys(levels)) api[level] = logWith(level);
+
+  if (cfg.quiet !== true && !packageGreetingShown) {
+    packageGreetingShown = true;
+    api.success("logger.loader", "@trebired/logger initialized");
+  }
 
   return api;
 }

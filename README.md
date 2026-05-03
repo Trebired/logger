@@ -320,17 +320,23 @@ app.get("/", (req, res) => {
 ```ts
 import { getEntriesForDir } from "@trebired/logger";
 
-const rows = await getEntriesForDir("/var/log/my-app", {
+const result = await getEntriesForDir("/var/log/my-app", {
   level: "error",
   groupKey: "app.runtime",
   limit: 100,
 });
+
+console.log(result.logs);
+console.log(result.levels.error.color);
+console.log(result.metadata.count);
 ```
 
 Logger instances also expose `getAll()`:
 
 ```ts
 const recent = await log.getAll({ groupKey: "billing.invoice", limit: 50 });
+console.log(recent.logs);
+console.log(recent.levels);
 ```
 
 ## Sampling
@@ -359,10 +365,13 @@ logStream.on("log", (entry, context) => {
 
 ```sh
 bun install
+bun run demo
 bun test
 bun run typecheck
 bun run build
 bun run bench
 ```
+
+`bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs under the OS temp directory, such as `/tmp/@trebired-logger/dummy-system` on Linux and macOS. Microslop Windows is not supported.
 
 The npm package exports compiled files from `dist`. Publishing runs `typecheck`, tests, and `build` through `prepublishOnly`.
