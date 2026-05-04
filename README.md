@@ -1,8 +1,8 @@
 # @trebired/logger
 
-Structured backend logging for Bun and Node.js applications that want readable console output and durable local logs without running a separate logging stack.
+Local-first JSONL logger with human-browsable group folders, durable writes, retention, redaction, query helpers, request scopes, rolling files, and more.
 
-`@trebired/logger` writes JSONL logs into group-based folders, supports custom weighted levels, queues file writes by default, and includes redaction, retention, rolling files, request-scoped loggers, and local query helpers.
+`@trebired/logger` stores structured logs as JSONL, organizes them by group, queues file writes by default, supports custom weighted levels, and includes console formatting, retention cleanup, redaction, request-scoped loggers, stream events, and local query helpers.
 
 ## Install
 
