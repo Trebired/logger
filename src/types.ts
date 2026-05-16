@@ -27,6 +27,7 @@ type WriteOptions = {
 type RetentionOptions = {
   enabled?: boolean;
   maxAgeDays?: number;
+  maxPartitions?: number;
   maxFileSize?: string | number;
   compressOldFiles?: boolean;
   cleanupIntervalMs?: number;
@@ -54,12 +55,12 @@ type RequestLoggerOptions = {
 
 type CreateLogOptions = {
   dir?: string;
+  partition?: string;
   save?: boolean;
   console?: boolean | ConsoleOptions;
   quiet?: boolean;
   timeZone?: string;
   source?: string;
-  defaultGroup?: string;
   levels?: Record<string, LogLevelConfig>;
   minLevel?: string | number;
   write?: WriteOptions;
@@ -81,6 +82,7 @@ type LogEntry = {
   group: string;
   message: string;
   origin: LogOrigin;
+  partition?: string | null;
   metadata?: Record<string, unknown>;
 };
 
@@ -90,7 +92,25 @@ type LogQueryOptions = {
   day?: string;
   hour?: string;
   limit?: number;
+  partition?: string;
+  acrossPartitions?: boolean;
   levels?: Record<string, LogLevelConfig>;
+};
+
+type LogQueryTotals = {
+  logs: number;
+  dirs: number;
+  files: number;
+};
+
+type LogPartitionTotals = LogQueryTotals & {
+  partitions: number;
+};
+
+type LogPartitionSummary = {
+  partition: string;
+  count: number;
+  total: LogQueryTotals;
 };
 
 type LogQueryResult = {
@@ -98,13 +118,21 @@ type LogQueryResult = {
   levels: Record<string, LogLevelConfig>;
   metadata: {
     dir: string;
+    partition: string | null;
     count: number;
+    total: LogQueryTotals;
     query: {
       level: string;
       groupKey: string;
       day: string;
       hour: string;
       limit: number;
+      partition: string;
+      acrossPartitions: boolean;
+    };
+    partitions: {
+      items: LogPartitionSummary[];
+      all: LogPartitionTotals;
     };
   };
 };
@@ -127,7 +155,8 @@ type LogInstance = Record<string, any> & {
   setDir(nextDir: string): void;
   requestLogger(options?: RequestLoggerOptions): (req: any, res: any, next: () => void) => void;
   logError(error: unknown, metadata?: Record<string, unknown>, source?: string): void;
-  getAll(options?: LogQueryOptions): Promise<LogQueryResult>;
+  getAllLogs(options?: LogQueryOptions): Promise<LogQueryResult>;
+  getAllLogsAcrossPartitions(options?: LogQueryOptions): Promise<LogQueryResult>;
   flush(): Promise<void>;
   close(): Promise<void>;
   getStats(): LogStats;
@@ -150,7 +179,8 @@ type NormalizedWriteOptions = {
 
 type NormalizedRetentionOptions = {
   enabled: boolean;
-  maxAgeDays: number;
+  maxAgeDays: number | null;
+  maxPartitions: number | null;
   maxFileSize: number;
   compressOldFiles: boolean;
   cleanupIntervalMs: number;
@@ -165,6 +195,9 @@ export type {
   LogOrigin,
   LogQueryOptions,
   LogQueryResult,
+  LogQueryTotals,
+  LogPartitionTotals,
+  LogPartitionSummary,
   LogStats,
   LogStreamName,
   NormalizedConsoleOptions,

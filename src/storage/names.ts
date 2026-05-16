@@ -3,6 +3,7 @@ import path from "node:path";
 import { TOP_LEVEL } from "../constants.js";
 import { groupKeyFromRelDir } from "../groups.js";
 import type { LogEntry } from "../types.js";
+import { toString } from "../utils/values.js";
 import { getLocalDateTimeParts, normalizeTimeZone } from "../utils/datetime.js";
 
 type ParsedLogFile = {
@@ -16,8 +17,14 @@ type ParsedLogFile = {
 type WalkedLogFile = ParsedLogFile & {
   absPath: string;
   relDir: string;
+  groupDir: string;
   groupKey: string;
+  partition: string | null;
 };
+
+function normalizePartitionKey(input: unknown): string {
+  return toString(input).replace(/[^a-zA-Z0-9_-]/g, "-");
+}
 
 function nowFileStamp(date = new Date(), timeZone?: string): string {
   const parts = getLocalDateTimeParts(date, normalizeTimeZone(timeZone));
@@ -69,18 +76,22 @@ function parseLogFileName(fileName: string): ParsedLogFile | null {
   };
 }
 
-function walkedFileFromPath(baseDir: string, filePath: string): WalkedLogFile | null {
+function walkedFileFromPath(baseDir: string, filePath: string, partition: string | null = null, rootDir?: string): WalkedLogFile | null {
   const parsed = parseLogFileName(path.basename(filePath));
   if (!parsed) return null;
-  const relDir = path.relative(baseDir, path.dirname(filePath));
+  const relativeRoot = rootDir || baseDir;
+  const relDir = path.relative(relativeRoot, path.dirname(filePath));
+  const groupDir = relDir && relDir !== "." ? relDir : "";
 
   return {
     ...parsed,
     absPath: filePath,
-    relDir,
-    groupKey: relDir && relDir !== "." ? groupKeyFromRelDir(relDir) : TOP_LEVEL,
+    relDir: path.relative(baseDir, path.dirname(filePath)),
+    groupDir,
+    groupKey: groupDir ? groupKeyFromRelDir(groupDir) : TOP_LEVEL,
+    partition,
   };
 }
 
-export { fileStampForEntry, makeLogFileName, nowFileStamp, parseLogFileName, walkedFileFromPath };
+export { fileStampForEntry, makeLogFileName, normalizePartitionKey, nowFileStamp, parseLogFileName, walkedFileFromPath };
 export type { ParsedLogFile, WalkedLogFile };

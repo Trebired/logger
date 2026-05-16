@@ -1,8 +1,8 @@
 # @trebired/logger
 
-Local-first JSONL logger with human-browsable group folders, durable writes, retention, redaction, query helpers, request scopes, rolling files, and more.
+Structured backend logging for Bun and Node.js applications that want readable console output and durable local logs without running a separate logging stack.
 
-`@trebired/logger` stores structured logs as JSONL, organizes them by group, queues file writes by default, supports custom weighted levels, and includes console formatting, retention cleanup, redaction, request-scoped loggers, stream events, and local query helpers.
+`@trebired/logger` writes JSONL logs into group-based folders, supports optional partitioned storage, custom weighted levels, queued file writes, redaction, rolling files, request-scoped loggers, and local query helpers.
 
 ## Install
 
@@ -31,6 +31,7 @@ Most loggers either write to stdout and expect an external collector, or provide
 
 - structured JSONL entries
 - one directory tree per log group
+- optional partition folders above group trees
 - async queued file writes by default
 - custom weighted log levels
 - local querying by group, level, day, and hour
@@ -55,6 +56,16 @@ Each line is a JSON object:
 {"recorded_at":"2026-05-03T13:00:00.000Z","level":"info","group":"app.start","message":"ready","origin":{"source":"app","instance":null},"metadata":{"port":3000}}
 ```
 
+If you want an extra top-level separation layer, set `partition` and the logger writes one more folder layer. This is useful for deployments, releases, environments, sessions, tenants, workers, import batches, or any other caller-defined bucket:
+
+```txt
+/var/log/my-app/
+  blue-2026-05-16/
+    app/
+      start/
+        2026-05-03-13-0000-info.jsonl
+```
+
 ## Core API
 
 ```ts
@@ -64,7 +75,6 @@ const log = createLog({
   console: true,
   timeZone: "America/New_York",
   source: "api",
-  defaultGroup: "default",
 });
 
 log.debug("app.boot", "config loaded");
@@ -77,7 +87,7 @@ log.error("app.runtime", "uncaught error");
 
 `save` defaults to `true` when `dir` is provided. If no `dir` is provided, the logger can still emit console output and live stream events.
 
-`defaultGroup` defaults to `"default"`.
+If you log without passing a group, the logger always uses `"default"`.
 
 `@trebired/logger` runs on both Bun and Node.js. It may print one-time package notices for runtime-specific guidance or important future package messages. For example, when it detects Node.js, it recommends Bun for best startup and file I/O performance. Pass `quiet: true` to suppress package notices:
 
@@ -117,6 +127,7 @@ import { createLog } from "@trebired/logger";
 
 const log = createLog({
   dir: "/var/log/my-app",
+  partition: "blue-2026-05-16",
   save: true,
   console: {
     enabled: true,
@@ -129,7 +140,6 @@ const log = createLog({
   quiet: true,
   timeZone: "America/New_York",
   source: "api",
-  defaultGroup: "default",
   levels: {
     debug: { weight: 10, label: "DEBUG", color: "#94a3b8" },
     info: { weight: 20, label: "INFO", color: "#38bdf8" },
@@ -148,10 +158,12 @@ const log = createLog({
   },
   retention: {
     enabled: true,
-    maxAgeDays: 7,
     maxFileSize: "20mb",
     compressOldFiles: false,
     cleanupIntervalMs: 60_000,
+    // deletion is opt-in:
+    maxAgeDays: 30,
+    maxPartitions: 5,
   },
   redact: {
     includeDefaultSensitiveKeys: true,
@@ -242,8 +254,7 @@ const log = createLog({
 
 Defaults:
 
-- retention enabled
-- `maxAgeDays: 7`
+- logs are kept forever unless you set a retention number
 - `maxFileSize: "20mb"`
 - `compressOldFiles: false`
 
@@ -251,13 +262,17 @@ Defaults:
 const log = createLog({
   dir: "/var/log/my-app",
   retention: {
+    // only delete when you set one or both of these:
     maxAgeDays: 30,
+    maxPartitions: 5,
     maxFileSize: "100mb",
     compressOldFiles: true,
     cleanupIntervalMs: 60 * 60 * 1000,
   },
 });
 ```
+
+`maxAgeDays` deletes old files by age. `maxPartitions` keeps only the newest partition folders by last write time. A partition can represent deployments, sessions, environments, release versions, or any other caller-defined grouping. If you omit both, the logger stores logs indefinitely.
 
 When a file exceeds the configured size, the logger rolls to the next sequence inside the same group and hour:
 
@@ -317,10 +332,12 @@ app.get("/", (req, res) => {
 
 ## Query Saved Logs
 
-```ts
-import { getEntriesForDir } from "@trebired/logger";
+Old query names are not supported anymore. Use `getLogsForDir()`, `getAllLogs()`, and `getAllLogsAcrossPartitions()`. Do not use `getEntriesForDir()` or `getAll()`.
 
-const result = await getEntriesForDir("/var/log/my-app", {
+```ts
+import { getLogsForDir } from "@trebired/logger";
+
+const result = await getLogsForDir("/var/log/my-app", {
   level: "error",
   groupKey: "app.runtime",
   limit: 100,
@@ -329,14 +346,28 @@ const result = await getEntriesForDir("/var/log/my-app", {
 console.log(result.logs);
 console.log(result.levels.error.color);
 console.log(result.metadata.count);
+console.log(result.metadata.total);
 ```
 
-Logger instances also expose `getAll()`:
+The main instance query method is `getAllLogs()`:
 
 ```ts
-const recent = await log.getAll({ groupKey: "billing.invoice", limit: 50 });
+const recent = await log.getAllLogs({ groupKey: "billing.invoice", limit: 50 });
 console.log(recent.logs);
 console.log(recent.levels);
+console.log(recent.metadata.total);
+```
+
+If you use partition folders and want a merged read across every partition:
+
+```ts
+const merged = await log.getAllLogsAcrossPartitions({
+  groupKey: "billing.invoice",
+  limit: 100,
+});
+
+console.log(merged.logs);
+console.log(merged.metadata.partitions.items);
 ```
 
 ## Sampling
@@ -369,9 +400,8 @@ bun run demo
 bun test
 bun run typecheck
 bun run build
-bun run bench
 ```
 
-`bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs under the OS temp directory, such as `/tmp/@trebired-logger/dummy-system` on Linux and macOS. Microslop Windows is not supported.
+`bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs under the OS temp directory, such as `/tmp/@trebired-logger/dummy` on Linux and macOS. Microslop Windows is not supported.
 
 The npm package exports compiled files from `dist`. Publishing runs `typecheck`, tests, and `build` through `prepublishOnly`.

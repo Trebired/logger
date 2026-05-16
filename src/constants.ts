@@ -1,6 +1,7 @@
 import type { LogLevelConfig } from "./types.js";
 
 const TOP_LEVEL = "top-level";
+const PARTITION_MARKER_FILE = ".trebired-partition.json";
 
 const DEFAULT_LEVELS: Record<string, LogLevelConfig> = Object.freeze({
   debug: { weight: 10, label: "DEBUG", color: "#b7c063", stream: "stdout", showStack: false, bold: false },
@@ -16,6 +17,8 @@ const RESERVED_METADATA_KEYS = new Set([
   "configKey",
   "config_key",
   "deployment_type",
+  "deployment",
+  "partition",
   "group",
   "groupKey",
   "group_label",
@@ -48,4 +51,4 @@ const DEFAULT_SENSITIVE_KEYS = new Set([
   "access_token",
 ]);
 
-export { DEFAULT_LEVELS, DEFAULT_SENSITIVE_KEYS, RESERVED_METADATA_KEYS, TOP_LEVEL };
+export { DEFAULT_LEVELS, DEFAULT_SENSITIVE_KEYS, PARTITION_MARKER_FILE, RESERVED_METADATA_KEYS, TOP_LEVEL };

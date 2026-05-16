@@ -18,12 +18,6 @@ bun test
 bun run build
 ```
 
-The benchmark is Bun-based:
-
-```sh
-bun run bench
-```
-
 ## Pull Request Checklist
 
 - Keep public API changes intentional and documented in `README.md`.

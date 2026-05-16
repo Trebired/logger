@@ -18,11 +18,13 @@ function normalizeWriteOptions(input?: WriteOptions): NormalizedWriteOptions {
 function normalizeRetentionOptions(input?: RetentionOptions): NormalizedRetentionOptions {
   const cfg = input || {};
   const days = Number(cfg.maxAgeDays);
+  const maxPartitions = Number(cfg.maxPartitions);
   const cleanupIntervalMs = Number(cfg.cleanupIntervalMs);
 
   return {
     enabled: cfg.enabled !== false,
-    maxAgeDays: Number.isFinite(days) && days > 0 ? days : 7,
+    maxAgeDays: Number.isFinite(days) && days > 0 ? Math.floor(days) : null,
+    maxPartitions: Number.isFinite(maxPartitions) && maxPartitions > 0 ? Math.floor(maxPartitions) : null,
     maxFileSize: parseSize(cfg.maxFileSize, 20 * 1024 * 1024),
     compressOldFiles: cfg.compressOldFiles === true,
     cleanupIntervalMs: Number.isFinite(cleanupIntervalMs) && cleanupIntervalMs > 0 ? cleanupIntervalMs : 60 * 60 * 1000,

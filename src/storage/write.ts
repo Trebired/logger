@@ -1,14 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { PARTITION_MARKER_FILE } from "../constants.js";
 import { normGroup } from "../groups.js";
 import type { LogEntry, LogStats, NormalizedRetentionOptions, NormalizedWriteOptions } from "../types.js";
 import { toString } from "../utils/values.js";
 import { cleanupLogs } from "./retention.js";
-import { fileStampForEntry, makeLogFileName } from "./names.js";
+import { fileStampForEntry, makeLogFileName, normalizePartitionKey } from "./names.js";
 
 type WriterOptions = {
   dir: string;
+  partition: string;
   save: boolean;
   write: NormalizedWriteOptions;
   retention: NormalizedRetentionOptions;
@@ -18,6 +20,7 @@ type WriterOptions = {
 
 class FileWriter {
   private dir: string;
+  private partition: string;
   private save: boolean;
   private writeOptions: NormalizedWriteOptions;
   private retention: NormalizedRetentionOptions;
@@ -32,6 +35,7 @@ class FileWriter {
 
   constructor(options: WriterOptions) {
     this.dir = toString(options.dir);
+    this.partition = normalizePartitionKey(options.partition);
     this.save = Boolean(options.save);
     this.writeOptions = options.write;
     this.retention = options.retention;
@@ -123,6 +127,7 @@ class FileWriter {
     if (this.cleanupTimer) clearInterval(this.cleanupTimer);
     this.cleanupTimer = null;
     if (!this.save || !this.dir || !this.retention.enabled) return;
+    if (this.retention.maxAgeDays == null && this.retention.maxPartitions == null && !this.retention.compressOldFiles) return;
 
     cleanupLogs(this.dir, this.retention).catch(() => {});
     this.cleanupTimer = setInterval(() => {
@@ -161,7 +166,15 @@ class FileWriter {
 
   private resolvePath(entry: LogEntry): string {
     const normalized = normGroup(entry.group);
-    const groupDir = path.join(this.dir, ...normalized.parts);
+    const groupDir = this.partition
+      ? path.join(this.dir, this.partition, ...normalized.parts)
+      : path.join(this.dir, ...normalized.parts);
+    if (this.partition) {
+      const partitionRoot = path.join(this.dir, this.partition);
+      fs.mkdirSync(partitionRoot, { recursive: true });
+      const markerPath = path.join(partitionRoot, PARTITION_MARKER_FILE);
+      if (!fs.existsSync(markerPath)) fs.writeFileSync(markerPath, `${JSON.stringify({ partition: this.partition })}\n`, "utf8");
+    }
     fs.mkdirSync(groupDir, { recursive: true });
     const stamp = fileStampForEntry(entry, this.timeZone);
 

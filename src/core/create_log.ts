@@ -6,7 +6,8 @@ import { minLevelWeight, normalizeLevel, normalizeLevels } from "../levels/index
 import { prepareMetadata } from "../metadata/process.js";
 import { buildRequestMiddleware } from "../middleware/request.js";
 import { logStream } from "../stream/index.js";
-import { getEntriesForDir } from "../storage/query.js";
+import { normalizePartitionKey } from "../storage/names.js";
+import { getLogsForDir } from "../storage/query.js";
 import { normalizeRetentionOptions, normalizeWriteOptions } from "../storage/options.js";
 import { FileWriter } from "../storage/write.js";
 import type { CreateLogOptions, LogEntry, LogInstance, LogOrigin } from "../types.js";
@@ -15,6 +16,7 @@ import { maybeShowNodeRuntimeNotice } from "../utils/runtime.js";
 import { asObject, toString } from "../utils/values.js";
 
 let packageGreetingShown = false;
+const DEFAULT_GROUP = "default";
 
 function safeResolveDir(value: unknown): string {
   const raw = toString(value);
@@ -67,12 +69,13 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
   const consoleOptions = normalizeConsoleOptions(cfg.console);
   const timeZone = normalizeTimeZone(cfg.timeZone);
   const defaultSource = toString(cfg.source) || "app";
-  const defaultGroup = toString(cfg.defaultGroup) || "default";
+  const partition = normalizePartitionKey(cfg.partition);
   let loggingEnabled = true;
   let closed = false;
 
   const writer = new FileWriter({
     dir: safeResolveDir(cfg.dir),
+    partition,
     save: typeof cfg.save === "boolean" ? cfg.save : Boolean(toString(cfg.dir)),
     write: normalizeWriteOptions(cfg.write),
     retention: normalizeRetentionOptions(cfg.retention),
@@ -90,7 +93,7 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     const rawMetadata = asObject(metadataInput);
     const recordedAt = toString(rawMetadata.__recorded_at) || new Date().toISOString();
     const metadata = prepareMetadata(rawMetadata, cfg.serializers, cfg.redact);
-    const group = normGroup(groupInput || defaultGroup).key;
+    const group = normGroup(groupInput || DEFAULT_GROUP).key;
     const message = typeof messageInput === "string" ? messageInput : String(messageInput ?? "");
     const originSource = originInput && originInput.source ? originInput.source : defaultSource;
     const originInstance = originInput && Object.prototype.hasOwnProperty.call(originInput, "instance") ? originInput.instance : null;
@@ -100,6 +103,7 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
       group,
       message,
       origin: buildOrigin(originSource, originInstance),
+      partition: partition || null,
     };
     if (Object.keys(metadata).length) entry.metadata = metadata;
 
@@ -115,13 +119,13 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
 
   function logWith(level: string) {
     return function levelLogger(this: unknown): void {
-      const parsed = parseCallArguments(arguments, defaultGroup);
+      const parsed = parseCallArguments(arguments, DEFAULT_GROUP);
       emit(level, parsed.group, parsed.message, parsed.metadata);
     };
   }
 
   function bindGroup(groupName: unknown, originInput?: Partial<LogOrigin>): Record<string, any> {
-    const boundGroup = normGroup(groupName || defaultGroup).key;
+    const boundGroup = normGroup(groupName || DEFAULT_GROUP).key;
     const grouped: Record<string, any> = {};
 
     for (const level of Object.keys(levels)) {
@@ -142,14 +146,14 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
 
   const api: LogInstance = {
     group(groupName?: string) {
-      return bindGroup(groupName || defaultGroup);
+      return bindGroup(groupName || DEFAULT_GROUP);
     },
     withScope(source?: string | null, groupName?: string, instance?: string | number | null) {
       const originInput = {
         source: toString(source) || defaultSource,
         instance: instance == null ? null : String(instance),
       };
-      return bindGroup(groupName || defaultGroup, originInput);
+      return bindGroup(groupName || DEFAULT_GROUP, originInput);
     },
     setEnabled(flag: boolean) {
       loggingEnabled = Boolean(flag);
@@ -163,7 +167,7 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     requestLogger: buildRequestMiddleware(null, cfg.request),
     logError(error: unknown, metadata?: Record<string, unknown>, source?: string) {
       const meta = asObject(metadata);
-      const groupName = toString(meta.group) || defaultGroup;
+      const groupName = toString(meta.group) || DEFAULT_GROUP;
       const originSource = toString(source) || defaultSource;
       if (error instanceof Error) {
         emit("error", groupName, error.message, { ...meta, stack: error.stack }, { source: originSource });
@@ -171,9 +175,19 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
       }
       emit("error", groupName, String(error), meta, { source: originSource });
     },
-    async getAll(options) {
+    async getAllLogs(options) {
       await writer.flush();
-      return getEntriesForDir(writer.getDir(), { ...(options || {}), levels });
+      return getLogsForDir(writer.getDir(), {
+        ...(options || {}),
+        partition: Object.prototype.hasOwnProperty.call(options || {}, "partition")
+          ? options?.partition
+          : partition || undefined,
+        levels,
+      });
+    },
+    async getAllLogsAcrossPartitions(options) {
+      await writer.flush();
+      return getLogsForDir(writer.getDir(), { ...(options || {}), acrossPartitions: true, levels });
     },
     flush() {
       return writer.flush();

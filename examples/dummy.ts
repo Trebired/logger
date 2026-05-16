@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { createLog, getEntriesForDir, logStream } from "../src/index";
+import { createLog, getLogsForDir, logStream } from "../src/index";
 
 type DemoRequest = {
   headers: Record<string, string>;
@@ -18,7 +18,7 @@ type DemoResponse = {
   };
 };
 
-const rootDir = path.join(os.tmpdir(), "@trebired-logger", "dummy-system");
+const rootDir = path.join(os.tmpdir(), "@trebired-logger", "dummy");
 
 function assertSupportedPlatform(): void {
   if (process.platform === "win32") {
@@ -59,8 +59,7 @@ async function runDummySystem(): Promise<void> {
     },
     quiet: true,
     timeZone: "Europe/Prague",
-    source: "dummy-system",
-    defaultGroup: "system",
+    source: "dummy",
     levels: {
       audit: { weight: 35, label: "AUDIT", color: "#8b5cf6" },
       panic: { weight: 100, label: "PANIC", color: "#dc2626", stream: "stderr", bold: true, showStack: true },
@@ -109,14 +108,14 @@ async function runDummySystem(): Promise<void> {
     if (querying) return;
     querying = true;
     try {
-      const recent = await log.getAll({ groupKey: "app.heartbeat", limit: 3 });
+      const recent = await log.getAllLogs({ groupKey: "app.heartbeat", limit: 3 });
       log.debug("logs.query", "recent heartbeat query", {
         count: recent.metadata.count,
         levels: Object.keys(recent.levels),
         latest: recent.logs.length ? recent.logs[recent.logs.length - 1].message : null,
       });
 
-      const audit = await getEntriesForDir(log.getDir(), { level: "audit", limit: 5, levels: recent.levels });
+      const audit = await getLogsForDir(log.getDir(), { level: "audit", limit: 5, levels: recent.levels });
       log.debug("logs.query", "recent audit query", {
         count: audit.metadata.count,
         levelColor: audit.levels.audit.color,
