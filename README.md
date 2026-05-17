@@ -1,8 +1,8 @@
 # @trebired/logger
 
-Structured backend logging for Bun and Node.js applications that want readable console output and durable local logs without running a separate logging stack.
+Structured logging for server and browser applications that want one event model, readable console output, and durable local logs without running a separate logging stack.
 
-`@trebired/logger` writes JSONL logs into group-based folders, supports optional partitioned storage, custom weighted levels, queued file writes, redaction, rolling files, request-scoped loggers, and local query helpers.
+`@trebired/logger` writes JSONL logs into group-based folders on the server, supports optional partitioned storage, and now ships a framework-neutral browser runtime with an optional React adapter on top.
 
 ## Install
 
@@ -24,6 +24,64 @@ const log = createLog({
 log.info("app.start", "ready", { port: 3000 });
 await log.flush();
 ```
+
+Browser entrypoints:
+
+```ts
+import { createBrowserLog } from "@trebired/logger/browser";
+import { LogProvider, useLog } from "@trebired/logger/browser/react";
+```
+
+## Browser Runtime
+
+Use `@trebired/logger/browser` when you want the same levels, metadata conventions, grouping rules, and scoped logger behavior in browser code:
+
+```ts
+import { createBrowserLog } from "@trebired/logger/browser";
+
+const log = createBrowserLog({
+  group: "frontend.app",
+  metadata: {
+    deploymentId: "deploy-42",
+    requestId: "req-abc",
+  },
+});
+
+log.info("frontend boot");
+await log.flush();
+```
+
+The first browser release ships with console delivery built in. It also supports custom browser transports with in-memory batching so you can add fetch, beacon, websocket, or other delivery later without changing the logger API.
+
+There is no built-in SSR bootstrap helper in this release. If you want browser correlation data such as `requestId`, `sessionId`, or `deploymentId`, pass it explicitly through `metadata` or per-log metadata.
+
+## React Adapter
+
+`@trebired/logger/browser/react` is intentionally thin. It does not create a logger for you. It only helps wire an existing browser logger into React context:
+
+```tsx
+import { createRoot } from "react-dom/client";
+import { createBrowserLog } from "@trebired/logger/browser";
+import { LogProvider, useLog } from "@trebired/logger/browser/react";
+
+const log = createBrowserLog({
+  group: "frontend.app",
+  metadata: { deploymentId: "deploy-42" },
+});
+
+function SaveButton() {
+  const scopedLog = useLog("ui.save_button");
+  return <button onClick={() => scopedLog.info("clicked")}>Save</button>;
+}
+
+createRoot(document.getElementById("root")!).render(
+  <LogProvider log={log}>
+    <SaveButton />
+  </LogProvider>,
+);
+```
+
+`LogErrorBoundary` is also available from `@trebired/logger/browser/react` when you want render errors logged with the shared event shape.
 
 ## Why This Logger
 
@@ -64,6 +122,78 @@ If you want an extra top-level separation layer, set `partition` and the logger 
     app/
       start/
         2026-05-03-13-0000-info.jsonl
+```
+
+Partition names can now be built from a stable time prefix plus any caller-defined suffix:
+
+```ts
+import {
+  buildPartitionName,
+  buildTemporaryPartitionName,
+  createLog,
+} from "@trebired/logger";
+
+const staged = buildTemporaryPartitionName({
+  timeZone: "UTC",
+  suffix: "deployment-unknown",
+});
+
+const final = buildPartitionName({
+  timeZone: "UTC",
+  suffix: "deployment-42",
+});
+
+const log = createLog({
+  dir: "/var/log/my-app",
+  partition: staged,
+  temporaryPartition: true,
+});
+
+log.info("app.boot", "starting before final ownership is known");
+await log.flush();
+
+await log.promotePartition(final);
+```
+
+If you already have a full custom partition string, pass it directly with `partition`, or normalize it first with `sanitizePartitionName()`.
+
+## Partition Lifecycle
+
+You can manage partitions either from a live logger or with standalone helpers:
+
+```ts
+import {
+  copyPartition,
+  createPartition,
+  deleteLogs,
+  listPartitions,
+  renamePartition,
+} from "@trebired/logger";
+
+await createPartition("/var/log/my-app", "2026-05-17-12-0000-staged", {
+  temporary: true,
+});
+
+console.log(await listPartitions("/var/log/my-app"));
+
+await renamePartition("/var/log/my-app", {
+  from: "2026-05-17-12-0000-staged",
+  to: "2026-05-17-12-0000-final",
+});
+
+await copyPartition({
+  fromDir: "/var/log/my-app",
+  from: "2026-05-17-12-0000-final",
+  toDir: "/var/log/archive",
+  to: "2026-05-17-12-0000-final-copy",
+});
+
+await deleteLogs("/var/log/my-app", {
+  partition: "2026-05-17-12-0000-final",
+  groupKey: "jobs.queue",
+  level: "warn",
+  olderThanDays: 7,
+});
 ```
 
 ## Core API
@@ -128,6 +258,7 @@ import { createLog } from "@trebired/logger";
 const log = createLog({
   dir: "/var/log/my-app",
   partition: "blue-2026-05-16",
+  temporaryPartition: false,
   save: true,
   console: {
     enabled: true,
@@ -357,6 +488,8 @@ console.log(recent.logs);
 console.log(recent.levels);
 console.log(recent.metadata.total);
 ```
+
+Pass `partition: null` when you want only unpartitioned logs from a mixed directory tree.
 
 If you use partition folders and want a merged read across every partition:
 

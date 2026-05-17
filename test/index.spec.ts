@@ -104,7 +104,7 @@ describe("@trebired/logger", () => {
     expect(event.entry.message).toBe("complete");
     expect(event.entry.metadata).toEqual({ attempt: 1 });
     expect(event.entry.origin).toEqual({ source: "app", instance: null });
-    expect(event.context).toEqual({ dir: "" });
+    expect(event.context).toEqual({ runtime: "server", dir: "" });
   });
 
   test("uses default as the implicit group", () => {
@@ -147,7 +147,7 @@ describe("@trebired/logger", () => {
       day: "",
       hour: "",
       limit: 10,
-      partition: "",
+      partition: null,
       acrossPartitions: true,
     });
     expect(result.metadata.partitions.all.logs).toBe(1);

@@ -1,12 +1,38 @@
 export { TOP_LEVEL, DEFAULT_LEVELS as defaultLevels } from "./constants.js";
 export { createLog } from "./core/create_log.js";
 export { normalizeLevels } from "./levels/index.js";
+export {
+  buildPartitionName,
+  buildTemporaryPartitionName,
+  formatPartitionTimePrefix,
+  sanitizePartitionName,
+} from "./storage/names.js";
+export {
+  copyPartition,
+  createPartition,
+  deleteLogs,
+  deletePartition,
+  deletePartitions,
+  getPartitionInfo,
+  listPartitions,
+  mergePartition,
+  movePartition,
+  renamePartition,
+} from "./storage/partitions.js";
 export { getLogsForDir } from "./storage/query.js";
 export { logStream } from "./stream/index.js";
 
 export type {
+  BrowserLogStreamContext,
   ConsoleOptions,
+  CopyPartitionOptions,
+  CreatePartitionOptions,
   CreateLogOptions,
+  DeleteLogFileSummary,
+  DeleteLogsOptions,
+  DeleteLogsResult,
+  DeletePartitionResult,
+  DeletePartitionsOptions,
   LogEntry,
   LogInstance,
   LogLevelConfig,
@@ -17,10 +43,24 @@ export type {
   LogPartitionTotals,
   LogPartitionSummary,
   LogStats,
+  LogStreamContext,
+  LogStreamHandler,
   LogStreamName,
+  MergePartitionOptions,
+  MovePartitionOptions,
+  PartitionInfo,
+  PartitionNameOptions,
+  PartitionSanitizeOptions,
+  PartitionSanitizer,
+  PartitionTimeValue,
+  PartitionTotals,
+  PromotePartitionOptions,
   RedactOptions,
   RedactTransformArgs,
+  RenamePartitionOptions,
   RequestLoggerOptions,
   RetentionOptions,
+  ServerLogStreamContext,
+  SetPartitionOptions,
   WriteOptions,
 } from "./types.js";

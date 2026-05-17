@@ -4,6 +4,18 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.0.0
+
+- Added `@trebired/logger/browser` for framework-neutral browser logging with the same levels, metadata conventions, grouping rules, and scoped logger behavior as the server logger.
+- Added `@trebired/logger/browser/react` with `LogProvider`, `useLog()`, and `LogErrorBoundary` as a thin React adapter on top of the browser runtime.
+- Added a runtime-neutral log stream context so stream listeners can distinguish `{ runtime: "server", dir }` from `{ runtime: "browser", transports }`.
+- Rebuilt partition handling as a clean-break subsystem with no legacy partition marker or legacy log filename compatibility.
+- Added partition naming helpers for time-prefixed names, arbitrary caller suffixes, full-name sanitization, and temporary partition names.
+- Added live partition lifecycle APIs on logger instances, including `getPartition()`, `setPartition()`, `promotePartition()`, `listPartitions()`, and `getPartitionInfo()`.
+- Added standalone partition management helpers for creating, listing, inspecting, renaming, moving, copying, merging, and deleting partitions.
+- Added `deleteLogs()` for file-bucket deletion by partition, age, day, hour, group, level, and temporary-partition filters.
+- Changed query metadata and partition summaries to use real partition names or `null` for unpartitioned logs.
+
 ## 1.1.3
 
 - Added optional `partition` storage folders so one logger dir can keep separate deployments, sessions, environments, or other caller-defined log trees.

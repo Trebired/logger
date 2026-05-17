@@ -1,25 +1,7 @@
-import type { ConsoleOptions, LogEntry, LogLevelConfig, LogStreamName, NormalizedConsoleOptions } from "../types.js";
-import { formatDisplayTimestamp, normalizeLocale } from "../utils/datetime.js";
+import type { LogEntry, LogLevelConfig, LogStreamName, NormalizedConsoleOptions } from "../types.js";
+import { formatDisplayTimestamp } from "../utils/datetime.js";
 import { toString } from "../utils/values.js";
-
-function normalizeConsoleOptions(input: boolean | ConsoleOptions | undefined): NormalizedConsoleOptions {
-  if (input === false) {
-    return { enabled: false, colors: true, timestamp: true, group: true, metadata: true, locale: normalizeLocale() };
-  }
-
-  if (input && typeof input === "object") {
-    return {
-      enabled: input.enabled !== false,
-      colors: input.colors !== false,
-      timestamp: input.timestamp !== false,
-      group: input.group !== false,
-      metadata: input.metadata !== false,
-      locale: normalizeLocale(input.locale),
-    };
-  }
-
-  return { enabled: true, colors: true, timestamp: true, group: true, metadata: true, locale: normalizeLocale() };
-}
+import { normalizeConsoleOptions } from "./options.js";
 
 function hexToAnsi(hex: string, bold = false): string {
   const raw = toString(hex).replace(/^#/, "");

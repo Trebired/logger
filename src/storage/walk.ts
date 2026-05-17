@@ -2,25 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { PARTITION_MARKER_FILE } from "../constants.js";
+import { readPartitionMarkerFromRoot, readPartitionMarkerFromRootSync } from "./partitions.js";
 import { walkedFileFromPath, type WalkedLogFile } from "./names.js";
-
-async function hasPartitionMarker(dir: string): Promise<boolean> {
-  try {
-    await fs.promises.access(path.join(dir, PARTITION_MARKER_FILE));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function hasPartitionMarkerSync(dir: string): boolean {
-  try {
-    fs.accessSync(path.join(dir, PARTITION_MARKER_FILE));
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 async function walkTree(baseDir: string, startDir: string, rootDir: string, partition: string | null, out: WalkedLogFile[]): Promise<void> {
   const stack = [startDir];
@@ -88,7 +71,7 @@ async function walkLogFiles(baseDir: string): Promise<WalkedLogFile[]> {
   for (const entry of entries) {
     const absPath = path.join(baseDir, entry.name);
     if (entry.isDirectory()) {
-      if (await hasPartitionMarker(absPath)) {
+      if (await readPartitionMarkerFromRoot(absPath, entry.name)) {
         await walkTree(baseDir, absPath, absPath, entry.name, out);
         continue;
       }
@@ -115,7 +98,7 @@ function walkLogFilesSync(baseDir: string): WalkedLogFile[] {
   for (const entry of entries) {
     const absPath = path.join(baseDir, entry.name);
     if (entry.isDirectory()) {
-      if (hasPartitionMarkerSync(absPath)) {
+      if (readPartitionMarkerFromRootSync(absPath, entry.name)) {
         walkTreeSync(baseDir, absPath, absPath, entry.name, out);
         continue;
       }

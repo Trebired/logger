@@ -11,13 +11,11 @@ import type {
   LogQueryTotals,
 } from "../types.js";
 import { toString } from "../utils/values.js";
-import { normalizePartitionKey, type WalkedLogFile } from "./names.js";
+import { sanitizePartitionName, type WalkedLogFile } from "./names.js";
 import { walkLogFiles } from "./walk.js";
 
-const LEGACY_PARTITION = "default";
-
-type DeploymentSummaryState = {
-  partition: string;
+type PartitionSummaryState = {
+  partition: string | null;
   total: LogQueryTotals;
 };
 
@@ -52,19 +50,18 @@ function sortByRecordedAtAsc(entries: LogEntry[]): LogEntry[] {
   return entries;
 }
 
-function partitionLabel(partition: string | null | undefined): string {
-  return partition || LEGACY_PARTITION;
+function partitionKey(partition: string | null | undefined): string {
+  return partition || "__unpartitioned__";
 }
 
-function normalizePartitionFilter(input: unknown): string | null | undefined {
-  const raw = toString(input);
-  if (!raw) return undefined;
-  const normalized = normalizePartitionKey(raw);
-  if (!normalized || normalized === LEGACY_PARTITION) return null;
-  return normalized;
+function normalizePartitionFilter(input: unknown): string | null {
+  if (input == null) return null;
+  const raw = toString(input).trim();
+  if (!raw) return null;
+  return sanitizePartitionName(raw);
 }
 
-function buildAggregateTotals(items: Map<string, DeploymentSummaryState>): LogPartitionTotals {
+function buildAggregateTotals(items: Map<string, PartitionSummaryState>): LogPartitionTotals {
   let logs = 0;
   let dirs = 0;
   let files = 0;
@@ -83,12 +80,12 @@ function buildAggregateTotals(items: Map<string, DeploymentSummaryState>): LogPa
   };
 }
 
-function buildDeploymentItems(items: Map<string, DeploymentSummaryState>, counts: Map<string, number>): LogPartitionSummary[] {
+function buildPartitionItems(items: Map<string, PartitionSummaryState>, counts: Map<string, number>): LogPartitionSummary[] {
   return Array.from(items.values())
-    .sort((a, b) => a.partition.localeCompare(b.partition))
+    .sort((a, b) => (a.partition || "").localeCompare(b.partition || ""))
     .map((item) => ({
       partition: item.partition,
-      count: counts.get(item.partition) || 0,
+      count: counts.get(partitionKey(item.partition)) || 0,
       total: item.total,
     }));
 }
@@ -98,14 +95,14 @@ function buildQueryResult(
   logs: LogEntry[],
   options: LogQueryOptions | undefined,
   partition: string | null,
+  hasExplicitPartition: boolean,
   total: LogQueryTotals,
-  items: Map<string, DeploymentSummaryState>,
+  items: Map<string, PartitionSummaryState>,
   counts: Map<string, number>,
 ): LogQueryResult {
   const opts = options || {};
   const limit = Number(opts.limit) || 0;
-  const queryPartition = normalizePartitionFilter(opts.partition);
-  const acrossPartitions = opts.acrossPartitions === true || queryPartition === undefined;
+  const acrossPartitions = opts.acrossPartitions === true || !hasExplicitPartition;
 
   return {
     logs,
@@ -121,11 +118,11 @@ function buildQueryResult(
         day: toString(opts.day),
         hour: toString(opts.hour),
         limit: Number.isFinite(limit) ? limit : 0,
-        partition: queryPartition == null ? "" : queryPartition,
+        partition: hasExplicitPartition ? partition : null,
         acrossPartitions,
       },
       partitions: {
-        items: buildDeploymentItems(items, counts),
+        items: buildPartitionItems(items, counts),
         all: buildAggregateTotals(items),
       },
     },
@@ -163,29 +160,29 @@ async function hydrateRows(file: WalkedLogFile): Promise<LogEntry[]> {
   return rows;
 }
 
-async function summarizeFiles(files: WalkedLogFile[]): Promise<Map<string, DeploymentSummaryState>> {
-  const items = new Map<string, DeploymentSummaryState>();
+async function summarizeFiles(files: WalkedLogFile[]): Promise<Map<string, PartitionSummaryState>> {
+  const items = new Map<string, PartitionSummaryState>();
   const dirSets = new Map<string, Set<string>>();
 
   for (const file of files) {
-    const partition = partitionLabel(file.partition);
+    const key = partitionKey(file.partition);
     const rows = await hydrateRows(file);
-    const current = items.get(partition) || {
-      partition,
+    const current = items.get(key) || {
+      partition: file.partition || null,
       total: { logs: 0, dirs: 0, files: 0 },
     };
 
     current.total.logs += rows.length;
     current.total.files += 1;
-    items.set(partition, current);
+    items.set(key, current);
 
-    const dirs = dirSets.get(partition) || new Set<string>();
+    const dirs = dirSets.get(key) || new Set<string>();
     dirs.add(file.relDir || ".");
-    dirSets.set(partition, dirs);
+    dirSets.set(key, dirs);
   }
 
-  for (const [partition, dirs] of dirSets.entries()) {
-    const item = items.get(partition);
+  for (const [key, dirs] of dirSets.entries()) {
+    const item = items.get(key);
     if (item) item.total.dirs = dirs.size;
   }
 
@@ -199,8 +196,8 @@ async function readFilteredLogs(files: WalkedLogFile[], options: LogQueryOptions
   for (const file of files) {
     if (!fileMatchesFilters(file, options)) continue;
     const rows = await hydrateRows(file);
-    const partition = partitionLabel(file.partition);
-    counts.set(partition, (counts.get(partition) || 0) + rows.length);
+    const key = partitionKey(file.partition);
+    counts.set(key, (counts.get(key) || 0) + rows.length);
     logs = logs.concat(rows);
   }
 
@@ -215,11 +212,12 @@ async function getLogsForDir(dir: string, options?: LogQueryOptions): Promise<Lo
   const baseDir = toString(dir);
   const opts = options || {};
   if (!baseDir) {
-    return buildQueryResult("", [], opts, null, { logs: 0, dirs: 0, files: 0 }, new Map(), new Map());
+    return buildQueryResult("", [], opts, null, false, { logs: 0, dirs: 0, files: 0 }, new Map(), new Map());
   }
 
-  const partition = normalizePartitionFilter(opts.partition);
-  const acrossPartitions = opts.acrossPartitions === true || partition === undefined;
+  const hasExplicitPartition = Object.prototype.hasOwnProperty.call(opts, "partition");
+  const partition = hasExplicitPartition ? normalizePartitionFilter(opts.partition) : null;
+  const acrossPartitions = opts.acrossPartitions === true || !hasExplicitPartition;
   const allFiles = await walkLogFiles(baseDir);
   const scopeFiles = allFiles.filter((file) => scopeMatches(file, partition, acrossPartitions));
   const allItems = await summarizeFiles(allFiles);
@@ -238,6 +236,7 @@ async function getLogsForDir(dir: string, options?: LogQueryOptions): Promise<Lo
     logs,
     opts,
     acrossPartitions ? null : partition,
+    hasExplicitPartition,
     total,
     allItems,
     counts,

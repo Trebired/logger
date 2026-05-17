@@ -2,9 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 
-import { PARTITION_MARKER_FILE } from "../constants.js";
 import type { NormalizedRetentionOptions } from "../types.js";
 import { nowFileStamp } from "./names.js";
+import { readPartitionMarkerFromRoot } from "./partitions.js";
 import { walkLogFiles } from "./walk.js";
 
 function currentDayHour(): { day: string; hour: string } {
@@ -42,10 +42,7 @@ async function listPartitionRoots(dir: string): Promise<string[]> {
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const root = path.join(dir, entry.name);
-    try {
-      await fs.promises.access(path.join(root, PARTITION_MARKER_FILE));
-      roots.push(root);
-    } catch {}
+    if (await readPartitionMarkerFromRoot(root, entry.name)) roots.push(root);
   }
 
   return roots;
