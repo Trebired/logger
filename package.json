@@ -1,7 +1,7 @@
 {
   "name": "@trebired/logger",
   "version": "2.1.1",
-  "description": "Local-first JSONL logger with durable writes, partitions, retention, redaction, query helpers, and browser runtimes.",
+  "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "license": "MIT",
   "keywords": [
     "logger",
@@ -60,7 +60,7 @@
     "build:native": "node ./scripts/build-native.mjs",
     "build:native:matrix": "node ./scripts/build-native-matrix.mjs",
     "demo": "bun run examples/dummy.ts",
-    "prepublishOnly": "bun run typecheck && bun test && bun run build && bun run build:native && node ./scripts/verify-publish.mjs",
+    "prepublishOnly": "bun run typecheck && bun test && bun run build && node ./scripts/verify-publish.mjs",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "verify:pack": "node ./scripts/verify-pack.mjs"
