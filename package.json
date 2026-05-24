@@ -16,12 +16,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/trebired/logger.git"
+    "url": "https://github.com/Trebired/logger"
   },
   "bugs": {
-    "url": "https://github.com/trebired/logger/issues"
+    "url": "https://github.com/Trebired/logger/issues"
   },
-  "homepage": "https://github.com/trebired/logger#readme",
+  "homepage": "https://github.com/Trebired/logger#readme",
   "type": "module",
   "engines": {
     "node": ">=18",
