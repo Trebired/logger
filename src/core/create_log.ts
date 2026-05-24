@@ -6,6 +6,7 @@ import { normalizeConsoleOptions } from "../format/options.js";
 import { normalizeLevels } from "../levels/index.js";
 import { buildRequestMiddleware } from "../middleware/request.js";
 import { logStream } from "../stream/index.js";
+import { exportPartition as exportStoredPartition, exportPartitions as exportStoredPartitions } from "../storage/export.js";
 import { normalizePartitionKey, sanitizePartitionName } from "../storage/names.js";
 import {
   getPartitionInfo as getStoredPartitionInfo,
@@ -145,6 +146,20 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     },
     async listPartitions() {
       return listStoredPartitions(writer.getDir());
+    },
+    async exportPartition(partitionOrOptions, maybeOptions) {
+      await writer.flush();
+      const hasPartitionArg = typeof partitionOrOptions === "string";
+      const partition = hasPartitionArg ? sanitizePartitionName(partitionOrOptions) : activePartition;
+      const options = (hasPartitionArg
+        ? maybeOptions
+        : (partitionOrOptions && typeof partitionOrOptions === "object" ? partitionOrOptions : maybeOptions)) || {};
+      if (!partition) throw new Error("partition-not-set");
+      return exportStoredPartition(writer.getDir(), partition, options);
+    },
+    async exportPartitions(options) {
+      await writer.flush();
+      return exportStoredPartitions(writer.getDir(), options || {});
     },
     async getPartitionInfo(partition) {
       const target = partition == null ? activePartition : sanitizePartitionName(partition);

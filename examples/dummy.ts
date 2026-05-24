@@ -1,6 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createLog, getLogsForDir, logStream } from "../src/index";
 
@@ -18,7 +18,8 @@ type DemoResponse = {
   };
 };
 
-const rootDir = path.join(os.tmpdir(), "@trebired-logger", "dummy");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const rootDir = path.join(repoRoot, ".demo-logs", "dummy");
 
 function assertSupportedPlatform(): void {
   if (process.platform === "win32") {

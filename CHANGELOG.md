@@ -4,6 +4,18 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## Unreleased
+
+## 2.1.0
+
+- Added partition export helpers for single-partition and multi-partition exports with `tar.gz` as the default format and `.zip` as an alternate format.
+- Added export convenience methods on live logger instances that flush pending writes before archiving.
+- Added export archives with a shared `manifest.json` while preserving raw exported log files byte-for-byte under `logs/<partition>/...`.
+- Added a Rust native storage backend for partition scanning and archive creation, plus a JS fallback backend and Bun-safe native fallback behavior.
+- Added platform-specific native binary loading so one `@trebired/logger` package can bundle prebuilt Linux and macOS `.node` files under `native/` and select the right binary at runtime.
+- Reused the new storage scan backend for partition info totals so large partition summaries can share the same native/JS seam as export.
+- Changed error console output to keep pretty log headers while emitting a plain `path:line:column` location line and raw stack frames for better terminal and IDE navigation.
+
 ## 2.0.0
 
 - Added `@trebired/logger/browser` for framework-neutral browser logging with the same levels, metadata conventions, grouping rules, and scoped logger behavior as the server logger.

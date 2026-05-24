@@ -11,6 +11,7 @@ coverage/
 # Logs and runtime output
 *.log
 logs/
+.demo-logs/
 .runtime/
 
 # OS and editor noise

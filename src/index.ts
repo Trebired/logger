@@ -19,6 +19,7 @@ export {
   movePartition,
   renamePartition,
 } from "./storage/partitions.js";
+export { exportPartition, exportPartitions } from "./storage/export.js";
 export { getLogsForDir } from "./storage/query.js";
 export { logStream } from "./stream/index.js";
 
@@ -33,6 +34,13 @@ export type {
   DeleteLogsResult,
   DeletePartitionResult,
   DeletePartitionsOptions,
+  ExportFormat,
+  ExportManifest,
+  ExportManifestFile,
+  ExportManifestPartition,
+  ExportPartitionOptions,
+  ExportPartitionsOptions,
+  ExportResult,
   LogEntry,
   LogInstance,
   LogLevelConfig,

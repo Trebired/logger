@@ -20,6 +20,31 @@ function color(options: NormalizedConsoleOptions, hex: string | undefined, value
   return `${hexToAnsi(hex || "", bold)}${text}\x1b[0m`;
 }
 
+function inlineMetadata(entry: LogEntry, includeStack: boolean): Record<string, unknown> | null {
+  const metadata = entry.metadata;
+  if (!metadata || !Object.keys(metadata).length) return null;
+  if (includeStack || !Object.prototype.hasOwnProperty.call(metadata, "stack")) return metadata;
+
+  const trimmed = { ...metadata };
+  delete trimmed.stack;
+  return Object.keys(trimmed).length ? trimmed : null;
+}
+
+function extractStackLocation(stackText: string): string {
+  for (const rawLine of String(stackText).split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const parenMatch = line.match(/\(([^()]+:\d+:\d+)\)\s*$/);
+    if (parenMatch) return parenMatch[1];
+
+    const directMatch = line.match(/^at\s+([^()]+:\d+:\d+)\s*$/);
+    if (directMatch) return directMatch[1].trim();
+  }
+
+  return "";
+}
+
 function formatConsole(entry: LogEntry, levelConfig: LogLevelConfig, options: NormalizedConsoleOptions, timeZone: string): string {
   const levelText = color(options, levelConfig.color || "#ffffff", levelConfig.label || entry.level.toUpperCase(), levelConfig.bold === true);
   const bracketParts = [levelText];
@@ -33,11 +58,22 @@ function formatConsole(entry: LogEntry, levelConfig: LogLevelConfig, options: No
     line = `${when} ${line}`;
   }
 
-  if (options.metadata && entry.metadata && Object.keys(entry.metadata).length) {
-    line += ` ${color(options, "#5c5c5c", JSON.stringify(entry.metadata))}`;
+  const stackText = levelConfig.showStack === true && entry.metadata && entry.metadata.stack
+    ? String(entry.metadata.stack)
+    : "";
+  const metadata = options.metadata
+    ? inlineMetadata(entry, !stackText)
+    : null;
+
+  if (metadata) {
+    line += ` ${color(options, "#5c5c5c", JSON.stringify(metadata))}`;
   }
 
-  if (levelConfig.showStack === true && entry.metadata && entry.metadata.stack) line += `\n${String(entry.metadata.stack)}`;
+  if (stackText) {
+    const location = extractStackLocation(stackText);
+    if (location) line += `\n${location}`;
+    line += `\n${stackText}`;
+  }
 
   return line;
 }

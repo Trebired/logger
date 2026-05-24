@@ -1,12 +1,28 @@
 # @trebired/logger
 
-Structured logging for server and browser applications that want one event model, readable console output, and durable local logs without running a separate logging stack.
+Local-first JSONL logger with human-browsable group folders, durable writes, retention, redaction, query helpers, and more.
 
 `@trebired/logger` writes JSONL logs into group-based folders on the server, supports optional partitioned storage, and now ships a framework-neutral browser runtime with an optional React adapter on top.
 
 ## Install
 
 Runtime support: Bun 1+ and Node.js 18+.
+
+The package can use bundled native binaries for supported Linux and macOS targets to speed up large storage/export workloads. Consumers still install a single package:
+
+```txt
+@trebired/logger
+  dist/
+  native/
+    linux-x64-gnu.node
+    linux-x64-musl.node
+    linux-arm64-gnu.node
+    linux-arm64-musl.node
+    darwin-arm64.node
+    darwin-x64.node
+```
+
+At runtime the JS wrapper selects the matching `.node` file when one is bundled for the current platform, and falls back to the built-in JS backend otherwise. End users do not need Rust installed.
 
 ```sh
 npm install @trebired/logger
@@ -535,6 +551,6 @@ bun run typecheck
 bun run build
 ```
 
-`bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs under the OS temp directory, such as `/tmp/@trebired-logger/dummy` on Linux and macOS. Microslop Windows is not supported.
+`bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs into the repo under `.demo-logs/dummy`. Microslop Windows is not supported.
 
 The npm package exports compiled files from `dist`. Publishing runs `typecheck`, tests, and `build` through `prepublishOnly`.

@@ -1,7 +1,7 @@
 {
   "name": "@trebired/logger",
-  "version": "2.0.0",
-  "description": "Structured server and browser logger with JSONL storage, shared event semantics, custom weighted levels, redaction, retention, and local query helpers.",
+  "version": "2.1.0",
+  "description": "Local-first JSONL logger with durable writes, partitions, retention, redaction, query helpers, and browser runtimes.",
   "license": "MIT",
   "keywords": [
     "logger",
@@ -50,12 +50,15 @@
   },
   "files": [
     "dist",
+    "native/*.node",
     "CHANGELOG.md",
     "LICENSE",
     "README.md"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "build:native": "node ./scripts/build-native.mjs",
+    "build:native:matrix": "node ./scripts/build-native-matrix.mjs",
     "demo": "bun run examples/dummy.ts",
     "prepublishOnly": "bun run typecheck && bun test && bun run build",
     "test": "bun test",
@@ -74,8 +77,13 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.2",
     "@types/react-test-renderer": "^19.1.0",
+    "@types/tar-stream": "^3.1.4",
     "react": "^19.2.0",
     "react-test-renderer": "^19.2.0",
     "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "tar-stream": "^3.2.0"
   }
 }
