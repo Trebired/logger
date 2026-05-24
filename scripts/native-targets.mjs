@@ -9,7 +9,11 @@ const TARGET_BINARY_NAMES = new Map([
   ["aarch64-apple-darwin", "darwin-arm64.node"],
 ]);
 
-const DEFAULT_NATIVE_TARGETS = Array.from(TARGET_BINARY_NAMES.keys());
+const RELEASE_NATIVE_TARGETS = [
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin",
+  "aarch64-apple-darwin",
+];
 
 function linuxLibcVariant() {
   const report = typeof process.report?.getReport === "function" ? process.report.getReport() : null;
@@ -43,7 +47,7 @@ function nativeBinaryNameForTarget(target) {
 }
 
 export {
-  DEFAULT_NATIVE_TARGETS,
+  RELEASE_NATIVE_TARGETS,
   TARGET_BINARY_NAMES,
   expectedHostBinaryName,
   nativeBinaryNameForTarget,

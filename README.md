@@ -15,14 +15,11 @@ The package can use bundled native binaries for supported Linux and macOS target
   dist/
   native/
     linux-x64-gnu.node
-    linux-x64-musl.node
-    linux-arm64-gnu.node
-    linux-arm64-musl.node
     darwin-arm64.node
     darwin-x64.node
 ```
 
-At runtime the JS wrapper selects the matching `.node` file when one is bundled for the current platform, and falls back to the built-in JS backend otherwise. End users do not need Rust installed.
+At runtime the JS wrapper selects the matching `.node` file when one is bundled for the current platform, and falls back to the built-in JS backend otherwise. Bundled native binaries are currently published for Linux GNU and macOS targets. End users do not need Rust installed.
 
 ```sh
 npm install @trebired/logger

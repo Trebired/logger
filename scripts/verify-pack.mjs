@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 
-import { DEFAULT_NATIVE_TARGETS, expectedHostBinaryName, nativeBinaryNameForTarget } from "./native-targets.mjs";
+import { RELEASE_NATIVE_TARGETS, expectedHostBinaryName, nativeBinaryNameForTarget } from "./native-targets.mjs";
 
 function packedPaths() {
   const result = spawnSync("npm", ["pack", "--json", "--dry-run"], {
@@ -24,7 +24,7 @@ function expectPaths(paths, required, label) {
 
 function expectedNativePackPaths(scope) {
   if (scope === "matrix") {
-    return DEFAULT_NATIVE_TARGETS.map((target) => `native/${nativeBinaryNameForTarget(target)}`);
+    return RELEASE_NATIVE_TARGETS.map((target) => `native/${nativeBinaryNameForTarget(target)}`);
   }
 
   if (scope === "host") {
