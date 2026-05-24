@@ -3,18 +3,11 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { nativeBinaryNameForTarget } from "./native-targets.mjs";
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const manifestPath = path.join(repoRoot, "native", "logger-native", "Cargo.toml");
 const crateRoot = path.dirname(manifestPath);
-
-const TARGET_BINARY_NAMES = new Map([
-  ["x86_64-unknown-linux-gnu", "linux-x64-gnu.node"],
-  ["x86_64-unknown-linux-musl", "linux-x64-musl.node"],
-  ["aarch64-unknown-linux-gnu", "linux-arm64-gnu.node"],
-  ["aarch64-unknown-linux-musl", "linux-arm64-musl.node"],
-  ["x86_64-apple-darwin", "darwin-x64.node"],
-  ["aarch64-apple-darwin", "darwin-arm64.node"],
-]);
 
 function parseArgValue(flag) {
   const index = process.argv.indexOf(flag);
@@ -35,12 +28,6 @@ function detectHostTarget() {
   const host = line ? line.slice(5).trim() : "";
   if (!host) throw new Error("unable-to-detect-rust-host-target");
   return host;
-}
-
-function nativeBinaryNameForTarget(target) {
-  const resolved = TARGET_BINARY_NAMES.get(target);
-  if (!resolved) throw new Error(`unsupported-native-target: ${target}`);
-  return resolved;
 }
 
 function sharedLibraryNameForTarget(target) {

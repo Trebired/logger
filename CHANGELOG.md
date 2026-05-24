@@ -6,6 +6,12 @@ This project follows semantic versioning once published.
 
 ## Unreleased
 
+## 2.1.1
+
+- Changed `prepublishOnly` to build the host native addon before publish and verify the packed tarball contents.
+- Added publish-time guards so full releases fail unless the expected Linux and macOS native `.node` files are present in the package tarball.
+- Added npm packaging overrides for `native/*.node` so bundled binaries are not dropped from published archives.
+
 ## 2.1.0
 
 - Added partition export helpers for single-partition and multi-partition exports with `tar.gz` as the default format and `.zip` as an alternate format.
