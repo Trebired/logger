@@ -2,7 +2,7 @@
   "name": "@trebired/logger",
   "version": "2.2.0",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "keywords": [
     "logger",
     "logging",
@@ -16,7 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Trebired/logger"
+    "url": "git+https://github.com/Trebired/logger.git"
   },
   "bugs": {
     "url": "https://github.com/Trebired/logger/issues"
@@ -61,6 +61,8 @@
     "build:native:matrix": "node ./scripts/build-native-matrix.mjs",
     "demo": "bun run examples/dummy.ts",
     "prepublishOnly": "bun run typecheck && bun test && bun run build && node ./scripts/verify-publish.mjs",
+    "publish:npm": "bun run build:native:matrix && npm publish",
+    "publish:npm:host": "bun run build:native && TREBIRED_LOGGER_ALLOW_HOST_ONLY_PUBLISH=1 npm publish",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "verify:pack": "node ./scripts/verify-pack.mjs"

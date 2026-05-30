@@ -8,6 +8,7 @@ This project follows semantic versioning once published.
 
 ## 2.2.0
 
+- Changed the project license from MIT to GNU AGPL-3.0.
 - Added automatic cleanup for temporary partitions that are no longer current so stale temp partitions are deleted during partition switches, promotions, logger dir changes, and shutdown.
 - Added partition size reporting in megabytes alongside raw bytes, plus combined `listPartitions()` totals across all returned partitions.
 - Expanded the native Rust backend to rewrite partition files during copy, move, rename, and merge flows instead of leaving that work in TypeScript.
