@@ -170,6 +170,8 @@ await log.promotePartition(final);
 
 If you already have a full custom partition string, pass it directly with `partition`, or normalize it first with `sanitizePartitionName()`.
 
+Temporary partitions are now self-cleaning: once a logger switches away from a temporary partition, promotes it, or closes, any temporary partition in that log directory that is no longer current is deleted automatically.
+
 ## Partition Lifecycle
 
 You can manage partitions either from a live logger or with standalone helpers:
@@ -179,6 +181,7 @@ import {
   copyPartition,
   createPartition,
   deleteLogs,
+  getPartitionInfo,
   listPartitions,
   renamePartition,
 } from "@trebired/logger";
@@ -187,7 +190,9 @@ await createPartition("/var/log/my-app", "2026-05-17-12-0000-staged", {
   temporary: true,
 });
 
-console.log(await listPartitions("/var/log/my-app"));
+const partitions = await listPartitions("/var/log/my-app");
+console.log(partitions.total.megabytes);
+console.log(partitions[0]?.total.megabytes);
 
 await renamePartition("/var/log/my-app", {
   from: "2026-05-17-12-0000-staged",
@@ -207,6 +212,8 @@ await deleteLogs("/var/log/my-app", {
   level: "warn",
   olderThanDays: 7,
 });
+
+console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-0000-final"));
 ```
 
 ## Core API

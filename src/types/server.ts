@@ -1,6 +1,6 @@
 import type { ConsoleOptions, LogEntry, LogLevelConfig, RedactOptions, RequestLoggerOptions, RetentionOptions, ServerLogStreamContext, WriteOptions } from "./common.js";
 import type { ExportPartitionOptions, ExportPartitionsOptions, ExportResult } from "./export.js";
-import type { PartitionInfo, PromotePartitionOptions, SetPartitionOptions } from "./partitions.js";
+import type { PartitionInfo, PartitionListResult, PromotePartitionOptions, SetPartitionOptions } from "./partitions.js";
 import type { LogQueryOptions, LogQueryResult } from "./query.js";
 
 type CreateLogOptions = {
@@ -43,7 +43,7 @@ type LogInstance = Record<string, any> & {
   promotePartition(partition: string, options?: PromotePartitionOptions): Promise<void>;
   exportPartition(partition?: string, options?: Omit<ExportPartitionOptions, "outputPath"> & { outputPath: string }): Promise<ExportResult>;
   exportPartitions(options: Omit<ExportPartitionsOptions, "outputPath"> & { outputPath: string }): Promise<ExportResult>;
-  listPartitions(): Promise<PartitionInfo[]>;
+  listPartitions(): Promise<PartitionListResult>;
   getPartitionInfo(partition?: string): Promise<PartitionInfo | null>;
   requestLogger(options?: RequestLoggerOptions): (req: any, res: any, next: () => void) => void;
   logError(error: unknown, metadata?: Record<string, unknown>, source?: string): void;

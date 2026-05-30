@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { PartitionInfo } from "../../types.js";
+import type { PartitionAggregateTotals, PartitionInfo, PartitionListResult, PartitionTotals } from "../../types.js";
+import { bytesToMegabytes } from "../../utils/size.js";
 import { getStorageBackend } from "../backend/index.js";
 import { sanitizePartitionName } from "../names.js";
 import { readPartitionMarkerFromRoot } from "./markers.js";
@@ -47,6 +48,25 @@ async function requirePartitionRecord(dir: string, partition: string): Promise<P
   return record;
 }
 
+function partitionTotalsFromSummary(summary?: {
+  total?: {
+    logs?: number;
+    dirs?: number;
+    files?: number;
+    bytes?: number;
+    megabytes?: number;
+  };
+}): PartitionTotals {
+  const bytes = summary?.total?.bytes || 0;
+  return {
+    logs: summary?.total?.logs || 0,
+    dirs: summary?.total?.dirs || 0,
+    files: summary?.total?.files || 0,
+    bytes,
+    megabytes: summary?.total?.megabytes || bytesToMegabytes(bytes),
+  };
+}
+
 async function partitionInfoFromRecord(record: PartitionRecord): Promise<PartitionInfo> {
   const backend = getStorageBackend();
   const snapshot = await backend.scanPartitions(record.dir, [record.name]);
@@ -59,13 +79,28 @@ async function partitionInfoFromRecord(record: PartitionRecord): Promise<Partiti
     created_at: record.marker.created_at,
     updated_at: record.marker.updated_at,
     last_activity_at: summary?.lastActivityAt || null,
-    total: {
-      logs: summary?.total.logs || 0,
-      dirs: summary?.total.dirs || 0,
-      files: summary?.total.files || 0,
-      bytes: summary?.total.bytes || 0,
-    },
+    total: partitionTotalsFromSummary(summary),
   };
+}
+
+function partitionListResult(items: PartitionInfo[]): PartitionListResult {
+  const total = items.reduce<PartitionAggregateTotals>((acc, item) => ({
+    partitions: acc.partitions + 1,
+    logs: acc.logs + item.total.logs,
+    dirs: acc.dirs + item.total.dirs,
+    files: acc.files + item.total.files,
+    bytes: acc.bytes + item.total.bytes,
+    megabytes: acc.megabytes + item.total.megabytes,
+  }), {
+    partitions: 0,
+    logs: 0,
+    dirs: 0,
+    files: 0,
+    bytes: 0,
+    megabytes: 0,
+  });
+
+  return Object.assign(items, { total }) as PartitionListResult;
 }
 
 async function partitionMarkerMap(dir: string): Promise<Map<string, PartitionMarker>> {
@@ -77,6 +112,7 @@ export {
   collectPartitionRecords,
   getPartitionRecord,
   partitionInfoFromRecord,
+  partitionListResult,
   partitionMarkerMap,
   requirePartitionRecord,
 };

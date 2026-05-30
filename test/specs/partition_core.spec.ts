@@ -22,9 +22,33 @@ describe("partition lifecycle", () => {
   test("creates and lists temporary partitions before logs exist", async () => {
     const dir = tempDir("partition_test_");
     const created = await createPartition(dir, "staged-part", { temporary: true });
-    expect(created.total).toEqual({ logs: 0, dirs: 0, files: 0, bytes: 0 });
-    expect((await listPartitions(dir)).map((item) => item.name)).toEqual(["staged-part"]);
+    expect(created.total).toEqual({ logs: 0, dirs: 0, files: 0, bytes: 0, megabytes: 0 });
+    const partitions = await listPartitions(dir);
+    expect(partitions.map((item) => item.name)).toEqual(["staged-part"]);
+    expect(partitions.total).toEqual({ partitions: 1, logs: 0, dirs: 0, files: 0, bytes: 0, megabytes: 0 });
     expect((await getPartitionInfo(dir, "staged-part"))?.last_activity_at).toBe(null);
+  });
+
+  test("reports partition sizes in megabytes for single and multi-partition reads", async () => {
+    const dir = tempDir("partition_test_");
+    const alpha = createLog({ dir, partition: "alpha", console: false, quiet: true });
+    const beta = createLog({ dir, partition: "beta", console: false, quiet: true });
+    alpha.info("jobs.queue", "alpha-1", { payload: "x".repeat(2048) });
+    beta.info("jobs.queue", "beta-1", { payload: "y".repeat(1024) });
+    await alpha.flush();
+    await beta.flush();
+
+    const alphaInfo = await getPartitionInfo(dir, "alpha");
+    expect((alphaInfo?.total.bytes || 0) > 0).toBe(true);
+    expect(alphaInfo?.total.megabytes).toBeCloseTo((alphaInfo?.total.bytes || 0) / (1024 * 1024), 8);
+
+    const partitions = await listPartitions(dir);
+    expect(partitions.total.partitions).toBe(2);
+    expect(partitions.total.bytes).toBe(partitions.reduce((sum, item) => sum + item.total.bytes, 0));
+    expect(partitions.total.megabytes).toBeCloseTo(partitions.total.bytes / (1024 * 1024), 8);
+
+    await alpha.close();
+    await beta.close();
   });
 
   test("supports live partition switching and explicit unpartitioned queries", async () => {
@@ -40,7 +64,7 @@ describe("partition lifecycle", () => {
     worker.error("root-1");
     await log.flush();
     expect((await getLogsForDir(dir, { partition: "alpha", groupKey: "jobs.queue", limit: 10 })).logs.map((row) => row.message)).toEqual(["alpha-1"]);
-    expect((await getLogsForDir(dir, { partition: "beta", groupKey: "jobs.queue", limit: 10 })).logs.map((row) => row.message)).toEqual(["beta-1"]);
+    expect((await getLogsForDir(dir, { partition: "beta", groupKey: "jobs.queue", limit: 10 })).logs.map((row) => row.message)).toEqual([]);
     expect((await getLogsForDir(dir, { partition: null, groupKey: "jobs.queue", limit: 10 })).logs.map((row) => row.message)).toEqual(["root-1"]);
     await log.close();
   });
@@ -60,5 +84,23 @@ describe("partition lifecycle", () => {
     expect((await getLogsForDir(dir, { partition: finalPartition, groupKey: "app.boot", limit: 10 })).logs.map((row) => row.message)).toEqual(["before", "after"]);
     expect(fs.existsSync(path.join(dir, tempPartition))).toBe(false);
     await log.close();
+  });
+
+  test("automatically deletes temporary partitions after they stop being current", async () => {
+    const dir = tempDir("partition_test_");
+    const log = createLog({ dir, partition: "temp-a", temporaryPartition: true, console: false, quiet: true });
+    const jobs = log.group("jobs.queue");
+    jobs.info("first-temp");
+    await log.flush();
+
+    await log.setPartition("temp-b", { temporary: true });
+    jobs.info("second-temp");
+    await log.flush();
+
+    expect(fs.existsSync(path.join(dir, "temp-a"))).toBe(false);
+    expect(fs.existsSync(path.join(dir, "temp-b"))).toBe(true);
+
+    await log.close();
+    expect((await listPartitions(dir)).length).toBe(0);
   });
 });

@@ -43,6 +43,7 @@ type ExportManifest = {
     files: number;
     logs: number;
     bytes: number;
+    megabytes: number;
   };
   files: ExportManifestFile[];
 };

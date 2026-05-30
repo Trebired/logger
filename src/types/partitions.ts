@@ -30,6 +30,7 @@ type PartitionTotals = {
   dirs: number;
   files: number;
   bytes: number;
+  megabytes: number;
 };
 
 type PartitionInfo = {
@@ -40,6 +41,14 @@ type PartitionInfo = {
   updated_at: string;
   last_activity_at: string | null;
   total: PartitionTotals;
+};
+
+type PartitionAggregateTotals = PartitionTotals & {
+  partitions: number;
+};
+
+type PartitionListResult = PartitionInfo[] & {
+  total: PartitionAggregateTotals;
 };
 
 type RenamePartitionOptions = {
@@ -117,6 +126,8 @@ export type {
   MergePartitionOptions,
   MovePartitionOptions,
   PartitionInfo,
+  PartitionAggregateTotals,
+  PartitionListResult,
   PartitionNameOptions,
   PartitionSanitizeOptions,
   PartitionSanitizer,

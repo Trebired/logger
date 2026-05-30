@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { PartitionInfo } from "../../types.js";
+import { getStorageBackend } from "../backend/index.js";
 import { sanitizePartitionName } from "../names.js";
 import { writePartitionMarker } from "./markers.js";
 import { getPartitionInfo } from "./public.js";
-import { writePartitionFiles } from "./files.js";
 import { partitionRootPath, pathExists, resolveDir, type PartitionRecord, type PartitionTransformOptions } from "./internal.js";
 
 async function transformPartition(options: PartitionTransformOptions): Promise<PartitionInfo> {
@@ -27,9 +27,15 @@ async function transformPartition(options: PartitionTransformOptions): Promise<P
   if (await pathExists(targetRoot)) throw new Error(`partition-already-exists: ${targetName}`);
 
   const tempRoot = path.join(targetDir, `.trebired-partition-build-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const backend = getStorageBackend();
   try {
     await fs.promises.mkdir(targetDir, { recursive: true });
-    await writePartitionFiles(options.source, tempRoot, targetName, false);
+    await backend.rewritePartitionFiles({
+      sourceRoot: options.source.path,
+      targetRoot: tempRoot,
+      targetName,
+      merge: false,
+    });
     await writePartitionMarker(tempRoot, {
       name: targetName,
       temporary: options.targetTemporary,
@@ -47,7 +53,12 @@ async function transformPartition(options: PartitionTransformOptions): Promise<P
 
 async function mergePartitionRecord(source: PartitionRecord, target: PartitionRecord, temporary: boolean): Promise<PartitionInfo> {
   if (source.path === target.path) throw new Error(`partition-merge-target-same-as-source: ${source.name}`);
-  await writePartitionFiles(source, target.path, target.name, true);
+  await getStorageBackend().rewritePartitionFiles({
+    sourceRoot: source.path,
+    targetRoot: target.path,
+    targetName: target.name,
+    merge: true,
+  });
   await writePartitionMarker(target.path, {
     name: target.name,
     temporary,

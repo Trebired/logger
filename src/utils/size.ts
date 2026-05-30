@@ -23,4 +23,10 @@ function parseSize(value: string | number | undefined, fallback: number): number
   return Math.max(1, Math.floor(amount * factor));
 }
 
-export { parseSize };
+function bytesToMegabytes(value: number): number {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes <= 0) return 0;
+  return bytes / (1024 * 1024);
+}
+
+export { bytesToMegabytes, parseSize };

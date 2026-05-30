@@ -6,6 +6,13 @@ This project follows semantic versioning once published.
 
 ## Unreleased
 
+## 2.2.0
+
+- Added automatic cleanup for temporary partitions that are no longer current so stale temp partitions are deleted during partition switches, promotions, logger dir changes, and shutdown.
+- Added partition size reporting in megabytes alongside raw bytes, plus combined `listPartitions()` totals across all returned partitions.
+- Expanded the native Rust backend to rewrite partition files during copy, move, rename, and merge flows instead of leaving that work in TypeScript.
+- Refactored the native crate into focused modules for scan, rewrite, archive, log-file helpers, and shared utilities, and split storage query helpers into dedicated TypeScript modules for easier maintenance.
+
 ## 2.1.1
 
 - Changed `prepublishOnly` to build the host native addon before publish and verify the packed tarball contents.

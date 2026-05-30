@@ -7,9 +7,11 @@ import { zipSync, strToU8 } from "fflate";
 import tar from "tar-stream";
 
 import { PARTITION_MARKER_FILE } from "../../constants.js";
+import { bytesToMegabytes } from "../../utils/size.js";
 import { walkedFileFromPath, type WalkedLogFile } from "../names.js";
 import { readPartitionMarkerFromRoot } from "../partitions/markers.js";
 import { resolveDir } from "../partitions/internal.js";
+import { rewritePartitionFiles as rewritePartitionFilesToTarget } from "../partitions/rewrite.js";
 import type { ArchiveCreateInput, StorageBackend, StorageScanFile, StorageScanPartition, StorageScanSnapshot } from "./types.js";
 
 function countRows(text: string): number {
@@ -103,6 +105,7 @@ async function scanPartition(baseDir: string, partition: string): Promise<{ file
         dirs: dirs.size,
         files: files.length,
         bytes,
+        megabytes: bytesToMegabytes(bytes),
       },
       lastActivityAt: lastActivityMs > 0 ? new Date(lastActivityMs).toISOString() : null,
     },
@@ -123,6 +126,7 @@ async function scanPartitions(dir: string, partitions: string[]): Promise<Storag
   }
 
   files.sort((a, b) => a.path.localeCompare(b.path));
+  const totalBytes = files.reduce((sum, file) => sum + file.bytes, 0);
 
   return {
     partitions: partitionItems,
@@ -131,7 +135,8 @@ async function scanPartitions(dir: string, partitions: string[]): Promise<Storag
       partitions: partitionItems.length,
       files: files.length,
       logs: files.reduce((sum, file) => sum + file.rows, 0),
-      bytes: files.reduce((sum, file) => sum + file.bytes, 0),
+      bytes: totalBytes,
+      megabytes: bytesToMegabytes(totalBytes),
     },
   };
 }
@@ -193,6 +198,15 @@ async function createArchive(input: ArchiveCreateInput): Promise<void> {
 const jsStorageBackend: StorageBackend = {
   name: "js",
   scanPartitions,
+  async rewritePartitionFiles(input) {
+    await rewritePartitionFilesToTarget({
+      sourceRoot: input.sourceRoot,
+      sourceName: path.basename(input.sourceRoot),
+      targetRoot: input.targetRoot,
+      targetName: input.targetName,
+      merge: input.merge,
+    });
+  },
   createArchive,
 };
 

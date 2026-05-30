@@ -95,6 +95,18 @@ async function deletePartitions(dir: string, options: DeletePartitionsOptions = 
   };
 }
 
+async function deleteNonCurrentTemporaryPartitions(dir: string, currentPartitions: string[] = []): Promise<string[]> {
+  const keep = new Set(currentPartitions.map((partition) => sanitizePartitionName(partition)));
+  const records = await collectPartitionRecords(dir);
+  const stale = records.filter((record) => record.marker.temporary === true && !keep.has(record.name));
+
+  for (const record of stale) {
+    await fs.promises.rm(record.path, { recursive: true, force: true });
+  }
+
+  return stale.map((record) => record.name).sort((a, b) => a.localeCompare(b));
+}
+
 async function deleteLogs(dir: string, options: DeleteLogsOptions = {}): Promise<DeleteLogsResult> {
   const candidates = await fileDeleteCandidates(dir, options);
   const partitions = new Set<string>();
@@ -118,4 +130,4 @@ async function deleteLogs(dir: string, options: DeleteLogsOptions = {}): Promise
   };
 }
 
-export { deleteLogs, deletePartitions };
+export { deleteLogs, deleteNonCurrentTemporaryPartitions, deletePartitions };

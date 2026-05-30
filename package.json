@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "license": "MIT",
   "keywords": [

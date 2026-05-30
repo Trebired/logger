@@ -6,8 +6,10 @@ import { normalizeConsoleOptions } from "../format/options.js";
 import { normalizeLevels } from "../levels/index.js";
 import { buildRequestMiddleware } from "../middleware/request.js";
 import { logStream } from "../stream/index.js";
+import { activeStorageBackendNotice } from "../storage/backend/index.js";
 import { exportPartition as exportStoredPartition, exportPartitions as exportStoredPartitions } from "../storage/export.js";
 import { normalizePartitionKey, sanitizePartitionName } from "../storage/names.js";
+import { deleteNonCurrentTemporaryPartitions } from "../storage/partitions/delete.js";
 import {
   getPartitionInfo as getStoredPartitionInfo,
   listPartitions as listStoredPartitions,
@@ -24,10 +26,16 @@ import { maybeShowNodeRuntimeNotice } from "../utils/runtime.js";
 import { toString } from "../utils/values.js";
 
 let packageGreetingShown = false;
+let storageBackendNoticeShown = false;
+const activeTemporaryPartitionsByDir = new Map<string, Set<string>>();
 
 function safeResolveDir(value: unknown): string {
   const raw = toString(value);
   return raw ? path.resolve(raw) : "";
+}
+
+function cleanupErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function createLog(options: CreateLogOptions = {}): LogInstance {
@@ -47,10 +55,49 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     timeZone,
     onError: (message) => writeConsole("stderr", message),
   });
+  let registeredTemporaryPartition: { dir: string; partition: string } | null = null;
+
+  function unregisterTemporaryPartition(): void {
+    if (!registeredTemporaryPartition) return;
+    const current = activeTemporaryPartitionsByDir.get(registeredTemporaryPartition.dir);
+    if (current) {
+      current.delete(registeredTemporaryPartition.partition);
+      if (current.size === 0) activeTemporaryPartitionsByDir.delete(registeredTemporaryPartition.dir);
+    }
+    registeredTemporaryPartition = null;
+  }
+
+  function registerTemporaryPartition(): void {
+    unregisterTemporaryPartition();
+    if (!activeTemporary || !activePartition || !writer.isSavingEnabled() || !writer.getDir()) return;
+    const dir = writer.getDir();
+    const current = activeTemporaryPartitionsByDir.get(dir) || new Set<string>();
+    current.add(activePartition);
+    activeTemporaryPartitionsByDir.set(dir, current);
+    registeredTemporaryPartition = { dir, partition: activePartition };
+  }
+
+  function keepTemporaryPartitions(dir: string): string[] {
+    return Array.from(activeTemporaryPartitionsByDir.get(dir) || []);
+  }
+
+  async function cleanupTemporaryPartitions(dir = writer.getDir()): Promise<void> {
+    if (!writer.isSavingEnabled() || !dir) return;
+    await deleteNonCurrentTemporaryPartitions(dir, keepTemporaryPartitions(dir));
+  }
+
+  function scheduleTemporaryPartitionCleanup(dir = writer.getDir()): void {
+    if (!writer.isSavingEnabled() || !dir) return;
+    void cleanupTemporaryPartitions(dir).catch((error) => {
+      writeConsole("stderr", `[trebired.logger] temporary partition cleanup failed: ${cleanupErrorMessage(error)}`);
+    });
+  }
 
   if (activePartition && activeTemporary && writer.isSavingEnabled() && writer.getDir()) {
     touchPartitionMarkerSync(writer.getDir(), activePartition, { temporary: true });
   }
+  registerTemporaryPartition();
+  if (writer.isSavingEnabled() && writer.getDir()) scheduleTemporaryPartitionCleanup();
 
   const { api: baseApi } = createCommonLogger({
     levels,
@@ -85,10 +132,15 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
       return writer.getDir();
     },
     setDir(nextDir: string) {
+      const previousDir = writer.getDir();
+      unregisterTemporaryPartition();
       writer.setDir(safeResolveDir(nextDir));
       if (activePartition && activeTemporary && writer.isSavingEnabled() && writer.getDir()) {
         touchPartitionMarkerSync(writer.getDir(), activePartition, { temporary: true });
       }
+      registerTemporaryPartition();
+      if (previousDir && previousDir !== writer.getDir()) scheduleTemporaryPartitionCleanup(previousDir);
+      if (writer.isSavingEnabled() && writer.getDir()) scheduleTemporaryPartitionCleanup();
     },
     getPartition() {
       return activePartition;
@@ -102,6 +154,7 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
         : false;
 
       await writer.flush();
+      unregisterTemporaryPartition();
       activePartition = nextPartition;
       activeTemporary = nextTemporary;
 
@@ -110,6 +163,9 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
           temporary: activeTemporary,
         });
       }
+      registerTemporaryPartition();
+
+      await cleanupTemporaryPartitions();
     },
     async promotePartition(partition, options) {
       if (!activePartition) throw new Error("partition-not-set");
@@ -124,7 +180,9 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
 
       if (nextPartition === activePartition) {
         touchPartitionMarkerSync(writer.getDir(), nextPartition, { temporary: false });
+        unregisterTemporaryPartition();
         activeTemporary = false;
+        await cleanupTemporaryPartitions();
         return;
       }
 
@@ -141,8 +199,10 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
       }
 
       touchPartitionMarkerSync(writer.getDir(), nextPartition, { temporary: false });
+      unregisterTemporaryPartition();
       activePartition = nextPartition;
       activeTemporary = false;
+      await cleanupTemporaryPartitions();
     },
     async listPartitions() {
       return listStoredPartitions(writer.getDir());
@@ -180,6 +240,12 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
       await writer.flush();
       return getLogsForDir(writer.getDir(), { ...(options || {}), acrossPartitions: true, levels });
     },
+    async close() {
+      const cleanupDir = writer.getDir();
+      unregisterTemporaryPartition();
+      await writer.close();
+      await cleanupTemporaryPartitions(cleanupDir);
+    },
   });
 
   api.requestLogger = buildRequestMiddleware(api, cfg.request);
@@ -187,6 +253,10 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
   if (cfg.quiet !== true && !packageGreetingShown) {
     packageGreetingShown = true;
     api.success("logger.loader", "@trebired/logger initialized");
+    if (!storageBackendNoticeShown) {
+      storageBackendNoticeShown = true;
+      api.info("logger.loader", activeStorageBackendNotice());
+    }
   }
 
   return api;

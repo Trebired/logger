@@ -7,12 +7,13 @@ import type {
   MergePartitionOptions,
   MovePartitionOptions,
   PartitionInfo,
+  PartitionListResult,
   RenamePartitionOptions,
 } from "../../types.js";
 import { sanitizePartitionName } from "../names.js";
 import { deletePartitions } from "./delete.js";
 import { readPartitionMarkerFromRoot, writePartitionMarker } from "./markers.js";
-import { collectPartitionRecords, getPartitionRecord, partitionInfoFromRecord, requirePartitionRecord } from "./records.js";
+import { collectPartitionRecords, getPartitionRecord, partitionInfoFromRecord, partitionListResult, requirePartitionRecord } from "./records.js";
 import { mergePartitionRecord, transformPartition } from "./transforms.js";
 import { partitionRootPath, pathExists, resolveDir } from "./internal.js";
 
@@ -31,10 +32,10 @@ async function createPartition(dir: string, partition: string, options: CreatePa
   return (await getPartitionInfo(baseDir, name)) as PartitionInfo;
 }
 
-async function listPartitions(dir: string): Promise<PartitionInfo[]> {
+async function listPartitions(dir: string): Promise<PartitionListResult> {
   const records = await collectPartitionRecords(dir);
   const items = await Promise.all(records.map((record) => partitionInfoFromRecord(record)));
-  return items.sort((a, b) => a.name.localeCompare(b.name));
+  return partitionListResult(items.sort((a, b) => a.name.localeCompare(b.name)));
 }
 
 async function getPartitionInfo(dir: string, partition: string): Promise<PartitionInfo | null> {

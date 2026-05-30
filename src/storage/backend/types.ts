@@ -22,6 +22,7 @@ type StorageScanPartition = {
     dirs: number;
     files: number;
     bytes: number;
+    megabytes: number;
   };
   lastActivityAt: string | null;
 };
@@ -34,7 +35,15 @@ type StorageScanSnapshot = {
     files: number;
     logs: number;
     bytes: number;
+    megabytes: number;
   };
+};
+
+type PartitionRewriteInput = {
+  sourceRoot: string;
+  targetRoot: string;
+  targetName: string;
+  merge: boolean;
 };
 
 type ArchiveGeneratedFile = {
@@ -59,6 +68,7 @@ type ArchiveCreateInput = {
 type StorageBackend = {
   name: StorageBackendName;
   scanPartitions(dir: string, partitions: string[]): Promise<StorageScanSnapshot>;
+  rewritePartitionFiles(input: PartitionRewriteInput): Promise<void>;
   createArchive(input: ArchiveCreateInput): Promise<void>;
 };
 
@@ -66,6 +76,7 @@ export type {
   ArchiveCreateInput,
   ArchiveGeneratedFile,
   ArchiveSourceFile,
+  PartitionRewriteInput,
   StorageBackend,
   StorageBackendName,
   StorageScanFile,

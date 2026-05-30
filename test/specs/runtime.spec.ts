@@ -16,6 +16,7 @@ describe("@trebired/logger", () => {
     });
 
     expect(output).toContain("@trebired/logger initialized");
+    expect(output).toContain("@trebired/logger using JS fallback storage backend");
     expect(output).toContain("\x1b[38;2;18;52;86mYAY\x1b[0m");
   });
 

@@ -7,6 +7,7 @@ import type { ArchiveCreateInput, StorageBackend, StorageScanSnapshot } from "./
 
 type NativeBinding = {
   scanPartitions(dir: string, partitions: string[]): string;
+  rewritePartitionFiles(requestJson: string): void;
   createArchive(requestJson: string): void;
 };
 
@@ -87,6 +88,9 @@ function nativeStorageBackend(): StorageBackend | null {
     name: "native",
     async scanPartitions(dir: string, partitions: string[]): Promise<StorageScanSnapshot> {
       return JSON.parse(binding.scanPartitions(dir, partitions)) as StorageScanSnapshot;
+    },
+    async rewritePartitionFiles(input): Promise<void> {
+      binding.rewritePartitionFiles(JSON.stringify(input));
     },
     async createArchive(input: ArchiveCreateInput): Promise<void> {
       binding.createArchive(JSON.stringify(input));
