@@ -7,6 +7,7 @@ This project follows semantic versioning once published.
 ## 2.3.0
 
 - Changed native storage loading to try the bundled native backend by default in all runtimes, fall back to the JS backend automatically on load failure, and use `TB_LOGGER_DISABLE_NATIVE=1` as the explicit opt-out switch.
+- Added Linux ARM64 GNU to the bundled native release matrix for npm publish and package verification.
 
 ## 2.2.0
 

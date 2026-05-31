@@ -15,11 +15,12 @@ The package can use bundled native binaries for supported Linux and macOS target
   dist/
   native/
     linux-x64-gnu.node
+    linux-arm64-gnu.node
     darwin-arm64.node
     darwin-x64.node
 ```
 
-At runtime the JS wrapper always tries the matching `.node` file first when one is bundled for the current platform, and falls back to the built-in JS backend if native loading is unavailable or fails. Bundled native binaries are currently published for Linux GNU and macOS targets. End users do not need Rust installed.
+At runtime the JS wrapper always tries the matching `.node` file first when one is bundled for the current platform, and falls back to the built-in JS backend if native loading is unavailable or fails. Bundled native binaries are currently published for Linux GNU (`x64` and `arm64`) and macOS targets. End users do not need Rust installed.
 
 Set `TB_LOGGER_DISABLE_NATIVE=1` only when you explicitly want to force the JS backend.
 
