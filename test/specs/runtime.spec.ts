@@ -11,13 +11,14 @@ describe("@trebired/logger", () => {
     const output = captureStdout(() => {
       createLog({
         save: false,
-        console: { colors: true, timestamp: false, group: false, metadata: false },
+        console: { colors: true, timestamp: false, group: true, metadata: false },
         levels: { success: { weight: 25, label: "YAY", color: "#123456" } },
       });
     });
 
     expect(output).toContain("@trebired/logger initialized");
     expect(output).toContain(activeStorageBackendNotice());
+    expect(output).toContain("logger.initialize");
     expect(output).toContain("\x1b[38;2;18;52;86mYAY\x1b[0m");
   });
 

@@ -252,10 +252,10 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
 
   if (cfg.quiet !== true && !packageGreetingShown) {
     packageGreetingShown = true;
-    api.success("logger.loader", "@trebired/logger initialized");
+    api.success("logger.initialize", "@trebired/logger initialized");
     if (!storageBackendNoticeShown) {
       storageBackendNoticeShown = true;
-      api.info("logger.loader", activeStorageBackendNotice());
+      api.info("logger.initialize", activeStorageBackendNotice());
     }
   }
 
