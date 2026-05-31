@@ -39,8 +39,8 @@ function nativeBinaryBasenameForCurrentPlatform(): string | null {
 function nativeAddonCandidatePathsForCurrentPlatform(): string[] {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const binaryName = nativeBinaryBasenameForCurrentPlatform();
-  const envOverride = process.env.TREBIRED_LOGGER_NATIVE_BINARY
-    ? path.resolve(process.env.TREBIRED_LOGGER_NATIVE_BINARY)
+  const envOverride = process.env.TB_LOGGER_NATIVE_BINARY
+    ? path.resolve(process.env.TB_LOGGER_NATIVE_BINARY)
     : "";
 
   return [
@@ -55,12 +55,8 @@ function nativeAddonCandidatePathsForCurrentPlatform(): string[] {
 }
 
 function loadBinding(): NativeBinding | null {
-  if (cachedBinding) return cachedBinding;
-  if (process.env.TREBIRED_LOGGER_DISABLE_NATIVE === "1") {
-    cachedBinding = null;
-    return cachedBinding;
-  }
-  if (typeof Bun !== "undefined" && process.env.TREBIRED_LOGGER_ENABLE_BUN_NATIVE !== "1") {
+  if (cachedBinding !== undefined) return cachedBinding;
+  if (process.env.TB_LOGGER_DISABLE_NATIVE === "1") {
     cachedBinding = null;
     return cachedBinding;
   }
@@ -78,6 +74,10 @@ function loadBinding(): NativeBinding | null {
 
   cachedBinding = null;
   return cachedBinding;
+}
+
+function resetNativeBindingForTests(): void {
+  cachedBinding = undefined;
 }
 
 function nativeStorageBackend(): StorageBackend | null {
@@ -102,4 +102,5 @@ export {
   nativeAddonCandidatePathsForCurrentPlatform,
   nativeBinaryBasenameForCurrentPlatform,
   nativeStorageBackend,
+  resetNativeBindingForTests,
 };

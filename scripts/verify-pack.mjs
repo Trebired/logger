@@ -36,7 +36,7 @@ function expectedNativePackPaths(scope) {
 }
 
 function main() {
-  const scope = process.env.TREBIRED_LOGGER_VERIFY_NATIVE_SCOPE || "host";
+  const scope = process.env.TB_LOGGER_VERIFY_NATIVE_SCOPE || "host";
   const paths = packedPaths();
 
   expectPaths(paths, ["package.json"], "package");

@@ -9,7 +9,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const cliTargets = process.argv.slice(2);
 const requestedTargets = cliTargets.length
   ? cliTargets
-  : (process.env.TREBIRED_LOGGER_NATIVE_TARGETS || "")
+  : (process.env.TB_LOGGER_NATIVE_TARGETS || "")
       .split(",")
       .map((item) => item.trim())
       .filter(Boolean);

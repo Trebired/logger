@@ -35,7 +35,7 @@ function sharedLibraryNameForTarget(target) {
   return "liblogger_native.so";
 }
 
-const requestedTarget = process.env.TREBIRED_LOGGER_NATIVE_TARGET || parseArgValue("--target") || detectHostTarget();
+const requestedTarget = process.env.TB_LOGGER_NATIVE_TARGET || parseArgValue("--target") || detectHostTarget();
 const binaryName = nativeBinaryNameForTarget(requestedTarget);
 const targetDir = path.join(crateRoot, "target", requestedTarget, "release");
 const result = spawnSync("cargo", ["build", "--release", "--target", requestedTarget, "--manifest-path", manifestPath], {

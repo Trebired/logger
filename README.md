@@ -19,7 +19,9 @@ The package can use bundled native binaries for supported Linux and macOS target
     darwin-x64.node
 ```
 
-At runtime the JS wrapper selects the matching `.node` file when one is bundled for the current platform, and falls back to the built-in JS backend otherwise. Bundled native binaries are currently published for Linux GNU and macOS targets. End users do not need Rust installed.
+At runtime the JS wrapper always tries the matching `.node` file first when one is bundled for the current platform, and falls back to the built-in JS backend if native loading is unavailable or fails. Bundled native binaries are currently published for Linux GNU and macOS targets. End users do not need Rust installed.
+
+Set `TB_LOGGER_DISABLE_NATIVE=1` only when you explicitly want to force the JS backend.
 
 ```sh
 npm install @trebired/logger

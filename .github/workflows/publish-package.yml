@@ -131,7 +131,7 @@ jobs:
 
       - name: Verify packed release contents
         env:
-          TREBIRED_LOGGER_VERIFY_NATIVE_SCOPE: matrix
+          TB_LOGGER_VERIFY_NATIVE_SCOPE: matrix
         run: bun run verify:pack
 
       - name: Publish to npm
