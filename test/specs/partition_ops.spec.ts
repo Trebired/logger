@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { copyPartition, createLog, createPartition, deleteLogs, deletePartition, deletePartitions, getLogsForDir, listPartitions, mergePartition, movePartition, renamePartition } from "../../src/index";
+import { copyPartition, createLog, createPartition, deleteLogs, deletePartition, deletePartitions, getLogsForDir, getPartitionErrorCode, isPartitionError, listPartitions, mergePartition, movePartition, renamePartition } from "../../src/index";
 import { forceRecordedAt, listFilesRecursive, readPartitionMarker, tempDir, writePartitionLogFile, writePartitionMarker } from "./helpers";
 
 describe("partition lifecycle", () => {
@@ -14,10 +14,58 @@ describe("partition lifecycle", () => {
     tempLog.info("jobs.merge", "temp-before", forceRecordedAt("2026-05-17T10:05:00.000Z"));
     await finalLog.flush();
     await tempLog.flush();
-    await tempLog.promotePartition("final", { merge: true });
+    const result = await tempLog.promotePartition("final", { merge: true });
     tempLog.info("jobs.merge", "temp-after", forceRecordedAt("2026-05-17T10:10:00.000Z"));
     await tempLog.flush();
+    expect(result.action).toBe("merged");
+    expect(result.sourceExisted).toBe(true);
+    expect(result.targetExisted).toBe(true);
     expect((await getLogsForDir(dir, { partition: "final", groupKey: "jobs.merge", limit: 10 })).logs.map((row) => row.message)).toEqual(["final-before", "temp-before", "temp-after"]);
+    await finalLog.close();
+    await tempLog.close();
+  });
+
+  test("finalizePartition can switch to an existing target without app-owned fallback logic", async () => {
+    const dir = tempDir("partition_test_");
+    const finalLog = createLog({ dir, partition: "final", console: false, quiet: true });
+    const tempLog = createLog({ dir, partition: "temp-switch", temporaryPartition: true, console: false, quiet: true });
+
+    finalLog.info("jobs.switch", "final-only", forceRecordedAt("2026-05-17T10:00:00.000Z"));
+    tempLog.info("jobs.switch", "temp-only", forceRecordedAt("2026-05-17T10:05:00.000Z"));
+    await finalLog.flush();
+    await tempLog.flush();
+
+    const result = await tempLog.finalizePartition("final", { ifExists: "switch" });
+
+    expect(result.action).toBe("switched");
+    expect(result.sourceExisted).toBe(true);
+    expect(result.targetExisted).toBe(true);
+    expect(tempLog.getPartition()).toBe("final");
+    expect(fs.existsSync(path.join(dir, "temp-switch"))).toBe(false);
+    expect((await getLogsForDir(dir, { partition: "final", groupKey: "jobs.switch", limit: 10 })).logs.map((row) => row.message)).toEqual(["final-only"]);
+
+    await finalLog.close();
+    await tempLog.close();
+  });
+
+  test("keeps low-level promotePartition strict by default and exposes structured conflict detection", async () => {
+    const dir = tempDir("partition_test_");
+    const finalLog = createLog({ dir, partition: "final", console: false, quiet: true });
+    const tempLog = createLog({ dir, partition: "temp-error", temporaryPartition: true, console: false, quiet: true });
+
+    finalLog.info("jobs.strict", "final", forceRecordedAt("2026-05-17T10:00:00.000Z"));
+    tempLog.info("jobs.strict", "temp", forceRecordedAt("2026-05-17T10:05:00.000Z"));
+    await finalLog.flush();
+    await tempLog.flush();
+
+    try {
+      await tempLog.promotePartition("final");
+      throw new Error("expected partition conflict");
+    } catch (error) {
+      expect(getPartitionErrorCode(error)).toBe("partition-already-exists");
+      expect(isPartitionError(error, "partition-already-exists")).toBe(true);
+    }
+
     await finalLog.close();
     await tempLog.close();
   });

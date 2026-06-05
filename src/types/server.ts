@@ -1,6 +1,6 @@
 import type { ConsoleOptions, LogEntry, LogLevelConfig, RedactOptions, RequestLoggerOptions, RetentionOptions, ServerLogStreamContext, WriteOptions } from "./common.js";
 import type { ExportPartitionOptions, ExportPartitionsOptions, ExportResult } from "./export.js";
-import type { PartitionInfo, PartitionListResult, PromotePartitionOptions, SetPartitionOptions } from "./partitions.js";
+import type { FinalizePartitionOptions, FinalizePartitionResult, PartitionInfo, PartitionListResult, PromotePartitionOptions, SetPartitionOptions } from "./partitions.js";
 import type { LogQueryOptions, LogQueryResult } from "./query.js";
 
 type CreateLogOptions = {
@@ -40,7 +40,8 @@ type LogInstance = Record<string, any> & {
   setDir(nextDir: string): void;
   getPartition(): string | null;
   setPartition(partition: string | null, options?: SetPartitionOptions): Promise<void>;
-  promotePartition(partition: string, options?: PromotePartitionOptions): Promise<void>;
+  finalizePartition(partition: string, options?: FinalizePartitionOptions): Promise<FinalizePartitionResult>;
+  promotePartition(partition: string, options?: PromotePartitionOptions): Promise<FinalizePartitionResult>;
   exportPartition(partition?: string, options?: Omit<ExportPartitionOptions, "outputPath"> & { outputPath: string }): Promise<ExportResult>;
   exportPartitions(options: Omit<ExportPartitionsOptions, "outputPath"> & { outputPath: string }): Promise<ExportResult>;
   listPartitions(): Promise<PartitionListResult>;

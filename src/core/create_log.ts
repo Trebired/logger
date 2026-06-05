@@ -10,6 +10,7 @@ import { activeStorageBackendNotice } from "../storage/backend/index.js";
 import { exportPartition as exportStoredPartition, exportPartitions as exportStoredPartitions } from "../storage/export.js";
 import { normalizePartitionKey, sanitizePartitionName } from "../storage/names.js";
 import { deleteNonCurrentTemporaryPartitions } from "../storage/partitions/delete.js";
+import { createPartitionError, isPartitionError } from "../storage/partitions/errors.js";
 import {
   getPartitionInfo as getStoredPartitionInfo,
   listPartitions as listStoredPartitions,
@@ -20,7 +21,7 @@ import {
 import { getLogsForDir } from "../storage/query.js";
 import { normalizeRetentionOptions, normalizeWriteOptions } from "../storage/options.js";
 import { FileWriter } from "../storage/write.js";
-import type { CreateLogOptions, LogInstance } from "../types.js";
+import type { CreateLogOptions, FinalizePartitionAction, FinalizePartitionOptions, FinalizePartitionResult, LogInstance, PartitionExistsPolicy, PromotePartitionOptions } from "../types.js";
 import { normalizeTimeZone } from "../utils/datetime.js";
 import { maybeShowNodeRuntimeNotice } from "../utils/runtime.js";
 import { toString } from "../utils/values.js";
@@ -36,6 +37,15 @@ function safeResolveDir(value: unknown): string {
 
 function cleanupErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function resolvePartitionExistsPolicy(
+  options: FinalizePartitionOptions | PromotePartitionOptions | undefined,
+  fallback: PartitionExistsPolicy,
+): PartitionExistsPolicy {
+  if (options && typeof options === "object" && options.ifExists) return options.ifExists;
+  if (options && typeof options === "object" && "merge" in options && options.merge === true) return "merge";
+  return fallback;
 }
 
 function createLog(options: CreateLogOptions = {}): LogInstance {
@@ -91,6 +101,189 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     void cleanupTemporaryPartitions(dir).catch((error) => {
       writeConsole("stderr", `[trebired.logger] temporary partition cleanup failed: ${cleanupErrorMessage(error)}`);
     });
+  }
+
+  async function applyActivePartition(nextPartition: string | null, nextTemporary: boolean): Promise<void> {
+    unregisterTemporaryPartition();
+    activePartition = nextPartition;
+    activeTemporary = nextTemporary;
+
+    if (activePartition && writer.isSavingEnabled() && writer.getDir()) {
+      touchPartitionMarkerSync(writer.getDir(), activePartition, {
+        temporary: activeTemporary,
+      });
+    }
+
+    registerTemporaryPartition();
+    await cleanupTemporaryPartitions();
+  }
+
+  function createFinalizePartitionResult(args: {
+    action: FinalizePartitionAction;
+    partition: string;
+    previousPartition: string | null;
+    sourceExisted: boolean;
+    targetExisted: boolean;
+    temporaryBefore: boolean;
+  }): FinalizePartitionResult {
+    return {
+      partition: args.partition,
+      previousPartition: args.previousPartition,
+      action: args.action,
+      sourceExisted: args.sourceExisted,
+      targetExisted: args.targetExisted,
+      temporaryBefore: args.temporaryBefore,
+      temporaryAfter: false,
+    };
+  }
+
+  async function finalizeActivePartition(
+    partition: string,
+    options: FinalizePartitionOptions | PromotePartitionOptions | undefined,
+    fallbackPolicy: PartitionExistsPolicy,
+  ): Promise<FinalizePartitionResult> {
+    if (!activePartition) throw createPartitionError("partition-not-set");
+    const nextPartition = sanitizePartitionName(partition);
+    const previousPartition = activePartition;
+    const temporaryBefore = activeTemporary;
+    const ifExists = resolvePartitionExistsPolicy(options, fallbackPolicy);
+
+    await writer.flush();
+
+    if (!writer.isSavingEnabled() || !writer.getDir()) {
+      if (nextPartition === activePartition) {
+        const action: FinalizePartitionAction = activeTemporary ? "marked-permanent" : "already-finalized";
+        activeTemporary = false;
+        return createFinalizePartitionResult({
+          action,
+          partition: nextPartition,
+          previousPartition,
+          sourceExisted: false,
+          targetExisted: false,
+          temporaryBefore,
+        });
+      }
+
+      activePartition = nextPartition;
+      activeTemporary = false;
+      return createFinalizePartitionResult({
+        action: "activated-target",
+        partition: nextPartition,
+        previousPartition,
+        sourceExisted: false,
+        targetExisted: false,
+        temporaryBefore,
+      });
+    }
+
+    const dir = writer.getDir();
+
+    if (nextPartition === activePartition) {
+      touchPartitionMarkerSync(dir, nextPartition, { temporary: false });
+      unregisterTemporaryPartition();
+      activeTemporary = false;
+      await cleanupTemporaryPartitions();
+      return createFinalizePartitionResult({
+        action: temporaryBefore ? "marked-permanent" : "already-finalized",
+        partition: nextPartition,
+        previousPartition,
+        sourceExisted: true,
+        targetExisted: true,
+        temporaryBefore,
+      });
+    }
+
+    let sourceInfo = await getStoredPartitionInfo(dir, activePartition);
+    let targetInfo = await getStoredPartitionInfo(dir, nextPartition);
+    const initialSourceExisted = Boolean(sourceInfo);
+    const initialTargetExisted = Boolean(targetInfo);
+
+    const activateTarget = async (action: FinalizePartitionAction): Promise<FinalizePartitionResult> => {
+      await applyActivePartition(nextPartition, false);
+      return createFinalizePartitionResult({
+        action,
+        partition: nextPartition,
+        previousPartition,
+        sourceExisted: initialSourceExisted,
+        targetExisted: initialTargetExisted,
+        temporaryBefore,
+      });
+    };
+
+    if (!sourceInfo) {
+      if (targetInfo) {
+        if (ifExists === "error") {
+          throw createPartitionError("partition-already-exists", { partition: nextPartition });
+        }
+        await applyActivePartition(nextPartition, false);
+        return createFinalizePartitionResult({
+          action: ifExists === "switch" ? "switched" : "activated-target",
+          partition: nextPartition,
+          previousPartition,
+          sourceExisted: false,
+          targetExisted: true,
+          temporaryBefore,
+        });
+      }
+
+      await applyActivePartition(nextPartition, false);
+      return createFinalizePartitionResult({
+        action: "activated-target",
+        partition: nextPartition,
+        previousPartition,
+        sourceExisted: false,
+        targetExisted: false,
+        temporaryBefore,
+      });
+    }
+
+    if (targetInfo) {
+      if (ifExists === "switch") {
+        return activateTarget("switched");
+      }
+
+      if (ifExists === "merge") {
+        await mergePartition(dir, { from: activePartition, to: nextPartition });
+        sourceInfo = await getStoredPartitionInfo(dir, activePartition);
+        targetInfo = await getStoredPartitionInfo(dir, nextPartition);
+        return activateTarget("merged");
+      }
+
+      throw createPartitionError("partition-already-exists", { partition: nextPartition });
+    }
+
+    try {
+      await renamePartition(dir, { from: activePartition, to: nextPartition });
+      sourceInfo = await getStoredPartitionInfo(dir, activePartition);
+      targetInfo = await getStoredPartitionInfo(dir, nextPartition);
+      return activateTarget("renamed");
+    } catch (error) {
+      if (!isPartitionError(error, "partition-already-exists")) throw error;
+
+      sourceInfo = await getStoredPartitionInfo(dir, activePartition);
+      targetInfo = await getStoredPartitionInfo(dir, nextPartition);
+
+      if (!targetInfo) throw error;
+
+      if (ifExists === "switch") {
+        return activateTarget("switched");
+      }
+
+      if (ifExists === "merge" && sourceInfo) {
+        await mergePartition(dir, { from: activePartition, to: nextPartition });
+        await applyActivePartition(nextPartition, false);
+        return createFinalizePartitionResult({
+          action: "merged",
+          partition: nextPartition,
+          previousPartition,
+          sourceExisted: true,
+          targetExisted: true,
+          temporaryBefore,
+        });
+      }
+
+      throw error;
+    }
   }
 
   if (activePartition && activeTemporary && writer.isSavingEnabled() && writer.getDir()) {
@@ -154,55 +347,13 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
         : false;
 
       await writer.flush();
-      unregisterTemporaryPartition();
-      activePartition = nextPartition;
-      activeTemporary = nextTemporary;
-
-      if (activePartition && writer.isSavingEnabled() && writer.getDir()) {
-        touchPartitionMarkerSync(writer.getDir(), activePartition, {
-          temporary: activeTemporary,
-        });
-      }
-      registerTemporaryPartition();
-
-      await cleanupTemporaryPartitions();
+      await applyActivePartition(nextPartition, nextTemporary);
+    },
+    async finalizePartition(partition, options) {
+      return finalizeActivePartition(partition, options, "merge");
     },
     async promotePartition(partition, options) {
-      if (!activePartition) throw new Error("partition-not-set");
-      const nextPartition = sanitizePartitionName(partition);
-      await writer.flush();
-
-      if (!writer.isSavingEnabled() || !writer.getDir()) {
-        activePartition = nextPartition;
-        activeTemporary = false;
-        return;
-      }
-
-      if (nextPartition === activePartition) {
-        touchPartitionMarkerSync(writer.getDir(), nextPartition, { temporary: false });
-        unregisterTemporaryPartition();
-        activeTemporary = false;
-        await cleanupTemporaryPartitions();
-        return;
-      }
-
-      const sourceInfo = await getStoredPartitionInfo(writer.getDir(), activePartition);
-      const targetInfo = await getStoredPartitionInfo(writer.getDir(), nextPartition);
-
-      if (!sourceInfo) {
-        if (targetInfo && options?.merge !== true) throw new Error(`partition-already-exists: ${nextPartition}`);
-      } else if (targetInfo) {
-        if (options?.merge !== true) throw new Error(`partition-already-exists: ${nextPartition}`);
-        await mergePartition(writer.getDir(), { from: activePartition, to: nextPartition });
-      } else {
-        await renamePartition(writer.getDir(), { from: activePartition, to: nextPartition });
-      }
-
-      touchPartitionMarkerSync(writer.getDir(), nextPartition, { temporary: false });
-      unregisterTemporaryPartition();
-      activePartition = nextPartition;
-      activeTemporary = false;
-      await cleanupTemporaryPartitions();
+      return finalizeActivePartition(partition, options, "error");
     },
     async listPartitions() {
       return listStoredPartitions(writer.getDir());
@@ -214,7 +365,7 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
       const options = (hasPartitionArg
         ? maybeOptions
         : (partitionOrOptions && typeof partitionOrOptions === "object" ? partitionOrOptions : maybeOptions)) || {};
-      if (!partition) throw new Error("partition-not-set");
+      if (!partition) throw createPartitionError("partition-not-set");
       return exportStoredPartition(writer.getDir(), partition, options);
     },
     async exportPartitions(options) {

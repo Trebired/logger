@@ -77,12 +77,39 @@ describe("partition lifecycle", () => {
     const jobs = log.group("app.boot");
     jobs.info("before");
     await log.flush();
-    await log.promotePartition(finalPartition);
+    const result = await log.promotePartition(finalPartition);
     jobs.info("after");
     await log.flush();
+    expect(result.action).toBe("renamed");
+    expect(result.partition).toBe(finalPartition);
+    expect(result.previousPartition).toBe(tempPartition);
+    expect(result.sourceExisted).toBe(true);
+    expect(result.targetExisted).toBe(false);
     expect((await listPartitions(dir)).map((item) => item.name)).toEqual([finalPartition]);
     expect((await getLogsForDir(dir, { partition: finalPartition, groupKey: "app.boot", limit: 10 })).logs.map((row) => row.message)).toEqual(["before", "after"]);
     expect(fs.existsSync(path.join(dir, tempPartition))).toBe(false);
+    await log.close();
+  });
+
+  test("finalizePartition is idempotent and marks the active partition permanent", async () => {
+    const dir = tempDir("partition_test_");
+    const tempPartition = buildTemporaryPartitionName({ at: "2026-05-17T10:00:00.000Z", timeZone: "UTC", suffix: "deployment 2" });
+    const finalPartition = "2026-05-17-10-0000-final-2";
+    const log = createLog({ dir, partition: tempPartition, temporaryPartition: true, console: false, quiet: true });
+
+    log.info("app.boot", "before");
+    await log.flush();
+
+    const first = await log.finalizePartition(finalPartition);
+    const second = await log.finalizePartition(finalPartition);
+
+    expect(first.action).toBe("renamed");
+    expect(first.temporaryBefore).toBe(true);
+    expect(second.action).toBe("already-finalized");
+    expect(second.temporaryBefore).toBe(false);
+    expect(log.getPartition()).toBe(finalPartition);
+    expect((await getPartitionInfo(dir, finalPartition))?.temporary).toBe(false);
+
     await log.close();
   });
 

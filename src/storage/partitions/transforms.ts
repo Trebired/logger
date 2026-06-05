@@ -4,13 +4,14 @@ import path from "node:path";
 import type { PartitionInfo } from "../../types.js";
 import { getStorageBackend } from "../backend/index.js";
 import { sanitizePartitionName } from "../names.js";
+import { createPartitionError } from "./errors.js";
 import { writePartitionMarker } from "./markers.js";
 import { getPartitionInfo } from "./public.js";
 import { partitionRootPath, pathExists, resolveDir, type PartitionRecord, type PartitionTransformOptions } from "./internal.js";
 
 async function transformPartition(options: PartitionTransformOptions): Promise<PartitionInfo> {
   const targetDir = resolveDir(options.targetDir);
-  if (!targetDir) throw new Error("missing-log-dir");
+  if (!targetDir) throw createPartitionError("missing-log-dir");
   const targetName = sanitizePartitionName(options.targetName);
   const targetRoot = partitionRootPath(targetDir, targetName);
 
@@ -24,7 +25,9 @@ async function transformPartition(options: PartitionTransformOptions): Promise<P
     return (await getPartitionInfo(targetDir, targetName)) as PartitionInfo;
   }
 
-  if (await pathExists(targetRoot)) throw new Error(`partition-already-exists: ${targetName}`);
+  if (await pathExists(targetRoot)) {
+    throw createPartitionError("partition-already-exists", { partition: targetName });
+  }
 
   const tempRoot = path.join(targetDir, `.trebired-partition-build-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const backend = getStorageBackend();
@@ -52,7 +55,9 @@ async function transformPartition(options: PartitionTransformOptions): Promise<P
 }
 
 async function mergePartitionRecord(source: PartitionRecord, target: PartitionRecord, temporary: boolean): Promise<PartitionInfo> {
-  if (source.path === target.path) throw new Error(`partition-merge-target-same-as-source: ${source.name}`);
+  if (source.path === target.path) {
+    throw createPartitionError("partition-merge-target-same-as-source", { partition: source.name });
+  }
   await getStorageBackend().rewritePartitionFiles({
     sourceRoot: source.path,
     targetRoot: target.path,

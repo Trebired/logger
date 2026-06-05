@@ -175,6 +175,18 @@ If you already have a full custom partition string, pass it directly with `parti
 
 Temporary partitions are now self-cleaning: once a logger switches away from a temporary partition, promotes it, or closes, any temporary partition in that log directory that is no longer current is deleted automatically.
 
+If you want the logger to own the common “temp first, final later” lifecycle, call `finalizePartition()` instead of open-coding a `promotePartition()` plus fallback sequence:
+
+```ts
+const result = await log.finalizePartition(final, {
+  ifExists: "merge",
+});
+
+if (result.action === "switched") {
+  // optional app-specific warning or telemetry
+}
+```
+
 ## Partition Lifecycle
 
 You can manage partitions either from a live logger or with standalone helpers:
@@ -218,6 +230,31 @@ await deleteLogs("/var/log/my-app", {
 
 console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-0000-final"));
 ```
+
+For live loggers, the package now exposes two layers:
+
+- `promotePartition()` stays the lower-level explicit primitive. By default it still errors on target conflicts unless you pass `merge: true` or `ifExists`.
+- `finalizePartition()` is the higher-level lifecycle helper for idempotent temp-to-final transitions.
+
+`finalizePartition()` returns structured outcomes instead of forcing application code to catch expected conflicts:
+
+```ts
+const result = await log.finalizePartition("2026-05-17-12-0000-final", {
+  ifExists: "switch",
+});
+
+result.action;
+// "renamed" | "merged" | "switched" | "activated-target"
+// "marked-permanent" | "already-finalized"
+```
+
+Conflict policies:
+
+- `ifExists: "error"` keeps strict low-level behavior
+- `ifExists: "merge"` merges the active source partition into the existing target
+- `ifExists: "switch"` activates the existing target without merging the current source
+
+For advanced callers that still use the lower-level primitives directly, `getPartitionErrorCode()` and `isPartitionError()` can inspect partition lifecycle errors without parsing raw message strings.
 
 ## Core API
 

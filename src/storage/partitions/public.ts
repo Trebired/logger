@@ -11,6 +11,7 @@ import type {
   RenamePartitionOptions,
 } from "../../types.js";
 import { sanitizePartitionName } from "../names.js";
+import { createPartitionError } from "./errors.js";
 import { deletePartitions } from "./delete.js";
 import { readPartitionMarkerFromRoot, writePartitionMarker } from "./markers.js";
 import { collectPartitionRecords, getPartitionRecord, partitionInfoFromRecord, partitionListResult, requirePartitionRecord } from "./records.js";
@@ -19,10 +20,10 @@ import { partitionRootPath, pathExists, resolveDir } from "./internal.js";
 
 async function createPartition(dir: string, partition: string, options: CreatePartitionOptions = {}): Promise<PartitionInfo> {
   const baseDir = resolveDir(dir);
-  if (!baseDir) throw new Error("missing-log-dir");
+  if (!baseDir) throw createPartitionError("missing-log-dir");
   const name = sanitizePartitionName(partition);
   const rootDir = partitionRootPath(baseDir, name);
-  if (await pathExists(rootDir)) throw new Error(`partition-already-exists: ${name}`);
+  if (await pathExists(rootDir)) throw createPartitionError("partition-already-exists", { partition: name });
   await writePartitionMarker(rootDir, {
     name,
     temporary: options.temporary === true,
@@ -72,7 +73,9 @@ async function copyPartition(options: CopyPartitionOptions): Promise<PartitionIn
   const source = await requirePartitionRecord(options.fromDir, options.from);
   const targetDir = resolveDir(options.toDir);
   const targetName = sanitizePartitionName(options.to || source.name);
-  if (source.dir === targetDir && source.name === targetName) throw new Error(`partition-already-exists: ${targetName}`);
+  if (source.dir === targetDir && source.name === targetName) {
+    throw createPartitionError("partition-already-exists", { partition: targetName });
+  }
   return transformPartition({
     source,
     targetDir,

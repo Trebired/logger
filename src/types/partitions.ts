@@ -21,8 +21,33 @@ type SetPartitionOptions = {
   temporary?: boolean;
 };
 
+type PartitionExistsPolicy = "error" | "merge" | "switch";
+
 type PromotePartitionOptions = {
   merge?: boolean;
+  ifExists?: PartitionExistsPolicy;
+};
+
+type FinalizePartitionOptions = {
+  ifExists?: PartitionExistsPolicy;
+};
+
+type FinalizePartitionAction =
+  | "activated-target"
+  | "already-finalized"
+  | "marked-permanent"
+  | "merged"
+  | "renamed"
+  | "switched";
+
+type FinalizePartitionResult = {
+  partition: string;
+  previousPartition: string | null;
+  action: FinalizePartitionAction;
+  sourceExisted: boolean;
+  targetExisted: boolean;
+  temporaryBefore: boolean;
+  temporaryAfter: false;
 };
 
 type PartitionTotals = {
@@ -123,10 +148,14 @@ export type {
   DeleteLogsResult,
   DeletePartitionResult,
   DeletePartitionsOptions,
+  FinalizePartitionAction,
+  FinalizePartitionOptions,
+  FinalizePartitionResult,
   MergePartitionOptions,
   MovePartitionOptions,
   PartitionInfo,
   PartitionAggregateTotals,
+  PartitionExistsPolicy,
   PartitionListResult,
   PartitionNameOptions,
   PartitionSanitizeOptions,

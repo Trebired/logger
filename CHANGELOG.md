@@ -4,6 +4,13 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.4.0
+
+- Added `finalizePartition()` on live logger instances so applications can finalize temporary partitions with package-owned merge or switch behavior instead of open-coding promotion fallbacks.
+- Added structured partition finalization results, including explicit actions such as `renamed`, `merged`, `switched`, `marked-permanent`, and `already-finalized`.
+- Added `ifExists` conflict policies to live partition promotion flows while keeping `promotePartition()` strict by default.
+- Added `getPartitionErrorCode()` and `isPartitionError()` so advanced callers can inspect partition lifecycle failures without parsing raw error strings.
+
 ## 2.3.1
 
 - Changed package greeting logs to use the `logger.initialize` group instead of `logger.loader`.

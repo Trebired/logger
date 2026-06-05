@@ -1,6 +1,7 @@
 export { TOP_LEVEL, DEFAULT_LEVELS as defaultLevels } from "./constants.js";
 export { createLog } from "./core/create_log.js";
 export { normalizeLevels } from "./levels/index.js";
+export { getPartitionErrorCode, isPartitionError } from "./storage/partitions/errors.js";
 export {
   buildPartitionName,
   buildTemporaryPartitionName,
@@ -34,6 +35,9 @@ export type {
   DeleteLogsResult,
   DeletePartitionResult,
   DeletePartitionsOptions,
+  FinalizePartitionAction,
+  FinalizePartitionOptions,
+  FinalizePartitionResult,
   ExportFormat,
   ExportManifest,
   ExportManifestFile,
@@ -57,6 +61,7 @@ export type {
   MergePartitionOptions,
   MovePartitionOptions,
   PartitionAggregateTotals,
+  PartitionExistsPolicy,
   PartitionInfo,
   PartitionListResult,
   PartitionNameOptions,
@@ -74,3 +79,4 @@ export type {
   SetPartitionOptions,
   WriteOptions,
 } from "./types.js";
+export type { PartitionError, PartitionErrorCode } from "./storage/partitions/errors.js";
