@@ -66,7 +66,7 @@ async function pathExists(targetPath: string): Promise<boolean> {
 }
 
 function fileStamp(file: WalkedLogFile): string {
-  return `${file.day}-${file.hour}`;
+  return `${file.day}-${file.hour}-${file.minute}-${file.second}`;
 }
 
 function partitionAgeReferenceMs(info: PartitionInfo): number {

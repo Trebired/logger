@@ -118,10 +118,10 @@ The storage layout is meant to stay human-browsable:
 /var/log/my-app/
   app/
     start/
-      2026-05-03-13-0000-info.jsonl
+      2026-05-03-13-00-00-0000-info.jsonl
   billing/
     invoice/
-      2026-05-03-13-0000-audit.jsonl
+      2026-05-03-13-00-00-0000-audit.jsonl
 ```
 
 Each line is a JSON object:
@@ -137,7 +137,7 @@ If you want an extra top-level separation layer, set `partition` and the logger 
   blue-2026-05-16/
     app/
       start/
-        2026-05-03-13-0000-info.jsonl
+        2026-05-03-13-00-00-0000-info.jsonl
 ```
 
 Partition names can now be built from a stable time prefix plus any caller-defined suffix:
@@ -201,7 +201,7 @@ import {
   renamePartition,
 } from "@trebired/logger";
 
-await createPartition("/var/log/my-app", "2026-05-17-12-0000-staged", {
+await createPartition("/var/log/my-app", "2026-05-17-12-00-00-staged", {
   temporary: true,
 });
 
@@ -210,25 +210,25 @@ console.log(partitions.total.megabytes);
 console.log(partitions[0]?.total.megabytes);
 
 await renamePartition("/var/log/my-app", {
-  from: "2026-05-17-12-0000-staged",
-  to: "2026-05-17-12-0000-final",
+  from: "2026-05-17-12-00-00-staged",
+  to: "2026-05-17-12-00-00-final",
 });
 
 await copyPartition({
   fromDir: "/var/log/my-app",
-  from: "2026-05-17-12-0000-final",
+  from: "2026-05-17-12-00-00-final",
   toDir: "/var/log/archive",
-  to: "2026-05-17-12-0000-final-copy",
+  to: "2026-05-17-12-00-00-final-copy",
 });
 
 await deleteLogs("/var/log/my-app", {
-  partition: "2026-05-17-12-0000-final",
+  partition: "2026-05-17-12-00-00-final",
   groupKey: "jobs.queue",
   level: "warn",
   olderThanDays: 7,
 });
 
-console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-0000-final"));
+console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-00-00-final"));
 ```
 
 For live loggers, the package now exposes two layers:
@@ -239,7 +239,7 @@ For live loggers, the package now exposes two layers:
 `finalizePartition()` returns structured outcomes instead of forcing application code to catch expected conflicts:
 
 ```ts
-const result = await log.finalizePartition("2026-05-17-12-0000-final", {
+const result = await log.finalizePartition("2026-05-17-12-00-00-final", {
   ifExists: "switch",
 });
 
@@ -465,12 +465,12 @@ const log = createLog({
 
 `maxAgeDays` deletes old files by age. `maxPartitions` keeps only the newest partition folders by last write time. A partition can represent deployments, sessions, environments, release versions, or any other caller-defined grouping. If you omit both, the logger stores logs indefinitely.
 
-When a file exceeds the configured size, the logger rolls to the next sequence inside the same group and hour:
+When a file exceeds the configured size, the logger rolls to the next sequence inside the same group and timestamp bucket:
 
 ```txt
-2026-05-03-13-0000-info.jsonl
-2026-05-03-13-0001-info.jsonl
-2026-05-03-13-0002-info.jsonl
+2026-05-03-13-00-00-0000-info.jsonl
+2026-05-03-13-00-00-0001-info.jsonl
+2026-05-03-13-00-00-0002-info.jsonl
 ```
 
 ## Redaction and Serializers

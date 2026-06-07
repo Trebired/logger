@@ -9,9 +9,9 @@ describe("@trebired/logger", () => {
   test("uses top-level timezone for saved file names", async () => {
     const instant = "2026-05-03T13:00:00.000Z";
     for (const item of [
-      { timeZone: "Europe/Prague", expected: "2026-05-03-15-0000-info.jsonl" },
-      { timeZone: "America/New_York", expected: "2026-05-03-09-0000-info.jsonl" },
-      { timeZone: "UTC", expected: "2026-05-03-13-0000-info.jsonl" },
+      { timeZone: "Europe/Prague", expected: "2026-05-03-15-00-00-0000-info.jsonl" },
+      { timeZone: "America/New_York", expected: "2026-05-03-09-00-00-0000-info.jsonl" },
+      { timeZone: "UTC", expected: "2026-05-03-13-00-00-0000-info.jsonl" },
     ]) {
       const dir = tempDir();
       const log = createLog({ dir, console: false, timeZone: item.timeZone });
@@ -27,7 +27,7 @@ describe("@trebired/logger", () => {
     const log = createLog({ dir, console: false, timeZone: "Not/A_Timezone" });
     log.info("timezone.fallback", "saved", forceRecordedAt("2026-05-03T13:00:00.000Z"));
     await log.flush();
-    expect(fs.existsSync(path.join(dir, "timezone", "fallback", "2026-05-03-09-0000-info.jsonl"))).toBe(true);
+    expect(fs.existsSync(path.join(dir, "timezone", "fallback", "2026-05-03-09-00-00-0000-info.jsonl"))).toBe(true);
     await log.close();
   });
 
@@ -61,7 +61,7 @@ describe("@trebired/logger", () => {
 
   test("runs retention cleanup for old files", async () => {
     const dir = tempDir();
-    const oldFile = path.join(dir, "old", "logs", "2000-01-01-00-0000-info.jsonl");
+    const oldFile = path.join(dir, "old", "logs", "2000-01-01-00-00-00-0000-info.jsonl");
     fs.mkdirSync(path.dirname(oldFile), { recursive: true });
     fs.writeFileSync(oldFile, "{}\n");
     const oldDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
@@ -74,7 +74,7 @@ describe("@trebired/logger", () => {
 
   test("does not delete old files when no retention number is configured", async () => {
     const dir = tempDir();
-    const oldFile = path.join(dir, "forever", "logs", "2000-01-01-00-0000-info.jsonl");
+    const oldFile = path.join(dir, "forever", "logs", "2000-01-01-00-00-00-0000-info.jsonl");
     fs.mkdirSync(path.dirname(oldFile), { recursive: true });
     fs.writeFileSync(oldFile, "{}\n");
     const oldDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
@@ -87,7 +87,7 @@ describe("@trebired/logger", () => {
 
   test("optionally compresses old files and queries gzip rows", async () => {
     const dir = tempDir();
-    const oldFile = path.join(dir, "compress", "logs", "2099-01-01-00-0000-info.jsonl");
+    const oldFile = path.join(dir, "compress", "logs", "2099-01-01-00-00-00-0000-info.jsonl");
     fs.mkdirSync(path.dirname(oldFile), { recursive: true });
     fs.writeFileSync(oldFile, `${JSON.stringify({
       recorded_at: "2099-01-01T00:00:00.000Z",

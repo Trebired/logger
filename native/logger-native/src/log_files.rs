@@ -14,6 +14,8 @@ use crate::common::{PARTITION_MARKER_FILE, TOP_LEVEL};
 pub struct ParsedLogFile {
   pub day: String,
   pub hour: String,
+  pub minute: String,
+  pub second: String,
   pub sequence: u64,
   pub level: String,
   pub compressed: bool,
@@ -27,19 +29,21 @@ pub struct PartitionFileEntry {
 }
 
 pub fn parse_log_name(file_name: &str) -> Option<ParsedLogFile> {
-  let regex = Regex::new(r"^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$").ok()?;
+  let regex = Regex::new(r"^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$").ok()?;
   let captures = regex.captures(file_name)?;
   Some(ParsedLogFile {
     day: captures.get(1)?.as_str().to_string(),
     hour: captures.get(2)?.as_str().to_string(),
+    minute: captures.get(3)?.as_str().to_string(),
+    second: captures.get(4)?.as_str().to_string(),
     sequence: captures
-      .get(3)?
+      .get(5)?
       .as_str()
       .parse::<u64>()
       .ok()
       .unwrap_or(0),
-    level: captures.get(4)?.as_str().to_string(),
-    compressed: captures.get(5).is_some(),
+    level: captures.get(6)?.as_str().to_string(),
+    compressed: captures.get(7).is_some(),
   })
 }
 
@@ -124,9 +128,11 @@ pub fn find_available_target_path(dir: &Path, file: &PartitionFileEntry) -> Path
 
   loop {
     let file_name = format!(
-      "{}-{}-{:04}-{}.jsonl",
+      "{}-{}-{}-{}-{:04}-{}.jsonl",
       file.parsed.day,
       file.parsed.hour,
+      file.parsed.minute,
+      file.parsed.second,
       sequence,
       file.parsed.level
     );

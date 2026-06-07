@@ -16,6 +16,8 @@ import { toString } from "../utils/values.js";
 type ParsedLogFile = {
   day: string;
   hour: string;
+  minute: string;
+  second: string;
   sequence: number;
   level: string;
   compressed: boolean;
@@ -56,7 +58,7 @@ function partitionTimeParts(at: PartitionTimeValue | undefined, timeZone?: strin
 
 function formatPartitionTimePrefix(options: PartitionNameOptions = {}): string {
   const parts = partitionTimeParts(options.at, options.timeZone);
-  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}-0000`;
+  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}-${parts.minute}-${parts.second}`;
 }
 
 function buildPartitionName(options: PartitionNameOptions = {}): string {
@@ -96,7 +98,7 @@ function normalizePartitionKey(input: unknown): string {
 
 function nowFileStamp(date = new Date(), timeZone?: string): string {
   const parts = partitionTimeParts(date, timeZone);
-  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}`;
+  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}-${parts.minute}-${parts.second}`;
 }
 
 function fileStampForEntry(entry: LogEntry, timeZone?: string): string {
@@ -110,15 +112,17 @@ function makeLogFileName(stamp: string, sequence: number, level: string): string
 }
 
 function parseLogFileName(fileName: string): ParsedLogFile | null {
-  const match = /^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$/i.exec(fileName);
+  const match = /^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$/i.exec(fileName);
   if (!match) return null;
 
   return {
     day: match[1],
     hour: match[2],
-    sequence: Number(match[3]) || 0,
-    level: match[4],
-    compressed: Boolean(match[5]),
+    minute: match[3],
+    second: match[4],
+    sequence: Number(match[5]) || 0,
+    level: match[6],
+    compressed: Boolean(match[7]),
   };
 }
 
