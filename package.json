@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "license": "AGPL-3.0-only",
   "keywords": [
