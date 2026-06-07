@@ -58,7 +58,8 @@ function partitionTimeParts(at: PartitionTimeValue | undefined, timeZone?: strin
 
 function formatPartitionTimePrefix(options: PartitionNameOptions = {}): string {
   const parts = partitionTimeParts(options.at, options.timeZone);
-  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}-${parts.minute}-${parts.second}`;
+  const sequence = String(Math.max(1, Math.floor(Number(options.sequence) || 1)));
+  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}-${parts.minute}-${parts.second}-${sequence}`;
 }
 
 function buildPartitionName(options: PartitionNameOptions = {}): string {

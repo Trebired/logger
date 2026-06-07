@@ -9,6 +9,7 @@ type PartitionSanitizeOptions = {
 type PartitionNameOptions = {
   at?: PartitionTimeValue;
   timeZone?: string;
+  sequence?: number;
   suffix?: string | null;
   sanitizeSuffix?: PartitionSanitizer | false;
 };

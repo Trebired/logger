@@ -151,6 +151,7 @@ import {
 
 const staged = buildTemporaryPartitionName({
   timeZone: "UTC",
+  sequence: 2,
   suffix: "deployment-unknown",
 });
 
@@ -201,7 +202,7 @@ import {
   renamePartition,
 } from "@trebired/logger";
 
-await createPartition("/var/log/my-app", "2026-05-17-12-00-00-staged", {
+await createPartition("/var/log/my-app", "2026-05-17-12-00-00-1-staged", {
   temporary: true,
 });
 
@@ -210,25 +211,25 @@ console.log(partitions.total.megabytes);
 console.log(partitions[0]?.total.megabytes);
 
 await renamePartition("/var/log/my-app", {
-  from: "2026-05-17-12-00-00-staged",
-  to: "2026-05-17-12-00-00-final",
+  from: "2026-05-17-12-00-00-1-staged",
+  to: "2026-05-17-12-00-00-1-final",
 });
 
 await copyPartition({
   fromDir: "/var/log/my-app",
-  from: "2026-05-17-12-00-00-final",
+  from: "2026-05-17-12-00-00-1-final",
   toDir: "/var/log/archive",
-  to: "2026-05-17-12-00-00-final-copy",
+  to: "2026-05-17-12-00-00-1-final-copy",
 });
 
 await deleteLogs("/var/log/my-app", {
-  partition: "2026-05-17-12-00-00-final",
+  partition: "2026-05-17-12-00-00-1-final",
   groupKey: "jobs.queue",
   level: "warn",
   olderThanDays: 7,
 });
 
-console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-00-00-final"));
+console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-00-00-1-final"));
 ```
 
 For live loggers, the package now exposes two layers:
@@ -239,7 +240,7 @@ For live loggers, the package now exposes two layers:
 `finalizePartition()` returns structured outcomes instead of forcing application code to catch expected conflicts:
 
 ```ts
-const result = await log.finalizePartition("2026-05-17-12-00-00-final", {
+const result = await log.finalizePartition("2026-05-17-12-00-00-1-final", {
   ifExists: "switch",
 });
 

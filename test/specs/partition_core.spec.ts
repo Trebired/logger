@@ -7,15 +7,16 @@ import { forceRecordedAt, tempDir } from "./helpers";
 
 describe("partition lifecycle", () => {
   test("builds time-prefixed partition names and sanitizes caller suffixes", () => {
-    expect(formatPartitionTimePrefix({ at: "2026-05-17T10:34:00.000Z", timeZone: "Europe/Prague" })).toBe("2026-05-17-12-34-00");
-    expect(buildPartitionName({ at: "2026-05-17T10:34:00.000Z", timeZone: "Europe/Prague", suffix: "deploy 42/blue" })).toBe("2026-05-17-12-34-00-deploy-42-blue");
+    expect(formatPartitionTimePrefix({ at: "2026-05-17T10:34:00.000Z", timeZone: "Europe/Prague" })).toBe("2026-05-17-12-34-00-1");
+    expect(formatPartitionTimePrefix({ at: "2026-05-17T10:34:00.000Z", timeZone: "Europe/Prague", sequence: 2 })).toBe("2026-05-17-12-34-00-2");
+    expect(buildPartitionName({ at: "2026-05-17T10:34:00.000Z", timeZone: "Europe/Prague", suffix: "deploy 42/blue" })).toBe("2026-05-17-12-34-00-1-deploy-42-blue");
     expect(buildPartitionName({
       at: "2026-05-17T10:34:00.000Z",
       timeZone: "Europe/Prague",
       suffix: "Blue Env",
       sanitizeSuffix: (value) => value.toUpperCase().replace(/\s+/g, "_"),
-    })).toBe("2026-05-17-12-34-00-BLUE_ENV");
-    expect(buildTemporaryPartitionName({ at: "2026-05-17T10:34:00.000Z", timeZone: "Europe/Prague", suffix: "job 1" })).toMatch(/^2026-05-17-12-34-00-job-1-tmp-[a-f0-9]{8}$/);
+    })).toBe("2026-05-17-12-34-00-1-BLUE_ENV");
+    expect(buildTemporaryPartitionName({ at: "2026-05-17T10:34:00.000Z", timeZone: "Europe/Prague", suffix: "job 1" })).toMatch(/^2026-05-17-12-34-00-1-job-1-tmp-[a-f0-9]{8}$/);
     expect(sanitizePartitionName(" any / custom+string ")).toBe("any-custom-string");
   });
 
@@ -72,7 +73,7 @@ describe("partition lifecycle", () => {
   test("promotes temporary partitions and keeps child loggers on the final partition", async () => {
     const dir = tempDir("partition_test_");
     const tempPartition = buildTemporaryPartitionName({ at: "2026-05-17T10:00:00.000Z", timeZone: "UTC", suffix: "deployment 1" });
-    const finalPartition = "2026-05-17-10-00-00-final";
+    const finalPartition = "2026-05-17-10-00-00-1-final";
     const log = createLog({ dir, partition: tempPartition, temporaryPartition: true, console: false, quiet: true });
     const jobs = log.group("app.boot");
     jobs.info("before");
@@ -94,7 +95,7 @@ describe("partition lifecycle", () => {
   test("finalizePartition is idempotent and marks the active partition permanent", async () => {
     const dir = tempDir("partition_test_");
     const tempPartition = buildTemporaryPartitionName({ at: "2026-05-17T10:00:00.000Z", timeZone: "UTC", suffix: "deployment 2" });
-    const finalPartition = "2026-05-17-10-00-00-final-2";
+    const finalPartition = "2026-05-17-10-00-00-1-final-2";
     const log = createLog({ dir, partition: tempPartition, temporaryPartition: true, console: false, quiet: true });
 
     log.info("app.boot", "before");

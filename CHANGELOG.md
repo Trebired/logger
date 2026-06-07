@@ -6,6 +6,11 @@ This project follows semantic versioning once published.
 
 ## Unreleased
 
+## 2.4.3
+
+- Changed generated partition name prefixes to include the same plain numeric sequence slot as saved log filenames, so helper-built partitions now default to shapes like `YYYY-MM-DD-HH-mm-ss-1-...`.
+- Added optional `sequence` support to partition naming helpers so callers can explicitly build prefixes like `YYYY-MM-DD-HH-mm-ss-2-...`.
+
 ## 2.4.2
 
 - Changed partition time prefixes from the old hour-only `YYYY-MM-DD-HH-0000` shape to the explicit `YYYY-MM-DD-HH-mm-ss` format.
