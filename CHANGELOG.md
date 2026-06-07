@@ -8,12 +8,9 @@ This project follows semantic versioning once published.
 
 ## 2.4.2
 
-- Changed rolled log file sequence suffixes from zero-padded values like `0000` and `0001` to plain numeric values like `1`, `2`, and `10`.
-
-## 2.4.1
-
 - Changed partition time prefixes from the old hour-only `YYYY-MM-DD-HH-0000` shape to the explicit `YYYY-MM-DD-HH-mm-ss` format.
 - Changed saved log file timestamp prefixes to use the explicit `YYYY-MM-DD-HH-mm-ss` format before the trailing sequence number.
+- Changed rolled log file sequence suffixes from zero-padded values like `0000` and `0001` to plain numeric values like `1`, `2`, and `10`.
 
 ## 2.4.0
 
