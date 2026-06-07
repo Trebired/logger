@@ -41,7 +41,8 @@ pub fn parse_log_name(file_name: &str) -> Option<ParsedLogFile> {
       .as_str()
       .parse::<u64>()
       .ok()
-      .unwrap_or(0),
+      .unwrap_or(1)
+      .max(1),
     level: captures.get(6)?.as_str().to_string(),
     compressed: captures.get(7).is_some(),
   })
@@ -124,11 +125,11 @@ pub fn logical_partition_path(partition: &str, rel_dir: &str, file_name: &str) -
 }
 
 pub fn find_available_target_path(dir: &Path, file: &PartitionFileEntry) -> PathBuf {
-  let mut sequence = file.parsed.sequence;
+  let mut sequence = file.parsed.sequence.max(1);
 
   loop {
     let file_name = format!(
-      "{}-{}-{}-{}-{:04}-{}.jsonl",
+      "{}-{}-{}-{}-{}-{}.jsonl",
       file.parsed.day,
       file.parsed.hour,
       file.parsed.minute,

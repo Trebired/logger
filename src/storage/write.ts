@@ -175,7 +175,7 @@ class FileWriter {
     fs.mkdirSync(groupDir, { recursive: true });
     const stamp = fileStampForEntry(entry, this.timeZone);
 
-    let sequence = 0;
+    let sequence = 1;
     for (;;) {
       const filePath = path.join(groupDir, makeLogFileName(stamp, sequence, entry.level));
       try {

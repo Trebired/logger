@@ -66,7 +66,7 @@ async function collectPartitionFilesFromRoot(rootPath: string, partition: string
 }
 
 async function findAvailableTargetPath(dir: string, file: WalkedLogFile): Promise<string> {
-  let sequence = file.sequence;
+  let sequence = Math.max(1, file.sequence);
   for (;;) {
     const fileName = makeLogFileName(fileStamp(file), sequence, file.level);
     const plainTarget = path.join(dir, fileName);

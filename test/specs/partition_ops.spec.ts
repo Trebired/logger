@@ -85,7 +85,7 @@ describe("partition lifecycle", () => {
 
   test("merges partitions with sequence collision handling and preserves gzip files", async () => {
     const dir = tempDir("partition_test_");
-    const fileName = "2026-05-17-10-00-00-0000-info.jsonl";
+    const fileName = "2026-05-17-10-00-00-1-info.jsonl";
     await createPartition(dir, "target");
     await createPartition(dir, "source");
     writePartitionLogFile(dir, "target", "merge.collision", fileName, [{
@@ -106,8 +106,8 @@ describe("partition lifecycle", () => {
     }], true);
     await mergePartition(dir, { from: "source", to: "target" });
     const files = listFilesRecursive(path.join(dir, "target", "merge", "collision")).map((item) => path.basename(item));
-    expect(files).toContain("2026-05-17-10-00-00-0000-info.jsonl");
-    expect(files).toContain("2026-05-17-10-00-00-0001-info.jsonl.gz");
+    expect(files).toContain("2026-05-17-10-00-00-1-info.jsonl");
+    expect(files).toContain("2026-05-17-10-00-00-2-info.jsonl.gz");
   });
 
   test("deletes temporary partitions by age filters and deletes log files by bucket filters", async () => {
@@ -136,8 +136,8 @@ describe("partition lifecycle", () => {
     await alphaLog.flush();
     await tempLog.flush();
 
-    const alphaWarnFile = listFilesRecursive(path.join(dir, "alpha")).find((item) => item.endsWith("2026-05-17-10-00-00-0000-warn.jsonl"));
-    const rootFile = listFilesRecursive(dir).find((item) => item.endsWith(path.join("jobs", "queue", "2026-05-17-10-00-00-0000-info.jsonl")));
+    const alphaWarnFile = listFilesRecursive(path.join(dir, "alpha")).find((item) => item.endsWith("2026-05-17-10-00-00-1-warn.jsonl"));
+    const rootFile = listFilesRecursive(dir).find((item) => item.endsWith(path.join("jobs", "queue", "2026-05-17-10-00-00-1-info.jsonl")));
     const oldFsDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
     fs.utimesSync(alphaWarnFile as string, oldFsDate, oldFsDate);
     fs.utimesSync(rootFile as string, oldFsDate, oldFsDate);

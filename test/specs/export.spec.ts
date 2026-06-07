@@ -27,7 +27,7 @@ describe("partition export", () => {
     await createPartition(dir, "alpha");
     await createPartition(dir, "beta");
 
-    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-0000-info.jsonl", [{
+    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-1-info.jsonl", [{
       recorded_at: "2026-05-17T10:00:00.000Z",
       level: "info",
       group: "jobs.queue",
@@ -35,7 +35,7 @@ describe("partition export", () => {
       origin: { source: "test", instance: null },
       partition: "alpha",
     }]);
-    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-11-00-00-0000-warn.jsonl", [{
+    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-11-00-00-1-warn.jsonl", [{
       recorded_at: "2026-05-17T11:00:00.000Z",
       level: "warn",
       group: "jobs.queue",
@@ -43,7 +43,7 @@ describe("partition export", () => {
       origin: { source: "test", instance: null },
       partition: "alpha",
     }], true);
-    writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-00-00-0000-info.jsonl", [{
+    writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-00-00-1-info.jsonl", [{
       recorded_at: "2026-05-17T10:00:00.000Z",
       level: "info",
       group: "ops.audit",
@@ -62,15 +62,15 @@ describe("partition export", () => {
     const entries = await readArchiveEntries(result.path);
     const manifest = JSON.parse((entries.get(`${root}/manifest.json`) as Buffer).toString("utf8"));
 
-    expect(entries.has(`${root}/logs/alpha/jobs/queue/2026-05-17-10-00-00-0000-info.jsonl`)).toBe(true);
-    expect(entries.has(`${root}/logs/alpha/jobs/queue/2026-05-17-11-00-00-0000-warn.jsonl.gz`)).toBe(true);
-    expect(entries.has(`${root}/logs/beta/ops/audit/2026-05-17-10-00-00-0000-info.jsonl`)).toBe(false);
+    expect(entries.has(`${root}/logs/alpha/jobs/queue/2026-05-17-10-00-00-1-info.jsonl`)).toBe(true);
+    expect(entries.has(`${root}/logs/alpha/jobs/queue/2026-05-17-11-00-00-1-warn.jsonl.gz`)).toBe(true);
+    expect(entries.has(`${root}/logs/beta/ops/audit/2026-05-17-10-00-00-1-info.jsonl`)).toBe(false);
     expect(manifest.partitions).toEqual(["alpha"]);
     expect(manifest.total.files).toBe(2);
     expect(manifest.total.logs).toBe(2);
 
-    const sourceGzip = fs.readFileSync(path.join(dir, "alpha", "jobs", "queue", "2026-05-17-11-00-00-0000-warn.jsonl.gz"));
-    expect(entries.get(`${root}/logs/alpha/jobs/queue/2026-05-17-11-00-00-0000-warn.jsonl.gz`)).toEqual(sourceGzip);
+    const sourceGzip = fs.readFileSync(path.join(dir, "alpha", "jobs", "queue", "2026-05-17-11-00-00-1-warn.jsonl.gz"));
+    expect(entries.get(`${root}/logs/alpha/jobs/queue/2026-05-17-11-00-00-1-warn.jsonl.gz`)).toEqual(sourceGzip);
   });
 
   test("exports multiple partitions to zip with raw files for each selected partition", async () => {
@@ -78,7 +78,7 @@ describe("partition export", () => {
     await createPartition(dir, "alpha");
     await createPartition(dir, "beta");
 
-    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-0000-info.jsonl", [{
+    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-1-info.jsonl", [{
       recorded_at: "2026-05-17T10:00:00.000Z",
       level: "info",
       group: "jobs.queue",
@@ -86,7 +86,7 @@ describe("partition export", () => {
       origin: { source: "test", instance: null },
       partition: "alpha",
     }]);
-    writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-01-00-0000-error.jsonl", [{
+    writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-01-00-1-error.jsonl", [{
       recorded_at: "2026-05-17T10:01:00.000Z",
       level: "error",
       group: "ops.audit",
@@ -106,8 +106,8 @@ describe("partition export", () => {
     const manifest = JSON.parse((entries.get(`${root}/manifest.json`) as Buffer).toString("utf8"));
 
     expect(manifest.partitions).toEqual(["alpha", "beta"]);
-    expect(entries.has(`${root}/logs/alpha/jobs/queue/2026-05-17-10-00-00-0000-info.jsonl`)).toBe(true);
-    expect(entries.has(`${root}/logs/beta/ops/audit/2026-05-17-10-01-00-0000-error.jsonl`)).toBe(true);
+    expect(entries.has(`${root}/logs/alpha/jobs/queue/2026-05-17-10-00-00-1-info.jsonl`)).toBe(true);
+    expect(entries.has(`${root}/logs/beta/ops/audit/2026-05-17-10-01-00-1-error.jsonl`)).toBe(true);
   });
 
   test("logger instance export flushes pending writes and can export all partitions from the logger dir", async () => {
@@ -140,7 +140,7 @@ describe("partition export", () => {
   test("rejects output extension mismatches and existing targets without overwrite", async () => {
     const dir = tempDir("export_test_");
     await createPartition(dir, "alpha");
-    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-0000-info.jsonl", [{
+    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-1-info.jsonl", [{
       recorded_at: "2026-05-17T10:00:00.000Z",
       level: "info",
       group: "jobs.queue",
@@ -177,7 +177,7 @@ describe("partition export", () => {
     const dir = tempDir("export_test_");
     await createPartition(dir, "alpha");
     await createPartition(dir, "beta");
-    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-0000-info.jsonl", [{
+    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-1-info.jsonl", [{
       recorded_at: "2026-05-17T10:00:00.000Z",
       level: "info",
       group: "jobs.queue",
@@ -185,7 +185,7 @@ describe("partition export", () => {
       origin: { source: "test", instance: null },
       partition: "alpha",
     }]);
-    writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-01-00-0000-error.jsonl", [{
+    writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-01-00-1-error.jsonl", [{
       recorded_at: "2026-05-17T10:01:00.000Z",
       level: "error",
       group: "ops.audit",

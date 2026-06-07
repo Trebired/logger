@@ -118,10 +118,10 @@ The storage layout is meant to stay human-browsable:
 /var/log/my-app/
   app/
     start/
-      2026-05-03-13-00-00-0000-info.jsonl
+      2026-05-03-13-00-00-1-info.jsonl
   billing/
     invoice/
-      2026-05-03-13-00-00-0000-audit.jsonl
+      2026-05-03-13-00-00-1-audit.jsonl
 ```
 
 Each line is a JSON object:
@@ -137,7 +137,7 @@ If you want an extra top-level separation layer, set `partition` and the logger 
   blue-2026-05-16/
     app/
       start/
-        2026-05-03-13-00-00-0000-info.jsonl
+        2026-05-03-13-00-00-1-info.jsonl
 ```
 
 Partition names can now be built from a stable time prefix plus any caller-defined suffix:
@@ -468,9 +468,9 @@ const log = createLog({
 When a file exceeds the configured size, the logger rolls to the next sequence inside the same group and timestamp bucket:
 
 ```txt
-2026-05-03-13-00-00-0000-info.jsonl
-2026-05-03-13-00-00-0001-info.jsonl
-2026-05-03-13-00-00-0002-info.jsonl
+2026-05-03-13-00-00-1-info.jsonl
+2026-05-03-13-00-00-2-info.jsonl
+2026-05-03-13-00-00-3-info.jsonl
 ```
 
 ## Redaction and Serializers

@@ -4,6 +4,13 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## Unreleased
+
+## 2.4.1
+
+- Changed rolled log file sequence suffixes from zero-padded values like `0000` and `0001` to plain numeric values like `1`, `2`, and `10`.
+- Kept partition time prefixes on the explicit `YYYY-MM-DD-HH-mm-ss` format while making the trailing file sequence easier to read as a non-time value.
+
 ## 2.4.0
 
 - Added `finalizePartition()` on live logger instances so applications can finalize temporary partitions with package-owned merge or switch behavior instead of open-coding promotion fallbacks.

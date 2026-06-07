@@ -107,7 +107,7 @@ function fileStampForEntry(entry: LogEntry, timeZone?: string): string {
 }
 
 function makeLogFileName(stamp: string, sequence: number, level: string): string {
-  const seq = String(Math.max(0, Math.floor(sequence))).padStart(4, "0");
+  const seq = String(Math.max(1, Math.floor(sequence)));
   return `${stamp}-${seq}-${level}.jsonl`;
 }
 
@@ -120,7 +120,7 @@ function parseLogFileName(fileName: string): ParsedLogFile | null {
     hour: match[2],
     minute: match[3],
     second: match[4],
-    sequence: Number(match[5]) || 0,
+    sequence: Math.max(1, Number(match[5]) || 1),
     level: match[6],
     compressed: Boolean(match[7]),
   };

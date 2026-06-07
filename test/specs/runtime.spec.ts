@@ -142,8 +142,8 @@ describe("@trebired/logger", () => {
     log.info("roll.test", "second-long-message", { data: "y".repeat(100) });
     await log.flush();
     const files = listFilesRecursive(path.join(dir, "roll", "test")).map((file) => path.basename(file));
-    expect(files.some((file) => /\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-0000-info\.jsonl$/.test(file))).toBe(true);
-    expect(files.some((file) => /\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-0001-info\.jsonl$/.test(file))).toBe(true);
+    expect(files.some((file) => /\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-1-info\.jsonl$/.test(file))).toBe(true);
+    expect(files.some((file) => /\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-2-info\.jsonl$/.test(file))).toBe(true);
     await log.close();
   });
 
