@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { resolveConsoleVisibilityPolicy } from "../config/console_visibility.js";
 import { createCommonLogger } from "./shared.js";
 import { formatConsole, writeConsole } from "../format/console.js";
 import { normalizeConsoleOptions } from "../format/options.js";
@@ -23,12 +24,18 @@ import { normalizeRetentionOptions, normalizeWriteOptions } from "../storage/opt
 import { FileWriter } from "../storage/write.js";
 import type { CreateLogOptions, FinalizePartitionAction, FinalizePartitionOptions, FinalizePartitionResult, LogInstance, PartitionExistsPolicy, PromotePartitionOptions } from "../types.js";
 import { normalizeTimeZone } from "../utils/datetime.js";
-import { maybeShowNodeRuntimeNotice } from "../utils/runtime.js";
+import { maybeShowNodeRuntimeNotice, writePackageNotice } from "../utils/runtime.js";
 import { toString } from "../utils/values.js";
 
 let packageGreetingShown = false;
 let storageBackendNoticeShown = false;
 const activeTemporaryPartitionsByDir = new Map<string, Set<string>>();
+
+function resetCreateLogStateForTests(): void {
+  packageGreetingShown = false;
+  storageBackendNoticeShown = false;
+  activeTemporaryPartitionsByDir.clear();
+}
 
 function safeResolveDir(value: unknown): string {
   const raw = toString(value);
@@ -53,9 +60,12 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
   maybeShowNodeRuntimeNotice(cfg.quiet);
   const levels = normalizeLevels(cfg.levels);
   const consoleOptions = normalizeConsoleOptions(cfg.console);
+  const consoleVisibility = resolveConsoleVisibilityPolicy();
+  if (consoleVisibility.warning) writePackageNotice(consoleVisibility.warning);
   const timeZone = normalizeTimeZone(cfg.timeZone);
   let activePartition = normalizePartitionKey(cfg.partition) || null;
   let activeTemporary = cfg.temporaryPartition === true;
+  let bypassConsoleVisibility = false;
 
   const writer = new FileWriter({
     dir: safeResolveDir(cfg.dir),
@@ -66,6 +76,15 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     onError: (message) => writeConsole("stderr", message),
   });
   let registeredTemporaryPartition: { dir: string; partition: string } | null = null;
+
+  function withConsoleVisibilityBypass<T>(fn: () => T): T {
+    bypassConsoleVisibility = true;
+    try {
+      return fn();
+    } finally {
+      bypassConsoleVisibility = false;
+    }
+  }
 
   function unregisterTemporaryPartition(): void {
     if (!registeredTemporaryPartition) return;
@@ -301,12 +320,14 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
     sample: cfg.sample,
     getPartition: () => activePartition,
     writeEntry(entry, levelConfig) {
-    if (consoleOptions.enabled) writeConsole(levelConfig.stream, formatConsole(entry, levelConfig, consoleOptions, timeZone));
-    writer.write(entry);
+      if (consoleOptions.enabled && (bypassConsoleVisibility || !consoleVisibility.shouldHide(entry.group))) {
+        writeConsole(levelConfig.stream, formatConsole(entry, levelConfig, consoleOptions, timeZone));
+      }
+      writer.write(entry);
 
-    try {
-      logStream.emit("log", entry, { runtime: "server", dir: writer.getDir() });
-    } catch {}
+      try {
+        logStream.emit("log", entry, { runtime: "server", dir: writer.getDir() });
+      } catch {}
     },
     flush() {
       return writer.flush();
@@ -403,14 +424,16 @@ function createLog(options: CreateLogOptions = {}): LogInstance {
 
   if (cfg.quiet !== true && !packageGreetingShown) {
     packageGreetingShown = true;
-    api.success("logger.initialize", "@trebired/logger initialized");
-    if (!storageBackendNoticeShown) {
-      storageBackendNoticeShown = true;
-      api.info("logger.initialize", activeStorageBackendNotice());
-    }
+    withConsoleVisibilityBypass(() => {
+      api.success("logger.initialize", "@trebired/logger initialized");
+      if (!storageBackendNoticeShown) {
+        storageBackendNoticeShown = true;
+        api.info("logger.initialize", activeStorageBackendNotice());
+      }
+    });
   }
 
   return api;
 }
 
-export { createLog };
+export { createLog, resetCreateLogStateForTests };

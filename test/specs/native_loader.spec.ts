@@ -1,11 +1,16 @@
 import { describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import path from "node:path";
 
+import { resolveConsoleVisibilityConfigJs } from "../../src/config/console_visibility";
 import {
   nativeAddonCandidatePathsForCurrentPlatform,
   nativeBinaryBasenameForCurrentPlatform,
+  resolveNativeConsoleVisibilityConfig,
   nativeStorageBackend,
   resetNativeBindingForTests,
 } from "../../src/storage/backend/native";
+import { tempDir } from "./helpers";
 
 describe("native addon loader", () => {
   test("derives a platform-specific binary name for supported runtimes", () => {
@@ -55,6 +60,32 @@ describe("native addon loader", () => {
 
       expect(Boolean(secondLoad)).toBe(Boolean(firstLoad));
       expect(secondLoad?.name ?? null).toBe(firstLoad?.name ?? null);
+    } finally {
+      if (previousDisable === undefined) delete process.env.TB_LOGGER_DISABLE_NATIVE;
+      else process.env.TB_LOGGER_DISABLE_NATIVE = previousDisable;
+      resetNativeBindingForTests();
+    }
+  });
+
+  test("matches JS console visibility config fallback when native loading is disabled", () => {
+    const projectRoot = tempDir("project_");
+    const nestedDir = path.join(projectRoot, "apps", "api");
+    fs.mkdirSync(nestedDir, { recursive: true });
+    fs.writeFileSync(path.join(projectRoot, "tb.logger.json"), `${JSON.stringify({ hideConsoleGroups: ["blog.post", "blog.post"] })}\n`, "utf8");
+
+    const previousDisable = process.env.TB_LOGGER_DISABLE_NATIVE;
+
+    try {
+      delete process.env.TB_LOGGER_DISABLE_NATIVE;
+      resetNativeBindingForTests();
+      const native = resolveNativeConsoleVisibilityConfig(nestedDir);
+      if (!native) return;
+
+      process.env.TB_LOGGER_DISABLE_NATIVE = "1";
+      resetNativeBindingForTests();
+      const fallback = resolveConsoleVisibilityConfigJs(nestedDir);
+
+      expect(fallback).toEqual(native);
     } finally {
       if (previousDisable === undefined) delete process.env.TB_LOGGER_DISABLE_NATIVE;
       else process.env.TB_LOGGER_DISABLE_NATIVE = previousDisable;

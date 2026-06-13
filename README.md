@@ -309,6 +309,16 @@ const log = createLog({
 
 Use `timeZone` for the local hour and `console.locale` for the display style.
 
+Server runtimes also auto-discover a top-level `tb.logger.json` file by walking up from `process.cwd()`. When present, it overrides console group visibility in both development and production without affecting saved logs:
+
+```json
+{
+  "hideConsoleGroups": ["blog.post", "http.request"]
+}
+```
+
+Each configured group hides both the exact group and descendants such as `blog.post.comment`. Invalid files print a warning and are ignored.
+
 European dot-date locales such as `cs-CZ` and `de-DE` are formatted consistently as `03.05.2026, 15:59:23`.
 
 ## Full API Example

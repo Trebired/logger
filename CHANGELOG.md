@@ -6,6 +6,12 @@ This project follows semantic versioning once published.
 
 ## Unreleased
 
+## 2.5.0
+
+- Added top-level `tb.logger.json` auto-discovery for server runtimes so developers can hide selected log groups from console output without affecting saved logs or stream events.
+- Added exact-and-descendant console visibility matching for hidden groups, plus warning-and-ignore behavior for invalid `tb.logger.json` files.
+- Expanded the Rust native addon with config discovery and parsing for console visibility policy loading, while keeping a behavior-matching JS fallback when native loading is unavailable.
+
 ## 2.4.3
 
 - Changed generated partition name prefixes to include the same plain numeric sequence slot as saved log filenames, so helper-built partitions now default to shapes like `YYYY-MM-DD-HH-mm-ss-1-...`.

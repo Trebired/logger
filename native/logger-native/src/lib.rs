@@ -1,5 +1,6 @@
 mod archive;
 mod common;
+mod config;
 mod log_files;
 mod rewrite;
 mod scan;
@@ -20,4 +21,9 @@ pub fn rewrite_partition_files(request_json: String) -> Result<()> {
 #[napi]
 pub fn create_archive(request_json: String) -> Result<()> {
   archive::create_archive_json(request_json)
+}
+
+#[napi]
+pub fn resolve_console_visibility_config(start_dir: String) -> Result<String> {
+  config::resolve_console_visibility_config_json(start_dir)
 }
