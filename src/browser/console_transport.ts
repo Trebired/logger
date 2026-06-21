@@ -1,13 +1,13 @@
-import { formatDisplayTimestamp } from "../utils/datetime.js";
-import { normalizeConsoleOptions } from "../format/options.js";
-import { normalizeLevels } from "../levels/index.js";
+import { formatDisplayTimestamp } from "#0c4ri7nq63zi";
+import { normalizeConsoleOptions } from "#b2k4pfb67duj";
+import { normalizeLevels } from "#g4tupkl7rvk4";
 import type {
   BrowserConsoleTransportOptions,
   BrowserTransport,
   LogEntry,
   LogLevelConfig,
   NormalizedConsoleOptions,
-} from "../types.js";
+} from "#tvzweoxg5ahk";
 
 function consoleMethodName(level: string, levelConfig: LogLevelConfig): "debug" | "info" | "warn" | "error" | "log" {
   if (level === "debug") return "debug";

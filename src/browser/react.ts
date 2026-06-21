@@ -1,6 +1,6 @@
 import React, { Component, createContext, useContext } from "react";
 
-import type { BrowserLogInstance } from "../types.js";
+import type { BrowserLogInstance } from "#tvzweoxg5ahk";
 
 type LogProviderProps = {
   log: BrowserLogInstance;

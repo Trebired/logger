@@ -1,8 +1,8 @@
-import { normGroup } from "../groups.js";
-import { minLevelWeight, normalizeLevel } from "../levels/index.js";
-import { prepareMetadata } from "../metadata/process.js";
-import type { LogEntry, LogLevelConfig, LogOrigin, RedactOptions } from "../types.js";
-import { asObject, toString } from "../utils/values.js";
+import { normGroup } from "#8xmnu037caa7";
+import { minLevelWeight, normalizeLevel } from "#g4tupkl7rvk4";
+import { prepareMetadata } from "#kzmqayr84v3x";
+import type { LogEntry, LogLevelConfig, LogOrigin, RedactOptions } from "#tvzweoxg5ahk";
+import { asObject, toString } from "#ycytzc4gr3f7";
 
 const DEFAULT_GROUP = "default";
 
@@ -69,102 +69,265 @@ function createCommonLogger<TStats>(options: CommonLoggerOptions<TStats>) {
 
   let enabled = true;
   let closed = false;
+  const emit = createEmitter({
+    defaultGroup,
+    defaultMetadata,
+    defaultSource,
+    enabled: () => enabled,
+    closed: () => closed,
+    levels,
+    options,
+    threshold,
+  });
+  const bindGroup = createGroupBinder({
+    defaultGroup,
+    defaultSource,
+    levels,
+    emit,
+  });
+  const api = createLoggerApi({
+    bindGroup,
+    defaultGroup,
+    defaultSource,
+    emit,
+    options,
+    setClosed(value) {
+      closed = value;
+    },
+    setEnabled(value) {
+      enabled = value;
+    },
+  });
+  attachLevelLoggers(api, levels, defaultGroup, emit);
 
-  function emit(levelInput: string, groupInput: unknown, messageInput: unknown, metadataInput?: unknown, originInput?: Partial<LogOrigin>): void {
-    if (!enabled || closed) return;
+  return {
+    api,
+    emit,
+  };
+}
 
-    const level = normalizeLevel(levelInput, levels);
-    const levelConfig = levels[level] || levels.info;
-    if (levelConfig.weight < threshold) return;
+function createEmitter(args: {
+  defaultGroup: string;
+  defaultMetadata: Record<string, unknown>;
+  defaultSource: string;
+  enabled: () => boolean;
+  closed: () => boolean;
+  levels: Record<string, LogLevelConfig>;
+  options: CommonLoggerOptions<unknown>;
+  threshold: number;
+}) {
+  return function emit(
+    levelInput: string,
+    groupInput: unknown,
+    messageInput: unknown,
+    metadataInput?: unknown,
+    originInput?: Partial<LogOrigin>,
+  ): void {
+    if (!args.enabled() || args.closed()) return;
 
-    const rawMetadata = {
-      ...defaultMetadata,
-      ...asObject(metadataInput),
-    };
-    const recordedAt = toString(rawMetadata.__recorded_at) || new Date().toISOString();
-    const metadata = prepareMetadata(rawMetadata, options.serializers, options.redact);
-    const group = normGroup(groupInput || defaultGroup).key;
-    const message = typeof messageInput === "string" ? messageInput : String(messageInput ?? "");
-    const originSource = originInput && originInput.source ? originInput.source : defaultSource;
-    const originInstance = originInput && Object.prototype.hasOwnProperty.call(originInput, "instance") ? originInput.instance : null;
-    const entry: LogEntry = {
-      recorded_at: recordedAt,
-      level,
-      group,
-      message,
-      origin: buildOrigin(originSource, originInstance),
-    };
-    if (typeof options.getPartition === "function") entry.partition = options.getPartition() ?? null;
-    if (Object.keys(metadata).length) entry.metadata = metadata;
+    const prepared = prepareEntry({
+      defaultGroup: args.defaultGroup,
+      defaultMetadata: args.defaultMetadata,
+      defaultSource: args.defaultSource,
+      groupInput,
+      levels: args.levels,
+      messageInput,
+      metadataInput,
+      options: args.options,
+      originInput,
+      threshold: args.threshold,
+      levelInput,
+    });
 
-    if (!shouldKeepSample(entry, options.sample)) return;
+    if (!prepared || !shouldKeepSample(prepared.entry, args.options.sample)) {
+      return;
+    }
 
-    options.writeEntry(entry, levelConfig);
-  }
+    args.options.writeEntry(prepared.entry, prepared.levelConfig);
+  };
+}
 
-  function bindGroup(groupName: unknown, originInput?: Partial<LogOrigin>, extraMetadata?: Record<string, unknown>): Record<string, any> {
-    const boundGroup = normGroup(groupName || defaultGroup).key;
+function createGroupBinder(args: {
+  defaultGroup: string;
+  defaultSource: string;
+  levels: Record<string, LogLevelConfig>;
+  emit: (
+    levelInput: string,
+    groupInput: unknown,
+    messageInput: unknown,
+    metadataInput?: unknown,
+    originInput?: Partial<LogOrigin>,
+  ) => void;
+}) {
+  return function bindGroup(
+    groupName: unknown,
+    originInput?: Partial<LogOrigin>,
+    extraMetadata?: Record<string, unknown>,
+  ): Record<string, any> {
+    const boundGroup = normGroup(groupName || args.defaultGroup).key;
     const mergedExtraMetadata = asObject(extraMetadata);
     const grouped: Record<string, any> = {};
 
-    for (const level of Object.keys(levels)) {
+    for (const level of Object.keys(args.levels)) {
       grouped[level] = (message: unknown, metadata?: unknown) =>
-        emit(level, boundGroup, message, { ...mergedExtraMetadata, ...asObject(metadata) }, originInput);
+        args.emit(
+          level,
+          boundGroup,
+          message,
+          { ...mergedExtraMetadata, ...asObject(metadata) },
+          originInput,
+        );
     }
 
     grouped.child = (moreMetadata?: unknown) =>
       bindGroup(boundGroup, originInput, { ...mergedExtraMetadata, ...asObject(moreMetadata) });
 
     return grouped;
-  }
+  };
+}
 
-  const api: Record<string, any> = {
+function createLoggerApi(args: {
+  bindGroup: (
+    groupName: unknown,
+    originInput?: Partial<LogOrigin>,
+    extraMetadata?: Record<string, unknown>,
+  ) => Record<string, any>;
+  defaultGroup: string;
+  defaultSource: string;
+  emit: (
+    levelInput: string,
+    groupInput: unknown,
+    messageInput: unknown,
+    metadataInput?: unknown,
+    originInput?: Partial<LogOrigin>,
+  ) => void;
+  options: CommonLoggerOptions<unknown>;
+  setClosed: (value: boolean) => void;
+  setEnabled: (value: boolean) => void;
+}): Record<string, any> {
+  return {
     group(groupName?: string) {
-      return bindGroup(groupName || defaultGroup);
+      return args.bindGroup(groupName || args.defaultGroup);
     },
     withScope(source?: string | null, groupName?: string, instance?: string | number | null) {
-      const originInput = {
-        source: toString(source) || defaultSource,
+      return args.bindGroup(groupName || args.defaultGroup, {
+        source: toString(source) || args.defaultSource,
         instance: instance == null ? null : String(instance),
-      };
-      return bindGroup(groupName || defaultGroup, originInput);
+      });
     },
     setEnabled(flag: boolean) {
-      enabled = Boolean(flag);
+      args.setEnabled(Boolean(flag));
     },
     logError(error: unknown, metadata?: Record<string, unknown>, source?: string) {
-      const meta = asObject(metadata);
-      const groupName = toString(meta.group) || defaultGroup;
-      const originSource = toString(source) || defaultSource;
-      if (error instanceof Error) {
-        emit("error", groupName, error.message, { ...meta, stack: error.stack }, { source: originSource });
-        return;
-      }
-      emit("error", groupName, String(error), meta, { source: originSource });
+      emitLogError(args.emit, error, metadata, source, args.defaultGroup, args.defaultSource);
     },
     flush() {
-      return options.flush();
+      return args.options.flush();
     },
     async close() {
-      if (closed) return;
-      closed = true;
-      await options.close();
+      args.setClosed(true);
+      await args.options.close();
     },
     getStats() {
-      return options.getStats();
+      return args.options.getStats();
     },
   };
+}
 
+function emitLogError(
+  emit: (
+    levelInput: string,
+    groupInput: unknown,
+    messageInput: unknown,
+    metadataInput?: unknown,
+    originInput?: Partial<LogOrigin>,
+  ) => void,
+  error: unknown,
+  metadata: Record<string, unknown> | undefined,
+  source: string | undefined,
+  defaultGroup: string,
+  defaultSource: string,
+): void {
+  const meta = asObject(metadata);
+  const groupName = toString(meta.group) || defaultGroup;
+  const originSource = toString(source) || defaultSource;
+
+  if (error instanceof Error) {
+    emit("error", groupName, error.message, { ...meta, stack: error.stack }, { source: originSource });
+    return;
+  }
+
+  emit("error", groupName, String(error), meta, { source: originSource });
+}
+
+function attachLevelLoggers(
+  api: Record<string, any>,
+  levels: Record<string, LogLevelConfig>,
+  defaultGroup: string,
+  emit: (
+    levelInput: string,
+    groupInput: unknown,
+    messageInput: unknown,
+    metadataInput?: unknown,
+    originInput?: Partial<LogOrigin>,
+  ) => void,
+): void {
   for (const level of Object.keys(levels)) {
     api[level] = function levelLogger(this: unknown): void {
       const parsed = parseCallArguments(arguments, defaultGroup);
       emit(level, parsed.group, parsed.message, parsed.metadata);
     };
   }
+}
+
+function prepareEntry(args: {
+  defaultGroup: string;
+  defaultMetadata: Record<string, unknown>;
+  defaultSource: string;
+  groupInput: unknown;
+  levels: Record<string, LogLevelConfig>;
+  levelInput: string;
+  messageInput: unknown;
+  metadataInput: unknown;
+  options: CommonLoggerOptions<unknown>;
+  originInput?: Partial<LogOrigin>;
+  threshold: number;
+}): { entry: LogEntry; levelConfig: LogLevelConfig } | null {
+  const level = normalizeLevel(args.levelInput, args.levels);
+  const levelConfig = args.levels[level] || args.levels.info;
+  if (levelConfig.weight < args.threshold) {
+    return null;
+  }
+
+  const rawMetadata = {
+    ...args.defaultMetadata,
+    ...asObject(args.metadataInput),
+  };
+  const recordedAt = toString(rawMetadata.__recorded_at) || new Date().toISOString();
+  const metadata = prepareMetadata(rawMetadata, args.options.serializers, args.options.redact);
+  const originSource = args.originInput?.source || args.defaultSource;
+  const originInstance = Object.prototype.hasOwnProperty.call(args.originInput || {}, "instance")
+    ? args.originInput?.instance
+    : null;
+  const entry: LogEntry = {
+    recorded_at: recordedAt,
+    level,
+    group: normGroup(args.groupInput || args.defaultGroup).key,
+    message: typeof args.messageInput === "string" ? args.messageInput : String(args.messageInput ?? ""),
+    origin: buildOrigin(originSource, originInstance),
+  };
+
+  if (typeof args.options.getPartition === "function") {
+    entry.partition = args.options.getPartition() ?? null;
+  }
+
+  if (Object.keys(metadata).length) {
+    entry.metadata = metadata;
+  }
 
   return {
-    api,
-    emit,
+    entry,
+    levelConfig,
   };
 }
 

@@ -1,5 +1,5 @@
-import type { ConsoleOptions, NormalizedConsoleOptions } from "../types.js";
-import { normalizeLocale } from "../utils/datetime.js";
+import type { ConsoleOptions, NormalizedConsoleOptions } from "#tvzweoxg5ahk";
+import { normalizeLocale } from "#0c4ri7nq63zi";
 
 function normalizeConsoleOptions(input: boolean | ConsoleOptions | undefined): NormalizedConsoleOptions {
   if (input === false) {

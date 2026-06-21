@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import zlib from "node:zlib";
 
-import type { LogEntry } from "../../types.js";
-import type { WalkedLogFile } from "../names.js";
+import type { LogEntry } from "#tvzweoxg5ahk";
+import type { WalkedLogFile } from "#x2qkmwodgsce";
 
 async function readLogRows(filePath: string, compressed: boolean): Promise<LogEntry[]> {
   try {

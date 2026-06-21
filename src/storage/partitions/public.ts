@@ -9,8 +9,8 @@ import type {
   PartitionInfo,
   PartitionListResult,
   RenamePartitionOptions,
-} from "../../types.js";
-import { sanitizePartitionName } from "../names.js";
+} from "#tvzweoxg5ahk";
+import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { createPartitionError } from "./errors.js";
 import { deletePartitions } from "./delete.js";
 import { readPartitionMarkerFromRoot, writePartitionMarker } from "./markers.js";

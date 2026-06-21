@@ -1,5 +1,5 @@
-import type { NormalizedRetentionOptions, NormalizedWriteOptions, RetentionOptions, WriteOptions } from "../types.js";
-import { parseSize } from "../utils/size.js";
+import type { NormalizedRetentionOptions, NormalizedWriteOptions, RetentionOptions, WriteOptions } from "#tvzweoxg5ahk";
+import { parseSize } from "#unnkpg8o07bp";
 
 function normalizeWriteOptions(input?: WriteOptions): NormalizedWriteOptions {
   const cfg = input || {};

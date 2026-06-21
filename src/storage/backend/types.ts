@@ -1,4 +1,4 @@
-import type { ExportFormat } from "../../types.js";
+import type { ExportFormat } from "#tvzweoxg5ahk";
 
 type StorageBackendName = "native" | "js";
 

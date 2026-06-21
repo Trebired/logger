@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { PARTITION_MARKER_FILE } from "../../constants.js";
-import { sanitizePartitionName } from "../names.js";
+import { PARTITION_MARKER_FILE } from "#cuh2x5snaefd";
+import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { partitionRootPath, resolveDir, type PartitionMarker, type PartitionWriteOptions } from "./internal.js";
 
 function isValidMarker(value: unknown, expectedName?: string): value is PartitionMarker {

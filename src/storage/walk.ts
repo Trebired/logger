@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { PARTITION_MARKER_FILE } from "../constants.js";
+import { PARTITION_MARKER_FILE } from "#cuh2x5snaefd";
 import { readPartitionMarkerFromRoot, readPartitionMarkerFromRootSync } from "./partitions.js";
 import { walkedFileFromPath, type WalkedLogFile } from "./names.js";
 

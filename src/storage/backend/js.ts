@@ -6,12 +6,12 @@ import zlib from "node:zlib";
 import { zipSync, strToU8 } from "fflate";
 import tar from "tar-stream";
 
-import { PARTITION_MARKER_FILE } from "../../constants.js";
-import { bytesToMegabytes } from "../../utils/size.js";
-import { walkedFileFromPath, type WalkedLogFile } from "../names.js";
-import { readPartitionMarkerFromRoot } from "../partitions/markers.js";
-import { resolveDir } from "../partitions/internal.js";
-import { rewritePartitionFiles as rewritePartitionFilesToTarget } from "../partitions/rewrite.js";
+import { PARTITION_MARKER_FILE } from "#cuh2x5snaefd";
+import { bytesToMegabytes } from "#unnkpg8o07bp";
+import { walkedFileFromPath, type WalkedLogFile } from "#x2qkmwodgsce";
+import { readPartitionMarkerFromRoot } from "#60bftlbj9ito";
+import { resolveDir } from "#08atyj8ixt0i";
+import { rewritePartitionFiles as rewritePartitionFilesToTarget } from "#nal3wuve8edd";
 import type { ArchiveCreateInput, StorageBackend, StorageScanFile, StorageScanPartition, StorageScanSnapshot } from "./types.js";
 
 function countRows(text: string): number {
@@ -66,21 +66,74 @@ async function scanPartition(baseDir: string, partition: string): Promise<{ file
   const walked = await collectPartitionFiles(baseDir, partition);
   const files: StorageScanFile[] = [];
   const dirs = new Set<string>();
+  const summary = await collectScannedPartitionFiles(files, dirs, walked, partition);
+
+  return {
+    files,
+    item: {
+      name: partition,
+      total: {
+        logs: summary.logs,
+        dirs: dirs.size,
+        files: files.length,
+        bytes: summary.bytes,
+        megabytes: bytesToMegabytes(summary.bytes),
+      },
+      lastActivityAt: summary.lastActivityMs > 0 ? new Date(summary.lastActivityMs).toISOString() : null,
+    },
+  };
+}
+
+async function collectScannedPartitionFiles(
+  files: StorageScanFile[],
+  dirs: Set<string>,
+  walked: WalkedLogFile[],
+  partition: string,
+): Promise<{ bytes: number; logs: number; lastActivityMs: number }> {
   let bytes = 0;
   let logs = 0;
   let lastActivityMs = 0;
 
   for (const file of walked) {
-    let stat: fs.Stats;
-    try {
-      stat = await fs.promises.stat(file.absPath);
-    } catch {
+    const scanned = await scanPartitionFile(file, partition);
+    if (!scanned) {
       continue;
     }
-    const rows = await countRowsInFile(file.absPath, file.compressed);
-    files.push({
+
+    files.push(scanned.file);
+    dirs.add(file.groupDir || ".");
+    bytes += scanned.file.bytes;
+    logs += scanned.file.rows;
+    if (scanned.lastActivityMs > lastActivityMs) lastActivityMs = scanned.lastActivityMs;
+  }
+
+  return {
+    bytes,
+    logs,
+    lastActivityMs,
+  };
+}
+
+async function scanPartitionFile(
+  file: WalkedLogFile,
+  partition: string,
+): Promise<{ file: StorageScanFile; lastActivityMs: number } | null> {
+  let stat: fs.Stats;
+  try {
+    stat = await fs.promises.stat(file.absPath);
+  } catch {
+    return null;
+  }
+
+  const rows = await countRowsInFile(file.absPath, file.compressed);
+  return {
+    file: {
       absPath: file.absPath,
-      path: path.posix.join(partition, file.groupDir ? file.groupDir.split(path.sep).join(path.posix.sep) : "", path.basename(file.absPath)),
+      path: path.posix.join(
+        partition,
+        file.groupDir ? file.groupDir.split(path.sep).join(path.posix.sep) : "",
+        path.basename(file.absPath),
+      ),
       partition,
       groupKey: file.groupKey,
       day: file.day,
@@ -89,26 +142,8 @@ async function scanPartition(baseDir: string, partition: string): Promise<{ file
       compressed: file.compressed,
       bytes: stat.size,
       rows,
-    });
-    dirs.add(file.groupDir || ".");
-    bytes += stat.size;
-    logs += rows;
-    if (stat.mtimeMs > lastActivityMs) lastActivityMs = stat.mtimeMs;
-  }
-
-  return {
-    files,
-    item: {
-      name: partition,
-      total: {
-        logs,
-        dirs: dirs.size,
-        files: files.length,
-        bytes,
-        megabytes: bytesToMegabytes(bytes),
-      },
-      lastActivityAt: lastActivityMs > 0 ? new Date(lastActivityMs).toISOString() : null,
     },
+    lastActivityMs: stat.mtimeMs,
   };
 }
 

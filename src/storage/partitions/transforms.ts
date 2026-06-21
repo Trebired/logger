@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { PartitionInfo } from "../../types.js";
-import { getStorageBackend } from "../backend/index.js";
-import { sanitizePartitionName } from "../names.js";
+import type { PartitionInfo } from "#tvzweoxg5ahk";
+import { getStorageBackend } from "#1qrb8ldbr5aj";
+import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { createPartitionError } from "./errors.js";
 import { writePartitionMarker } from "./markers.js";
 import { getPartitionInfo } from "./public.js";

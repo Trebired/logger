@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 
-import type { NormalizedRetentionOptions } from "../types.js";
+import type { NormalizedRetentionOptions } from "#tvzweoxg5ahk";
 import { nowFileStamp } from "./names.js";
 import { readPartitionMarkerFromRoot } from "./partitions.js";
 import { walkLogFiles } from "./walk.js";
@@ -56,27 +56,7 @@ async function cleanupLogs(dir: string, options: NormalizedRetentionOptions): Pr
   const partitionActivity = new Map<string, number>();
 
   for (const file of files) {
-    try {
-      const stat = await fs.promises.stat(file.absPath);
-      if (cutoff != null && stat.mtimeMs < cutoff) {
-        await fs.promises.unlink(file.absPath);
-        continue;
-      }
-
-      if (file.partition) {
-        const rootDir = path.join(dir, file.partition);
-        const last = partitionActivity.get(rootDir) || 0;
-        if (stat.mtimeMs > last) partitionActivity.set(rootDir, stat.mtimeMs);
-      }
-
-      if (
-        options.compressOldFiles &&
-        !file.compressed &&
-        (file.day !== now.day || file.hour !== now.hour)
-      ) {
-        await compressFile(file.absPath);
-      }
-    } catch {}
+    await cleanupLogFile(dir, file, cutoff, now, options, partitionActivity);
   }
 
   if (options.maxPartitions == null) return;
@@ -100,6 +80,58 @@ async function cleanupLogs(dir: string, options: NormalizedRetentionOptions): Pr
       await fs.promises.rm(item.rootDir, { recursive: true, force: true });
     } catch {}
   }
+}
+
+async function cleanupLogFile(
+  dir: string,
+  file: Awaited<ReturnType<typeof walkLogFiles>>[number],
+  cutoff: number | null,
+  now: ReturnType<typeof currentDayHour>,
+  options: NormalizedRetentionOptions,
+  partitionActivity: Map<string, number>,
+): Promise<void> {
+  try {
+    const stat = await fs.promises.stat(file.absPath);
+    if (cutoff != null && stat.mtimeMs < cutoff) {
+      await fs.promises.unlink(file.absPath);
+      return;
+    }
+
+    updatePartitionActivity(dir, file.partition, stat.mtimeMs, partitionActivity);
+
+    if (shouldCompressFile(file, now, options)) {
+      await compressFile(file.absPath);
+    }
+  } catch {}
+}
+
+function updatePartitionActivity(
+  dir: string,
+  partition: string | null | undefined,
+  mtimeMs: number,
+  partitionActivity: Map<string, number>,
+): void {
+  if (!partition) {
+    return;
+  }
+
+  const rootDir = path.join(dir, partition);
+  const last = partitionActivity.get(rootDir) || 0;
+  if (mtimeMs > last) {
+    partitionActivity.set(rootDir, mtimeMs);
+  }
+}
+
+function shouldCompressFile(
+  file: Awaited<ReturnType<typeof walkLogFiles>>[number],
+  now: ReturnType<typeof currentDayHour>,
+  options: NormalizedRetentionOptions,
+): boolean {
+  return (
+    options.compressOldFiles &&
+    !file.compressed &&
+    (file.day !== now.day || file.hour !== now.hour)
+  );
 }
 
 export { cleanupLogs, compressFile };

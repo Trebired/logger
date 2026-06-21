@@ -9,4 +9,4 @@ export type {
   BrowserLogStats,
   BrowserTransport,
   BrowserTransportContext,
-} from "../types.js";
+} from "#tvzweoxg5ahk";

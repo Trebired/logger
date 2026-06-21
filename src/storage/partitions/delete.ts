@@ -1,7 +1,7 @@
 import fs from "node:fs";
 
-import type { DeleteLogsOptions, DeleteLogsResult, DeletePartitionResult, DeletePartitionsOptions } from "../../types.js";
-import { sanitizePartitionName } from "../names.js";
+import type { DeleteLogsOptions, DeleteLogsResult, DeletePartitionResult, DeletePartitionsOptions } from "#tvzweoxg5ahk";
+import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { fileMatchesDeleteFilters, listTopLevelFiles, readLogRows } from "./files.js";
 import { collectPartitionRecords, partitionInfoFromRecord, partitionMarkerMap } from "./records.js";
 import { cutoffMsForDays, partitionAgeReferenceMs, resolveDir, type DeleteLogCandidate, type PartitionDeleteCandidate } from "./internal.js";

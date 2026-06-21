@@ -1,30 +1,209 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "checkJs": false,
+    "esModuleInterop": true,
     "lib": [
       "ES2020"
     ],
-    "strict": false,
-    "allowJs": false,
-    "checkJs": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "noEmit": true,
+    "paths": {
+      "#08atyj8ixt0i": [
+        "./src/storage/partitions/internal.ts"
+      ],
+      "#0c4ri7nq63zi": [
+        "./src/utils/datetime.ts"
+      ],
+      "#0ns6umc1i7ld": [
+        "./src/types/common.ts"
+      ],
+      "#1qrb8ldbr5aj": [
+        "./src/storage/backend/index.ts"
+      ],
+      "#2qi0ju8pcrs2": [
+        "./src/backend/utils/object.ts"
+      ],
+      "#4gn2x99lawde": [
+        "./src/core/create_log.ts"
+      ],
+      "#4riod1305goy": [
+        "./src/types/server.ts"
+      ],
+      "#51dxqj3cwnrj": [
+        "./src/storage/retention.ts"
+      ],
+      "#5b2ar2e6zs0u": [
+        "./src/types/query.ts"
+      ],
+      "#5df776pxoxh5": [
+        "./src/storage/partitions/public.ts"
+      ],
+      "#60bftlbj9ito": [
+        "./src/storage/partitions/markers.ts"
+      ],
+      "#76iooq23kphm": [
+        "./src/storage/partitions.ts"
+      ],
+      "#84wm1krbmyck": [
+        "./src/storage/backend/types.ts"
+      ],
+      "#8ky9lhu2jb5d": [
+        "./src/storage/query/rows.ts"
+      ],
+      "#8xmnu037caa7": [
+        "./src/groups.ts"
+      ],
+      "#8y9zkb2bigg2": [
+        "./src/middleware/request.ts"
+      ],
+      "#91t1cde9d892": [
+        "./src/storage/partitions/files.ts"
+      ],
+      "#a505p6xv4tf1": [
+        "./src/frontend/js/utils/text.ts"
+      ],
+      "#a65l0o2g0gzz": [
+        "./src/storage/query/summary.ts"
+      ],
+      "#b2k4pfb67duj": [
+        "./src/format/options.ts"
+      ],
+      "#b5whz9hbbjxl": [
+        "./src/storage/partitions/transforms.ts"
+      ],
+      "#cpmz8lycnjch": [
+        "./src/storage/partitions/records.ts"
+      ],
+      "#cuh2x5snaefd": [
+        "./src/constants.ts"
+      ],
+      "#e1h3ay0cyhgl": [
+        "./src/types/index.ts"
+      ],
+      "#ee9snkkshbj2": [
+        "./src/index.ts"
+      ],
+      "#g4tupkl7rvk4": [
+        "./src/levels/index.ts"
+      ],
+      "#g50wuco0huop": [
+        "./src/core/create_log/api.ts"
+      ],
+      "#gvcc9893bkqo": [
+        "./src/browser/index.ts"
+      ],
+      "#h0uexrz2k072": [
+        "./src/storage/partitions/errors.ts"
+      ],
+      "#ho6lw68jfenw": [
+        "./src/storage/backend/native.ts"
+      ],
+      "#iaj6xqns4o0s": [
+        "./src/stream/index.ts"
+      ],
+      "#jaal40numbzs": [
+        "./src/storage/backend/js.ts"
+      ],
+      "#jp65xdmizety": [
+        "./src/config/console_visibility.ts"
+      ],
+      "#koef894lepm1": [
+        "./src/types/browser.ts"
+      ],
+      "#kwdf5u88q9g4": [
+        "./src/backend/utils/time.ts"
+      ],
+      "#kzmqayr84v3x": [
+        "./src/metadata/process.ts"
+      ],
+      "#m4kuwvprq8wl": [
+        "./src/types/export.ts"
+      ],
+      "#nal3wuve8edd": [
+        "./src/storage/partitions/rewrite.ts"
+      ],
+      "#nmfh3v2le5vp": [
+        "./src/utils/runtime.ts"
+      ],
+      "#o3jnvqp377lh": [
+        "./src/storage/walk.ts"
+      ],
+      "#o520iruia9te": [
+        "./src/core/create_log/runtime.ts"
+      ],
+      "#oceupfj37qp3": [
+        "./src/browser/react.ts"
+      ],
+      "#pngx4lcsdjmx": [
+        "./src/storage/options.ts"
+      ],
+      "#qkc6be246w9i": [
+        "./src/browser/create_log.ts"
+      ],
+      "#qqlp8cyr3105": [
+        "./src/storage/partitions/delete.ts"
+      ],
+      "#tvzweoxg5ahk": [
+        "./src/types.ts"
+      ],
+      "#ubetf5s0pfc2": [
+        "./src/core/shared.ts"
+      ],
+      "#udhxjfygntkt": [
+        "./src/types/partitions.ts"
+      ],
+      "#unnkpg8o07bp": [
+        "./src/utils/size.ts"
+      ],
+      "#uobjnphrxi2c": [
+        "./src/storage/export.ts"
+      ],
+      "#va6txcqwm0gh": [
+        "./src/format/console.ts"
+      ],
+      "#vpn8n9wiu1x0": [
+        "./src/backend/utils/normalize.ts"
+      ],
+      "#w1cc3mztq3ng": [
+        "./src/storage/write.ts"
+      ],
+      "#x2qkmwodgsce": [
+        "./src/storage/names.ts"
+      ],
+      "#xcylcir2d1qf": [
+        "./src/browser/console_transport.ts"
+      ],
+      "#xtaoa1f0kt5w": [
+        "./src/core/create_log/finalize.ts"
+      ],
+      "#ycytzc4gr3f7": [
+        "./src/utils/values.ts"
+      ],
+      "#yrpchhxv9iak": [
+        "./src/storage/query/shared.ts"
+      ],
+      "#zgjmhffod2k1": [
+        "./src/storage/query.ts"
+      ]
+    },
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "target": "ES2020",
     "types": [
       "node",
       "bun"
-    ],
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true
+    ]
   },
+  "exclude": [
+    "node_modules"
+  ],
   "include": [
     "examples/**/*.ts",
     "src/**/*.ts",
     "test/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
   ]
 }

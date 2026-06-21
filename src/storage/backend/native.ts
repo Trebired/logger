@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 import type { ArchiveCreateInput, StorageBackend, StorageScanSnapshot } from "./types.js";
-import type { ResolvedConsoleVisibilityPayload } from "../../config/console_visibility.js";
+import type { ResolvedConsoleVisibilityPayload } from "#jp65xdmizety";
 
 type NativeBinding = {
   scanPartitions(dir: string, partitions: string[]): string;

@@ -1,5 +1,5 @@
-import type { RequestLoggerOptions } from "../types.js";
-import { toString } from "../utils/values.js";
+import type { RequestLoggerOptions } from "#tvzweoxg5ahk";
+import { toString } from "#ycytzc4gr3f7";
 
 function requestId(): string {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;

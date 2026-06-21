@@ -1,6 +1,6 @@
-import { createCommonLogger } from "../core/shared.js";
-import { normalizeLevels } from "../levels/index.js";
-import { logStream } from "../stream/index.js";
+import { createCommonLogger } from "#ubetf5s0pfc2";
+import { normalizeLevels } from "#g4tupkl7rvk4";
+import { logStream } from "#iaj6xqns4o0s";
 import type {
   BrowserBatchOptions,
   BrowserLogInstance,
@@ -9,9 +9,9 @@ import type {
   BrowserTransport,
   BrowserTransportContext,
   LogEntry,
-} from "../types.js";
-import { normalizeTimeZone } from "../utils/datetime.js";
-import { asObject, toString } from "../utils/values.js";
+} from "#tvzweoxg5ahk";
+import { normalizeTimeZone } from "#0c4ri7nq63zi";
+import { asObject, toString } from "#ycytzc4gr3f7";
 import { createConsoleTransport } from "./console_transport.js";
 
 type RuntimeTransport = {
