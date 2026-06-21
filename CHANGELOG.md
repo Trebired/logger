@@ -4,7 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
-## Unreleased
+## 2.5.2
+
+- Enforced the package `tb.code-discipline.ts` policy across `src`, tests, and examples, including synced import aliases and normalized `tsconfig` path metadata.
+- Reduced small duplicated helper/value logic while keeping the public logger API and runtime behavior unchanged.
 
 ## 2.5.0
 

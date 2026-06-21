@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createLog, getLogsForDir, logStream } from "../src/index";
+import { createLog, getLogsForDir, logStream } from "#ee9snkkshbj2";
 
 type DemoRequest = {
   headers: Record<string, string>;

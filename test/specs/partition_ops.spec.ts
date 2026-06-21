@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { copyPartition, createLog, createPartition, deleteLogs, deletePartition, deletePartitions, getLogsForDir, getPartitionErrorCode, isPartitionError, listPartitions, mergePartition, movePartition, renamePartition } from "../../src/index";
+import { copyPartition, createLog, createPartition, deleteLogs, deletePartition, deletePartitions, getLogsForDir, getPartitionErrorCode, isPartitionError, listPartitions, mergePartition, movePartition, renamePartition } from "#ee9snkkshbj2";
 import { forceRecordedAt, listFilesRecursive, readPartitionMarker, tempDir, writePartitionLogFile, writePartitionMarker } from "./helpers";
 
 describe("partition lifecycle", () => {

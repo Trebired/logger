@@ -2,14 +2,14 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { resolveConsoleVisibilityConfigJs } from "../../src/config/console_visibility";
+import { resolveConsoleVisibilityConfigJs } from "#jp65xdmizety";
 import {
   nativeAddonCandidatePathsForCurrentPlatform,
   nativeBinaryBasenameForCurrentPlatform,
   resolveNativeConsoleVisibilityConfig,
   nativeStorageBackend,
   resetNativeBindingForTests,
-} from "../../src/storage/backend/native";
+} from "#ho6lw68jfenw";
 import { tempDir } from "./helpers";
 
 describe("native addon loader", () => {

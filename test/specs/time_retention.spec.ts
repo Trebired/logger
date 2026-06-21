@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { createLog, getLogsForDir } from "../../src/index";
+import { createLog, getLogsForDir } from "#ee9snkkshbj2";
 import { captureStdout, forceRecordedAt, sleep, tempDir } from "./helpers";
 
 describe("@trebired/logger", () => {

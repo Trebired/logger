@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { createLog, getLogsForDir, logStream } from "../../src/index";
-import { activeStorageBackendNotice } from "../../src/storage/backend/index";
-import { resetCreateLogStateForTests } from "../../src/core/create_log";
+import { createLog, getLogsForDir, logStream } from "#ee9snkkshbj2";
+import { activeStorageBackendNotice } from "#1qrb8ldbr5aj";
+import { resetCreateLogStateForTests } from "#4gn2x99lawde";
 import { captureStderr, captureStdout, tempDir } from "./helpers";
 
 function withWorkingDir<T>(nextDir: string, fn: () => T): T {

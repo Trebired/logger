@@ -4,8 +4,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { createLog, createPartition, exportPartition, exportPartitions } from "../../src/index";
-import { setStorageBackendPreferenceForTests } from "../../src/storage/backend/index";
+import { createLog, createPartition, exportPartition, exportPartitions } from "#ee9snkkshbj2";
+import { setStorageBackendPreferenceForTests } from "#1qrb8ldbr5aj";
 import { canBuildNativeAddon, readArchiveEntries, tempDir, writePartitionLogFile } from "./helpers";
 
 function archiveRootName(filePath: string): string {

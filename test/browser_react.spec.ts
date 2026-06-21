@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 
-import { createBrowserLog } from "../src/browser/index";
-import { LogErrorBoundary, LogProvider, useLog } from "../src/browser/react";
+import { createBrowserLog } from "#gvcc9893bkqo";
+import { LogErrorBoundary, LogProvider, useLog } from "#oceupfj37qp3";
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 

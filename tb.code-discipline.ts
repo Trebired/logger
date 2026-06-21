@@ -1,7 +1,7 @@
 export default {
-  sourceRoot: "src",
+  sourceRoot: ".",
   sourceExtensions: [".ts", ".tsx", ".js", ".jsx"],
-  excludeDirs: ["node_modules", "dist", "tmp", ".vite"],
+  excludeDirs: ["node_modules", "dist", "tmp", ".vite", "test", "examples"],
   logging: {
     enabled: true,
     quiet: false,
@@ -31,28 +31,16 @@ export default {
     dry: {
       helpers: [
         {
-          from: "./src/backend/utils/normalize.ts",
+          from: "./src/utils/values.ts",
           exportName: "toString",
         },
         {
-          from: "./src/backend/utils/time.ts",
-          exportName: "now",
+          from: "./src/utils/values.ts",
+          exportName: "asObject",
         },
         {
-          from: "./src/backend/utils/time.ts",
-          exportName: "nowMs",
-        },
-        {
-          from: "./src/backend/utils/object.ts",
-          exportName: "toObject",
-        },
-        {
-          from: "./src/backend/utils/object.ts",
-          exportName: "toArray",
-        },
-        {
-          from: "./src/frontend/js/utils/text.ts",
-          exportName: "text",
+          from: "./src/utils/values.ts",
+          exportName: "isPlainObject",
         },
       ],
     },

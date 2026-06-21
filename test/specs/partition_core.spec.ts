@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { buildPartitionName, buildTemporaryPartitionName, createLog, createPartition, formatPartitionTimePrefix, getLogsForDir, getPartitionInfo, listPartitions, sanitizePartitionName } from "../../src/index";
+import { buildPartitionName, buildTemporaryPartitionName, createLog, createPartition, formatPartitionTimePrefix, getLogsForDir, getPartitionInfo, listPartitions, sanitizePartitionName } from "#ee9snkkshbj2";
 import { forceRecordedAt, tempDir } from "./helpers";
 
 describe("partition lifecycle", () => {

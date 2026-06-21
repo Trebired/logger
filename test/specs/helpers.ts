@@ -8,7 +8,7 @@ import zlib from "node:zlib";
 import { unzipSync } from "fflate";
 import tar from "tar-stream";
 
-import { createLog, logStream } from "../../src/index";
+import { createLog, logStream } from "#ee9snkkshbj2";
 
 const handlers: any[] = [];
 

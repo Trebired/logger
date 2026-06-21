@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { createBrowserLog } from "../src/browser/index";
-import { logStream } from "../src/index";
+import { createBrowserLog } from "#gvcc9893bkqo";
+import { logStream } from "#ee9snkkshbj2";
 
 function createMemoryTransport() {
   const batches: Array<{ entries: any[]; context: any }> = [];
