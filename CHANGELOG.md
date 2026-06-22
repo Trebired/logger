@@ -4,6 +4,12 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.3
+
+- fixed the packed package metadata so runtime alias imports and declaration alias imports resolve to built files that actually exist in the published tarball
+- added a publish-preparation step that rewrites compiled `dist` alias imports to relative built paths and rewrites packed `package.json` imports from source aliases to `./dist/...`
+- strengthened package verification to inspect the real tarball, check expected native binaries, verify TypeScript resolution, and smoke-test Bun imports for `@trebired/logger` and `@trebired/logger/browser`
+
 ## 2.5.2
 
 - Enforced the package `tb.code-discipline.ts` policy across `src`, tests, and examples, including synced import aliases and normalized `tsconfig` path metadata.
