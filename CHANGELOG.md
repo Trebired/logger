@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.4
+
+- bumped the repository package version forward after the `2.5.3` npm publish so the repo can continue from the next unreleased patch state without republishing the same contents
+
 ## 2.5.3
 
 - fixed the packed package metadata so runtime alias imports and declaration alias imports resolve to built files that actually exist in the published tarball
