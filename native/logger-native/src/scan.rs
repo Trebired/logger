@@ -60,6 +60,37 @@ struct ScanSnapshot {
   total: ScanSummaryTotals,
 }
 
+fn scan_dir_key(rel_dir: &str) -> String {
+  if rel_dir.is_empty() {
+    ".".to_string()
+  } else {
+    rel_dir.to_string()
+  }
+}
+
+fn update_last_activity(last_activity: &mut Option<SystemTime>, metadata: &fs::Metadata) {
+  if let Ok(modified) = metadata.modified() {
+    if last_activity.map(|current| modified > current).unwrap_or(true) {
+      *last_activity = Some(modified);
+    }
+  }
+}
+
+fn to_scan_file(partition: &str, file: &crate::log_files::PartitionFile, logical_path: String, metadata: &fs::Metadata, row_count: u64) -> ScanFile {
+  ScanFile {
+    abs_path: file.abs_path.to_string_lossy().to_string(),
+    path: logical_path,
+    partition: partition.to_string(),
+    group_key: group_key_from_dir(&file.rel_dir),
+    day: file.parsed.day.clone(),
+    hour: file.parsed.hour.clone(),
+    level: file.parsed.level.clone(),
+    compressed: file.parsed.compressed,
+    bytes: metadata.len(),
+    rows: row_count,
+  }
+}
+
 fn scan_single_partition(base_dir: &Path, partition: &str) -> Result<(ScanPartition, Vec<ScanFile>)> {
   let root = base_dir.join(partition);
   if !root.join(PARTITION_MARKER_FILE).exists() {
@@ -78,25 +109,9 @@ fn scan_single_partition(base_dir: &Path, partition: &str) -> Result<(ScanPartit
     let row_count = count_rows(&file.abs_path, file.parsed.compressed).map_err(|error| err(error.to_string()))?;
     bytes += metadata.len();
     logs += row_count;
-    dirs.insert(if file.rel_dir.is_empty() { ".".to_string() } else { file.rel_dir.clone() });
-    if let Ok(modified) = metadata.modified() {
-      if last_activity.map(|current| modified > current).unwrap_or(true) {
-        last_activity = Some(modified);
-      }
-    }
-
-    files.push(ScanFile {
-      abs_path: file.abs_path.to_string_lossy().to_string(),
-      path: logical_path,
-      partition: partition.to_string(),
-      group_key: group_key_from_dir(&file.rel_dir),
-      day: file.parsed.day,
-      hour: file.parsed.hour,
-      level: file.parsed.level,
-      compressed: file.parsed.compressed,
-      bytes: metadata.len(),
-      rows: row_count,
-    });
+    dirs.insert(scan_dir_key(&file.rel_dir));
+    update_last_activity(&mut last_activity, &metadata);
+    files.push(to_scan_file(partition, &file, logical_path, &metadata, row_count));
   }
 
   files.sort_by(|a, b| a.path.cmp(&b.path));

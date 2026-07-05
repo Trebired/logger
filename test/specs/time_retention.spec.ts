@@ -1,12 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
 import { createLog, getLogsForDir } from "#ee9snkkshbj2";
 import { captureStdout, forceRecordedAt, sleep, tempDir } from "./helpers";
 
-describe("@trebired/logger", () => {
-  test("uses top-level timezone for saved file names", async () => {
+test("uses top-level timezone for saved file names", async () => {
     const instant = "2026-05-03T13:00:00.000Z";
     for (const item of [
       { timeZone: "Europe/Prague", expected: "2026-05-03-15-00-00-1-info.jsonl" },
@@ -22,7 +21,7 @@ describe("@trebired/logger", () => {
     }
   });
 
-  test("falls back to New York timezone for invalid timezone input", async () => {
+test("falls back to New York timezone for invalid timezone input", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false, timeZone: "Not/A_Timezone" });
     log.info("timezone.fallback", "saved", forceRecordedAt("2026-05-03T13:00:00.000Z"));
@@ -31,7 +30,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("uses top-level timezone and European console locale for display timestamps", () => {
+test("uses top-level timezone and European console locale for display timestamps", () => {
     const output = captureStdout(() => {
       const log = createLog({ save: false, timeZone: "Europe/Prague", console: { colors: false, locale: "cs-CZ" } });
       log.info("console.timezone", "visible message", forceRecordedAt("2026-05-03T13:00:00.000Z"));
@@ -39,7 +38,7 @@ describe("@trebired/logger", () => {
     expect(output).toContain("|03.05.2026, 15:00:00|");
   });
 
-  test("uses the same European timestamp style for other matching locales", () => {
+test("uses the same European timestamp style for other matching locales", () => {
     const output = captureStdout(() => {
       const log = createLog({ save: false, quiet: true, timeZone: "Europe/Prague", console: { colors: false, locale: "de-DE" } });
       log.info("console.timezone", "visible message", forceRecordedAt("2026-05-03T13:00:00.000Z"));
@@ -47,7 +46,7 @@ describe("@trebired/logger", () => {
     expect(output).toContain("|03.05.2026, 15:00:00|");
   });
 
-  test("uses runtime default locale when console locale is invalid", () => {
+test("uses runtime default locale when console locale is invalid", () => {
     const invalidLocaleOutput = captureStdout(() => {
       createLog({ save: false, timeZone: "UTC", console: { colors: false, locale: "not-a-locale" } })
         .info("console.locale", "visible message", forceRecordedAt("2026-05-03T13:00:00.000Z"));
@@ -59,7 +58,7 @@ describe("@trebired/logger", () => {
     expect(invalidLocaleOutput).toBe(runtimeLocaleOutput);
   });
 
-  test("runs retention cleanup for old files", async () => {
+test("runs retention cleanup for old files", async () => {
     const dir = tempDir();
     const oldFile = path.join(dir, "old", "logs", "2000-01-01-00-00-00-1-info.jsonl");
     fs.mkdirSync(path.dirname(oldFile), { recursive: true });
@@ -72,7 +71,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("does not delete old files when no retention number is configured", async () => {
+test("does not delete old files when no retention number is configured", async () => {
     const dir = tempDir();
     const oldFile = path.join(dir, "forever", "logs", "2000-01-01-00-00-00-1-info.jsonl");
     fs.mkdirSync(path.dirname(oldFile), { recursive: true });
@@ -85,7 +84,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("optionally compresses old files and queries gzip rows", async () => {
+test("optionally compresses old files and queries gzip rows", async () => {
     const dir = tempDir();
     const oldFile = path.join(dir, "compress", "logs", "2099-01-01-00-00-00-1-info.jsonl");
     fs.mkdirSync(path.dirname(oldFile), { recursive: true });
@@ -103,7 +102,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("keeps only the newest partition folders when maxPartitions is configured", async () => {
+test("keeps only the newest partition folders when maxPartitions is configured", async () => {
     const dir = tempDir();
     const alpha = createLog({ dir, partition: "alpha", console: false });
     const beta = createLog({ dir, partition: "beta", console: false });
@@ -127,4 +126,3 @@ describe("@trebired/logger", () => {
     await beta.close();
     await cleaner.close();
   });
-});

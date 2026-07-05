@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -21,8 +21,43 @@ async function manifestFromArchive(filePath: string): Promise<any> {
   return JSON.parse((entries.get(manifestPath) || Buffer.from("{}")).toString("utf8"));
 }
 
-describe("partition export", () => {
-  test("exports a single partition to tar.gz with manifest metadata and preserved bytes", async () => {
+function buildNativeExportFixture(dir: string) {
+  writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-1-info.jsonl", [{
+    recorded_at: "2026-05-17T10:00:00.000Z",
+    level: "info",
+    group: "jobs.queue",
+    message: "alpha-info",
+    origin: { source: "test", instance: null },
+    partition: "alpha",
+  }]);
+  writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-01-00-1-error.jsonl", [{
+    recorded_at: "2026-05-17T10:01:00.000Z",
+    level: "error",
+    group: "ops.audit",
+    message: "beta-error",
+    origin: { source: "test", instance: null },
+    partition: "beta",
+  }], true);
+}
+
+async function exportZipFixture(dir: string, outputName: string) {
+  return exportPartitions(dir, {
+    outputPath: path.join(dir, outputName),
+    format: "zip",
+  });
+}
+
+async function expectMatchingExports(jsPath: string, nativePath: string) {
+  const jsEntries = await readArchiveEntries(jsPath);
+  const nativeEntries = await readArchiveEntries(nativePath);
+  const jsNames = Array.from(jsEntries.keys()).sort();
+  const nativeNames = Array.from(nativeEntries.keys()).sort();
+  expect(jsNames).toEqual(nativeNames);
+  expect(JSON.parse((jsEntries.get(`${archiveRootName(jsPath)}/manifest.json`) as Buffer).toString("utf8")))
+    .toEqual(JSON.parse((nativeEntries.get(`${archiveRootName(nativePath)}/manifest.json`) as Buffer).toString("utf8")));
+}
+
+test("exports a single partition to tar.gz with manifest metadata and preserved bytes", async () => {
     const dir = tempDir("export_test_");
     await createPartition(dir, "alpha");
     await createPartition(dir, "beta");
@@ -73,7 +108,7 @@ describe("partition export", () => {
     expect(entries.get(`${root}/logs/alpha/jobs/queue/2026-05-17-11-00-00-1-warn.jsonl.gz`)).toEqual(sourceGzip);
   });
 
-  test("exports multiple partitions to zip with raw files for each selected partition", async () => {
+test("exports multiple partitions to zip with raw files for each selected partition", async () => {
     const dir = tempDir("export_test_");
     await createPartition(dir, "alpha");
     await createPartition(dir, "beta");
@@ -110,7 +145,7 @@ describe("partition export", () => {
     expect(entries.has(`${root}/logs/beta/ops/audit/2026-05-17-10-01-00-1-error.jsonl`)).toBe(true);
   });
 
-  test("logger instance export flushes pending writes and can export all partitions from the logger dir", async () => {
+test("logger instance export flushes pending writes and can export all partitions from the logger dir", async () => {
     const dir = tempDir("export_test_");
     const alpha = createLog({ dir, partition: "alpha", console: false, quiet: true });
     const beta = createLog({ dir, partition: "beta", console: false, quiet: true });
@@ -137,7 +172,7 @@ describe("partition export", () => {
     await beta.close();
   });
 
-  test("rejects output extension mismatches and existing targets without overwrite", async () => {
+test("rejects output extension mismatches and existing targets without overwrite", async () => {
     const dir = tempDir("export_test_");
     await createPartition(dir, "alpha");
     writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-1-info.jsonl", [{
@@ -162,7 +197,7 @@ describe("partition export", () => {
     })).rejects.toThrow("export-output-already-exists");
   });
 
-  test("js and native backends emit the same manifest and archive member paths when native is available", async () => {
+test("js and native backends emit the same manifest and archive member paths when native is available", async () => {
     if (typeof Bun !== "undefined") return;
     if (!canBuildNativeAddon()) return;
 
@@ -174,47 +209,18 @@ describe("partition export", () => {
     });
     if (built.status !== 0) return;
 
-    const dir = tempDir("export_test_");
-    await createPartition(dir, "alpha");
-    await createPartition(dir, "beta");
-    writePartitionLogFile(dir, "alpha", "jobs.queue", "2026-05-17-10-00-00-1-info.jsonl", [{
-      recorded_at: "2026-05-17T10:00:00.000Z",
-      level: "info",
-      group: "jobs.queue",
-      message: "alpha-info",
-      origin: { source: "test", instance: null },
-      partition: "alpha",
-    }]);
-    writePartitionLogFile(dir, "beta", "ops.audit", "2026-05-17-10-01-00-1-error.jsonl", [{
-      recorded_at: "2026-05-17T10:01:00.000Z",
-      level: "error",
-      group: "ops.audit",
-      message: "beta-error",
-      origin: { source: "test", instance: null },
-      partition: "beta",
-    }], true);
+  const dir = tempDir("export_test_");
+  await createPartition(dir, "alpha");
+  await createPartition(dir, "beta");
+  buildNativeExportFixture(dir);
 
-    try {
-      setStorageBackendPreferenceForTests("js");
-      const jsResult = await exportPartitions(dir, {
-        outputPath: path.join(dir, "js-export.zip"),
-        format: "zip",
-      });
-      setStorageBackendPreferenceForTests("native");
-      const nativeResult = await exportPartitions(dir, {
-        outputPath: path.join(dir, "native-export.zip"),
-        format: "zip",
-      });
-
-      const jsEntries = await readArchiveEntries(jsResult.path);
-      const nativeEntries = await readArchiveEntries(nativeResult.path);
-      const jsNames = Array.from(jsEntries.keys()).sort();
-      const nativeNames = Array.from(nativeEntries.keys()).sort();
-      expect(jsNames).toEqual(nativeNames);
-      expect(JSON.parse((jsEntries.get(`${archiveRootName(jsResult.path)}/manifest.json`) as Buffer).toString("utf8")))
-        .toEqual(JSON.parse((nativeEntries.get(`${archiveRootName(nativeResult.path)}/manifest.json`) as Buffer).toString("utf8")));
-    } finally {
-      setStorageBackendPreferenceForTests(null);
-    }
+  try {
+    setStorageBackendPreferenceForTests("js");
+    const jsResult = await exportZipFixture(dir, "js-export.zip");
+    setStorageBackendPreferenceForTests("native");
+    const nativeResult = await exportZipFixture(dir, "native-export.zip");
+    await expectMatchingExports(jsResult.path, nativeResult.path);
+  } finally {
+    setStorageBackendPreferenceForTests(null);
+  }
   });
-});

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -17,8 +17,7 @@ function withWorkingDir<T>(nextDir: string, fn: () => T): T {
   }
 }
 
-describe("console visibility config", () => {
-  test("hides configured groups from console while still saving and streaming logs", async () => {
+test("hides configured groups from console while still saving and streaming logs", async () => {
     const projectRoot = tempDir("project_");
     const nestedDir = path.join(projectRoot, "apps", "web");
     const logDir = tempDir("logs_");
@@ -60,7 +59,7 @@ describe("console visibility config", () => {
     }
   });
 
-  test("warns and ignores invalid tb.logger.json files", async () => {
+test("warns and ignores invalid tb.logger.json files", async () => {
     const projectRoot = tempDir("project_");
     const nestedDir = path.join(projectRoot, "workspace");
     fs.mkdirSync(nestedDir, { recursive: true });
@@ -86,7 +85,7 @@ describe("console visibility config", () => {
     await log?.close();
   });
 
-  test("keeps package startup notices visible even when logger.initialize is hidden", async () => {
+test("keeps package startup notices visible even when logger.initialize is hidden", async () => {
     const projectRoot = tempDir("project_");
     const nestedDir = path.join(projectRoot, "workspace");
     fs.mkdirSync(nestedDir, { recursive: true });
@@ -110,4 +109,3 @@ describe("console visibility config", () => {
     expect(output).not.toContain("user hidden");
     await log?.close();
   });
-});

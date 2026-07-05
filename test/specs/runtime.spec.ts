@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -6,8 +6,7 @@ import { createLog, getLogsForDir } from "#ee9snkkshbj2";
 import { activeStorageBackendNotice } from "#1qrb8ldbr5aj";
 import { captureNextLog, captureStderr, captureStdout, forceRecordedAt, listFilesRecursive, tempDir } from "./helpers";
 
-describe("@trebired/logger", () => {
-  test("uses the configured success level for the package greeting", () => {
+test("uses the configured success level for the package greeting", () => {
     const output = captureStdout(() => {
       createLog({
         save: false,
@@ -22,7 +21,7 @@ describe("@trebired/logger", () => {
     expect(output).toContain("\x1b[38;2;18;52;86mYAY\x1b[0m");
   });
 
-  test("logs without saving when save is false", async () => {
+test("logs without saving when save is false", async () => {
     const event = captureNextLog((log) => {
       log.info("worker.step", "complete", {
         attempt: 1,
@@ -38,15 +37,15 @@ describe("@trebired/logger", () => {
     expect(event.context).toEqual({ runtime: "server", dir: "" });
   });
 
-  test("uses default as the implicit group", () => {
+test("uses default as the implicit group", () => {
     expect(captureNextLog((log) => log.info("implicit group message")).entry.group).toBe("default");
   });
 
-  test("ignores any defaultGroup input and still uses default as the implicit group", () => {
+test("ignores any defaultGroup input and still uses default as the implicit group", () => {
     expect(captureNextLog((log) => log.info("implicit group message"), { defaultGroup: "system" } as any).entry.group).toBe("default");
   });
 
-  test("defaults save to true when dir is provided and stores by group directory", async () => {
+test("defaults save to true when dir is provided and stores by group directory", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false });
 
@@ -60,7 +59,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("supports async queue writes and flush", async () => {
+test("supports async queue writes and flush", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false });
     log.info("queue.test", "first");
@@ -70,7 +69,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("stores partitioned logs in their own folder and reports scoped totals", async () => {
+test("stores partitioned logs in their own folder and reports scoped totals", async () => {
     const dir = tempDir();
     const blue = createLog({ dir, partition: "blue-2026", console: false });
     const green = createLog({ dir, partition: "green-2026", console: false });
@@ -88,7 +87,7 @@ describe("@trebired/logger", () => {
     await green.close();
   });
 
-  test("supports sync write mode", async () => {
+test("supports sync write mode", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false, write: { mode: "sync" } });
     log.info("sync.test", "written");
@@ -96,7 +95,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("can hide optional console fields while always showing level and message", () => {
+test("can hide optional console fields while always showing level and message", () => {
     const output = captureStdout(() => {
       const log = createLog({ save: false, console: { colors: false, timestamp: false, group: false, metadata: false } });
       log.info("console.test", "visible message", { hidden: true });
@@ -106,7 +105,7 @@ describe("@trebired/logger", () => {
     expect(output).not.toContain("hidden");
   });
 
-  test("keeps pretty error formatting while leaving stack frames raw for terminals and IDEs", () => {
+test("keeps pretty error formatting while leaving stack frames raw for terminals and IDEs", () => {
     const output = captureStderr(() => {
       const log = createLog({ save: false, quiet: true, console: { colors: false, timestamp: false } });
       const error = new Error("boom");
@@ -125,7 +124,7 @@ describe("@trebired/logger", () => {
     expect(output).not.toContain('"stack":');
   });
 
-  test("tracks queue overflow with drop-newest", async () => {
+test("tracks queue overflow with drop-newest", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false, write: { mode: "async", maxQueue: 1, overflow: "drop-newest" } });
     log.info("overflow.test", "kept");
@@ -135,7 +134,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("rolls files by max size using sequence suffixes", async () => {
+test("rolls files by max size using sequence suffixes", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false, retention: { maxFileSize: 80 } });
     log.info("roll.test", "first-long-message", { data: "x".repeat(100) });
@@ -147,7 +146,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("supports redaction and serializers", async () => {
+test("supports redaction and serializers", async () => {
     const dir = tempDir();
     const log = createLog({
       dir,
@@ -166,7 +165,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("sampling suppresses entries", async () => {
+test("sampling suppresses entries", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false, sample: 0 });
     log.info("sample.test", "hidden");
@@ -175,7 +174,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("supports custom weighted levels as methods", async () => {
+test("supports custom weighted levels as methods", async () => {
     const dir = tempDir();
     const log = createLog({
       dir,
@@ -190,4 +189,3 @@ describe("@trebired/logger", () => {
     expect((await log.getAllLogs({ level: "all", groupKey: "all", limit: 10 })).logs.map((row) => row.level).sort()).toEqual(["audit", "panic"]);
     await log.close();
   });
-});

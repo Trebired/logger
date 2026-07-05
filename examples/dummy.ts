@@ -45,11 +45,8 @@ function makeRequest(tick: number): DemoRequest {
   };
 }
 
-async function runDummySystem(): Promise<void> {
-  assertSupportedPlatform();
-  resetDemoLogs();
-
-  const log = createLog({
+function createDemoLog() {
+  return createLog({
     dir: rootDir,
     console: {
       colors: true,
@@ -90,22 +87,19 @@ async function runDummySystem(): Promise<void> {
       attach: true,
     },
   });
+}
 
-  const streamHandler = (entry: any, context: any) => {
+function createStreamHandler() {
+  return (entry: any, context: any) => {
     if (entry.level === "audit" || entry.level === "error") {
       process.stdout.write(`[stream:${entry.level}] ${entry.group} -> ${entry.message} (${context.dir})\n`);
     }
   };
-  logStream.on("log", streamHandler);
+}
 
-  let tick = 0;
-  let interval: ReturnType<typeof setInterval> | null = null;
+function createQuerySnapshotLogger(log: ReturnType<typeof createLog>) {
   let querying = false;
-  let stopping = false;
-
-  const requestLogger = log.requestLogger();
-
-  async function logQuerySnapshot(): Promise<void> {
+  return async () => {
     if (querying) return;
     querying = true;
     try {
@@ -124,65 +118,105 @@ async function runDummySystem(): Promise<void> {
     } finally {
       querying = false;
     }
-  }
+  };
+}
 
-  function logRequest(): void {
-    const req = makeRequest(tick);
-    const res: DemoResponse = { locals: { currentSubdomain: "demo" } };
-    requestLogger(req, res, () => {
-      req.log?.info("request accepted", { route: "/api/widgets" });
-      if (tick % 6 === 0) req.log?.warn("request was slow", { durationMs: 80 + tick, token: "secret-demo-token" });
+function logRequest(requestLogger: ReturnType<ReturnType<typeof createLog>["requestLogger"]>, tick: number) {
+  const req = makeRequest(tick);
+  const res: DemoResponse = { locals: { currentSubdomain: "demo" } };
+  requestLogger(req, res, () => {
+    req.log?.info("request accepted", { route: "/api/widgets" });
+    if (tick % 6 === 0) req.log?.warn("request was slow", { durationMs: 80 + tick, token: "secret-demo-token" });
+  });
+}
+
+function logTick(
+  log: ReturnType<typeof createLog>,
+  tick: number,
+  requestLogger: ReturnType<ReturnType<typeof createLog>["requestLogger"]>,
+  logQuerySnapshot: () => Promise<void>,
+) {
+  log.info("app.heartbeat", "dummy system alive", { tick, pid: process.pid, logDir: rootDir });
+
+  const worker = log.withScope("worker", "jobs.demo", tick % 3);
+  worker.info("job started", { jobId: `job_demo_${tick}`, attempt: 1 });
+  worker.success("job finished", { jobId: `job_demo_${tick}`, durationMs: 20 + tick });
+
+  if (tick % 2 === 0) {
+    log.audit("billing.invoice", "invoice exported", {
+      invoiceId: `inv_demo_${tick}`,
+      payment: { cardLast4: "4242" },
+      user: { ssn: "123-45-6789" },
     });
   }
 
-  function logTick(): void {
-    tick += 1;
-    log.info("app.heartbeat", "dummy system alive", { tick, pid: process.pid, logDir: rootDir });
+  if (tick % 3 === 0) logRequest(requestLogger, tick);
+  if (tick % 5 === 0) log.warn("cache.refresh", "refresh took longer than expected", { durationMs: 120 + tick });
+  if (tick % 7 === 0) log.logError(new Error("demo database timeout"), { group: "db.query", durationMs: 300 + tick });
+  if (tick % 4 === 0) void logQuerySnapshot();
+}
 
-    const worker = log.withScope("worker", "jobs.demo", tick % 3);
-    worker.info("job started", { jobId: `job_demo_${tick}`, attempt: 1 });
-    worker.success("job finished", { jobId: `job_demo_${tick}`, durationMs: 20 + tick });
+async function stopDemoSystem(
+  log: ReturnType<typeof createLog>,
+  signal: string,
+  tick: number,
+  interval: ReturnType<typeof setInterval> | null,
+  streamHandler: ReturnType<typeof createStreamHandler>,
+) {
+  if (interval) clearInterval(interval);
+  log.success("app.shutdown", "dummy system stopping", { signal, ticks: tick });
+  await log.flush();
+  process.stdout.write(`${JSON.stringify(log.getStats(), null, 2)}\n`);
+  process.stdout.write(`logs written under: ${log.getDir()}\n`);
+  logStream.off("log", streamHandler);
+  await log.close();
+}
 
-    if (tick % 2 === 0) {
-      log.audit("billing.invoice", "invoice exported", {
-        invoiceId: `inv_demo_${tick}`,
-        payment: { cardLast4: "4242" },
-        user: { ssn: "123-45-6789" },
-      });
-    }
-
-    if (tick % 3 === 0) logRequest();
-    if (tick % 5 === 0) log.warn("cache.refresh", "refresh took longer than expected", { durationMs: 120 + tick });
-    if (tick % 7 === 0) log.logError(new Error("demo database timeout"), { group: "db.query", durationMs: 300 + tick });
-    if (tick % 4 === 0) void logQuerySnapshot();
-  }
-
-  async function stop(signal: string): Promise<void> {
-    if (stopping) return;
-    stopping = true;
-    if (interval) clearInterval(interval);
-
-    log.success("app.shutdown", "dummy system stopping", { signal, ticks: tick });
-    await log.flush();
-    process.stdout.write(`${JSON.stringify(log.getStats(), null, 2)}\n`);
-    process.stdout.write(`logs written under: ${log.getDir()}\n`);
-    logStream.off("log", streamHandler);
-    await log.close();
-  }
-
+function printStartup(log: ReturnType<typeof createLog>) {
   process.stdout.write(`dummy logger writing to: ${rootDir}\n`);
   process.stdout.write("press Ctrl+C to stop\n");
   log.success("app.boot", "dummy system started", { logDir: rootDir });
-  logTick();
-  interval = setInterval(logTick, 1000);
+}
 
+async function waitForStop(
+  log: ReturnType<typeof createLog>,
+  getTick: () => number,
+  interval: ReturnType<typeof setInterval> | null,
+  streamHandler: ReturnType<typeof createStreamHandler>,
+) {
+  let stopping = false;
   await new Promise<void>((resolve) => {
     const done = (signal: string) => {
-      void stop(signal).finally(resolve);
+      if (stopping) return;
+      stopping = true;
+      void stopDemoSystem(log, signal, getTick(), interval, streamHandler).finally(resolve);
     };
     process.once("SIGINT", () => done("SIGINT"));
     process.once("SIGTERM", () => done("SIGTERM"));
   });
+}
+
+async function runDummySystem(): Promise<void> {
+  assertSupportedPlatform();
+  resetDemoLogs();
+
+  const log = createDemoLog();
+  const streamHandler = createStreamHandler();
+  const requestLogger = log.requestLogger();
+  const logQuerySnapshot = createQuerySnapshotLogger(log);
+  let tick = 0;
+
+  logStream.on("log", streamHandler);
+  printStartup(log);
+  tick += 1;
+  logTick(log, tick, requestLogger, logQuerySnapshot);
+
+  const interval = setInterval(() => {
+    tick += 1;
+    logTick(log, tick, requestLogger, logQuerySnapshot);
+  }, 1000);
+
+  await waitForStop(log, () => tick, interval, streamHandler);
 }
 
 runDummySystem().catch((error) => {

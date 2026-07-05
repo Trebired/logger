@@ -25,6 +25,14 @@ fn empty_output() -> ConsoleVisibilityConfigOutput {
   }
 }
 
+fn output_with_warning(file_path: &Path, warning: String) -> ConsoleVisibilityConfigOutput {
+  ConsoleVisibilityConfigOutput {
+    source_path: Some(file_path.display().to_string()),
+    hide_console_groups: Vec::new(),
+    warning: Some(warning),
+  }
+}
+
 fn warning_for_invalid_shape(file_path: &Path) -> String {
   format!(
     "[trebired.logger] invalid {} at {}: expected an object with a hideConsoleGroups string array",
@@ -86,51 +94,17 @@ fn normalize_groups(values: &[Value]) -> Vec<String> {
   out
 }
 
-fn parse_config_file(file_path: &Path) -> ConsoleVisibilityConfigOutput {
-  let text = match fs::read_to_string(file_path) {
-    Ok(value) => value,
-    Err(error) => {
-      return ConsoleVisibilityConfigOutput {
-        source_path: Some(file_path.display().to_string()),
-        hide_console_groups: Vec::new(),
-        warning: Some(warning_for_read_error(file_path, error.to_string())),
-      };
-    }
-  };
-
-  let parsed: Value = match serde_json::from_str(&text) {
-    Ok(value) => value,
-    Err(error) => {
-      return ConsoleVisibilityConfigOutput {
-        source_path: Some(file_path.display().to_string()),
-        hide_console_groups: Vec::new(),
-        warning: Some(warning_for_parse_error(file_path, error.to_string())),
-      };
-    }
-  };
-
+fn parse_config_object(file_path: &Path, parsed: Value) -> ConsoleVisibilityConfigOutput {
   let Some(object) = parsed.as_object() else {
-    return ConsoleVisibilityConfigOutput {
-      source_path: Some(file_path.display().to_string()),
-      hide_console_groups: Vec::new(),
-      warning: Some(warning_for_invalid_shape(file_path)),
-    };
+    return output_with_warning(file_path, warning_for_invalid_shape(file_path));
   };
 
   let Some(groups) = object.get("hideConsoleGroups").and_then(|value| value.as_array()) else {
-    return ConsoleVisibilityConfigOutput {
-      source_path: Some(file_path.display().to_string()),
-      hide_console_groups: Vec::new(),
-      warning: Some(warning_for_invalid_shape(file_path)),
-    };
+    return output_with_warning(file_path, warning_for_invalid_shape(file_path));
   };
 
   if groups.iter().any(|value| !value.is_string()) {
-    return ConsoleVisibilityConfigOutput {
-      source_path: Some(file_path.display().to_string()),
-      hide_console_groups: Vec::new(),
-      warning: Some(warning_for_invalid_shape(file_path)),
-    };
+    return output_with_warning(file_path, warning_for_invalid_shape(file_path));
   }
 
   ConsoleVisibilityConfigOutput {
@@ -138,6 +112,24 @@ fn parse_config_file(file_path: &Path) -> ConsoleVisibilityConfigOutput {
     hide_console_groups: normalize_groups(groups),
     warning: None,
   }
+}
+
+fn parse_config_file(file_path: &Path) -> ConsoleVisibilityConfigOutput {
+  let text = match fs::read_to_string(file_path) {
+    Ok(value) => value,
+    Err(error) => {
+      return output_with_warning(file_path, warning_for_read_error(file_path, error.to_string()));
+    }
+  };
+
+  let parsed: Value = match serde_json::from_str(&text) {
+    Ok(value) => value,
+    Err(error) => {
+      return output_with_warning(file_path, warning_for_parse_error(file_path, error.to_string()));
+    }
+  };
+
+  parse_config_object(file_path, parsed)
 }
 
 pub fn resolve_console_visibility_config_json(start_dir: String) -> Result<String> {

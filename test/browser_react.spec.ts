@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 
@@ -21,8 +21,7 @@ function createMemoryTransport() {
   };
 }
 
-describe("browser react adapter", () => {
-  test("provides the supplied logger through LogProvider and useLog", async () => {
+test("provides the supplied logger through LogProvider and useLog", async () => {
     const memory = createMemoryTransport();
     const log = createBrowserLog({
       console: false,
@@ -62,7 +61,7 @@ describe("browser react adapter", () => {
     await log.close();
   });
 
-  test("useLog throws without a provider", async () => {
+test("useLog throws without a provider", async () => {
     function MissingProvider() {
       useLog();
       return null;
@@ -89,7 +88,7 @@ describe("browser react adapter", () => {
     expect((caught as Error).message).toContain("missing-log-provider");
   });
 
-  test("LogErrorBoundary logs render errors and renders fallback", async () => {
+test("LogErrorBoundary logs render errors and renders fallback", async () => {
     const memory = createMemoryTransport();
     const log = createBrowserLog({
       console: false,
@@ -137,4 +136,3 @@ describe("browser react adapter", () => {
       await log.close();
     }
   });
-});

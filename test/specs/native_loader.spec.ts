@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -12,8 +12,7 @@ import {
 } from "#ho6lw68jfenw";
 import { tempDir } from "./helpers";
 
-describe("native addon loader", () => {
-  test("derives a platform-specific binary name for supported runtimes", () => {
+test("derives a platform-specific binary name for supported runtimes", () => {
     const name = nativeBinaryBasenameForCurrentPlatform();
     if (["linux", "darwin"].includes(process.platform) && ["x64", "arm64"].includes(process.arch)) {
       expect(typeof name).toBe("string");
@@ -23,7 +22,7 @@ describe("native addon loader", () => {
     expect(name).toBe(null);
   });
 
-  test("prioritizes platform-specific native candidates before generic fallback paths", () => {
+test("prioritizes platform-specific native candidates before generic fallback paths", () => {
     const paths = nativeAddonCandidatePathsForCurrentPlatform();
     if (!paths.length) return;
 
@@ -32,7 +31,7 @@ describe("native addon loader", () => {
     expect(paths.some((item) => item.endsWith("native/index.node"))).toBe(true);
   });
 
-  test("disables native loading only when TB_LOGGER_DISABLE_NATIVE=1", () => {
+test("disables native loading only when TB_LOGGER_DISABLE_NATIVE=1", () => {
     const previousDisable = process.env.TB_LOGGER_DISABLE_NATIVE;
 
     try {
@@ -46,7 +45,7 @@ describe("native addon loader", () => {
     }
   });
 
-  test("keeps native loading behavior unchanged when the disable env is absent", () => {
+test("keeps native loading behavior unchanged when the disable env is absent", () => {
     const previousDisable = process.env.TB_LOGGER_DISABLE_NATIVE;
 
     try {
@@ -67,7 +66,7 @@ describe("native addon loader", () => {
     }
   });
 
-  test("matches JS console visibility config fallback when native loading is disabled", () => {
+test("matches JS console visibility config fallback when native loading is disabled", () => {
     const projectRoot = tempDir("project_");
     const nestedDir = path.join(projectRoot, "apps", "api");
     fs.mkdirSync(nestedDir, { recursive: true });
@@ -92,4 +91,3 @@ describe("native addon loader", () => {
       resetNativeBindingForTests();
     }
   });
-});

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 
 import { createBrowserLog } from "#gvcc9893bkqo";
 import { logStream } from "#ee9snkkshbj2";
@@ -48,8 +48,7 @@ afterEach(() => {
   }
 });
 
-describe("browser runtime", () => {
-  test("defaults to browser source and console transport formatting", async () => {
+test("defaults to browser source and console transport formatting", async () => {
     const originalInfo = console.info;
     const calls: unknown[][] = [];
 
@@ -69,7 +68,7 @@ describe("browser runtime", () => {
     expect(String(calls[0][0])).not.toContain("\x1b");
   });
 
-  test("applies default group, metadata, serializers, redaction, and sampling", async () => {
+test("applies default group, metadata, serializers, redaction, and sampling", async () => {
     const memory = createMemoryTransport();
     const log = createBrowserLog({
       console: false,
@@ -108,7 +107,7 @@ describe("browser runtime", () => {
     await log.close();
   });
 
-  test("supports dynamic levels, logError, and browser stream context", async () => {
+test("supports dynamic levels, logError, and browser stream context", async () => {
     const memory = createMemoryTransport();
     const events: any[] = [];
     const handler = (entry: any, context: any) => events.push({ entry, context });
@@ -138,7 +137,7 @@ describe("browser runtime", () => {
     await log.close();
   });
 
-  test("supports custom transport availability, batching, flush, and close", async () => {
+test("supports custom transport availability, batching, flush, and close", async () => {
     const memory = createMemoryTransport();
     const unavailable = {
       name: "skip-me",
@@ -173,4 +172,3 @@ describe("browser runtime", () => {
     expect(memory.closeCount).toBe(1);
     expect(log.getStats().closed).toBe(true);
   });
-});

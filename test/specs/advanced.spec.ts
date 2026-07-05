@@ -1,11 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import path from "node:path";
 
 import { createLog, getLogsForDir } from "#ee9snkkshbj2";
 import { captureStdout, tempDir } from "./helpers";
 
-describe("@trebired/logger", () => {
-  test("lets custom level configs override built-ins", async () => {
+test("lets custom level configs override built-ins", async () => {
     const dir = tempDir();
     const log = createLog({
       dir,
@@ -25,11 +24,11 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("rejects invalid custom level names", () => {
+test("rejects invalid custom level names", () => {
     expect(() => createLog({ levels: { "Bad Level": { weight: 99 } } })).toThrow("invalid-log-level-name");
   });
 
-  test("supports group, scope, getDir, and setDir", async () => {
+test("supports group, scope, getDir, and setDir", async () => {
     const firstDir = tempDir();
     const secondDir = tempDir();
     const log = createLog({ dir: firstDir, console: false, source: "service" });
@@ -44,7 +43,7 @@ describe("@trebired/logger", () => {
     await log.close();
   });
 
-  test("provides configurable request logger middleware", () => {
+test("provides configurable request logger middleware", () => {
     const log = createLog({ console: false, save: false, source: "platform", request: { group: "platform.request", idHeader: "x-request-id" } });
     const req: any = { hostname: "example.test", method: "GET", url: "/x", headers: { "x-request-id": "req-1" } };
     const res: any = { locals: { currentSubdomain: "main" } };
@@ -54,7 +53,7 @@ describe("@trebired/logger", () => {
     expect(typeof req.log.info).toBe("function");
   });
 
-  test("close drains and prevents further writes", async () => {
+test("close drains and prevents further writes", async () => {
     const dir = tempDir();
     const log = createLog({ dir, console: false });
     log.info("close.test", "before");
@@ -62,4 +61,3 @@ describe("@trebired/logger", () => {
     log.info("close.test", "after");
     expect((await getLogsForDir(dir, { groupKey: "close.test", limit: 10 })).logs.map((row) => row.message)).toEqual(["before"]);
   });
-});

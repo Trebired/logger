@@ -14,6 +14,9 @@
       "#08atyj8ixt0i": [
         "./src/storage/partitions/internal.ts"
       ],
+      "#0aonjdjhk7s3": [
+        "./test/specs/helpers.ts"
+      ],
       "#0c4ri7nq63zi": [
         "./src/utils/datetime.ts"
       ],
@@ -26,8 +29,17 @@
       "#2qi0ju8pcrs2": [
         "./src/backend/utils/object.ts"
       ],
+      "#3nl8z3ynuwua": [
+        "./test/specs/advanced.spec.ts"
+      ],
       "#4gn2x99lawde": [
         "./src/core/create_log.ts"
+      ],
+      "#4itf2q9dyl7i": [
+        "./test/specs/console_visibility.spec.ts"
+      ],
+      "#4os4c1y03lna": [
+        "./test/specs/runtime.spec.ts"
       ],
       "#4riod1305goy": [
         "./src/types/server.ts"
@@ -49,6 +61,9 @@
       ],
       "#84wm1krbmyck": [
         "./src/storage/backend/types.ts"
+      ],
+      "#8deeimujtavt": [
+        "./examples/dummy.ts"
       ],
       "#8ky9lhu2jb5d": [
         "./src/storage/query/rows.ts"
@@ -74,17 +89,26 @@
       "#b5whz9hbbjxl": [
         "./src/storage/partitions/transforms.ts"
       ],
+      "#be192bn17ruf": [
+        "./test/specs/native_loader.spec.ts"
+      ],
       "#cpmz8lycnjch": [
         "./src/storage/partitions/records.ts"
       ],
       "#cuh2x5snaefd": [
         "./src/constants.ts"
       ],
+      "#dq1a0cu612ll": [
+        "./test/browser_react.spec.ts"
+      ],
       "#e1h3ay0cyhgl": [
         "./src/types/index.ts"
       ],
       "#ee9snkkshbj2": [
         "./src/index.ts"
+      ],
+      "#foko950rohk7": [
+        "./test/specs/time_retention.spec.ts"
       ],
       "#g4tupkl7rvk4": [
         "./src/levels/index.ts"
@@ -100,6 +124,9 @@
       ],
       "#ho6lw68jfenw": [
         "./src/storage/backend/native.ts"
+      ],
+      "#huunp18l4fkz": [
+        "./test/browser.spec.ts"
       ],
       "#iaj6xqns4o0s": [
         "./src/stream/index.ts"
@@ -149,6 +176,9 @@
       "#r7zemzf5h80g": [
         "./tb.code-discipline.ts"
       ],
+      "#t9qe2730tg74": [
+        "./test/specs/partition/ops.spec.ts"
+      ],
       "#tvzweoxg5ahk": [
         "./src/types.ts"
       ],
@@ -173,6 +203,9 @@
       "#w1cc3mztq3ng": [
         "./src/storage/write.ts"
       ],
+      "#w5d7lm26abgj": [
+        "./test/specs/export.spec.ts"
+      ],
       "#x2qkmwodgsce": [
         "./src/storage/names.ts"
       ],
@@ -181,6 +214,9 @@
       ],
       "#xtaoa1f0kt5w": [
         "./src/core/create_log/finalize.ts"
+      ],
+      "#y870oqdqnzum": [
+        "./test/specs/partition/core.spec.ts"
       ],
       "#ycytzc4gr3f7": [
         "./src/utils/values.ts"
