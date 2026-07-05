@@ -76,7 +76,13 @@ fn update_last_activity(last_activity: &mut Option<SystemTime>, metadata: &fs::M
   }
 }
 
-fn to_scan_file(partition: &str, file: &crate::log_files::PartitionFile, logical_path: String, metadata: &fs::Metadata, row_count: u64) -> ScanFile {
+fn to_scan_file(
+  partition: &str,
+  file: &crate::log_files::PartitionFileEntry,
+  logical_path: String,
+  metadata: &fs::Metadata,
+  row_count: u64,
+) -> ScanFile {
   ScanFile {
     abs_path: file.abs_path.to_string_lossy().to_string(),
     path: logical_path,
