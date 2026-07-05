@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { result } from "@trebired/result";
 
 import type { PartitionAggregateTotals, PartitionInfo, PartitionListResult, PartitionTotals } from "#tvzweoxg5ahk";
 import { bytesToMegabytes } from "#unnkpg8o07bp";
@@ -80,6 +81,16 @@ async function partitionInfoFromRecord(record: PartitionRecord): Promise<Partiti
     updated_at: record.marker.updated_at,
     last_activity_at: summary?.lastActivityAt || null,
     total: partitionTotalsFromSummary(summary),
+    result: result.ok("Partition info resolved.", {
+      data: {
+        name: record.name,
+        temporary: record.marker.temporary,
+      },
+      details: {
+        bytes: summary?.total?.bytes || 0,
+        logs: summary?.total?.logs || 0,
+      },
+    }),
   };
 }
 

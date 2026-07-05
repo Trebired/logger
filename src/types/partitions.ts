@@ -1,3 +1,5 @@
+import type { ResultLike } from "@trebired/result";
+
 type PartitionSanitizer = (value: string) => string;
 
 type PartitionTimeValue = string | number | Date;
@@ -49,6 +51,10 @@ type FinalizePartitionResult = {
   targetExisted: boolean;
   temporaryBefore: boolean;
   temporaryAfter: false;
+  result?: ResultLike<{
+    action: FinalizePartitionAction;
+    partition: string;
+  }>;
 };
 
 type PartitionTotals = {
@@ -67,6 +73,13 @@ type PartitionInfo = {
   updated_at: string;
   last_activity_at: string | null;
   total: PartitionTotals;
+  result?: ResultLike<{
+    name: string;
+    temporary: boolean;
+  }, {
+    bytes: number;
+    logs: number;
+  }>;
 };
 
 type PartitionAggregateTotals = PartitionTotals & {

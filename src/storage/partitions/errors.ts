@@ -1,3 +1,5 @@
+import { result, type ResultLike } from "@trebired/result";
+
 type PartitionErrorCode =
   | "missing-log-dir"
   | "partition-already-exists"
@@ -9,6 +11,11 @@ type PartitionError = Error & {
   partition?: string;
   from?: string;
   to?: string;
+  result?: ResultLike<null, {
+    from?: string;
+    partition?: string;
+    to?: string;
+  }>;
 };
 
 function createPartitionError(
@@ -32,6 +39,9 @@ function createPartitionError(
   if (details.partition) error.partition = details.partition;
   if (details.from) error.from = details.from;
   if (details.to) error.to = details.to;
+  error.result = code === "partition-already-exists"
+    ? result.conflict(code, message, { details })
+    : result.error(400, code, message, { details });
   return error;
 }
 
