@@ -85,11 +85,11 @@ test("warns and ignores invalid tb.logger.json files", async () => {
     await log?.close();
   });
 
-test("keeps package startup notices visible even when logger.initialize is hidden", async () => {
+test("keeps package startup notices visible even when trebired.logger.initialize is hidden", async () => {
     const projectRoot = tempDir("project_");
     const nestedDir = path.join(projectRoot, "workspace");
     fs.mkdirSync(nestedDir, { recursive: true });
-    fs.writeFileSync(path.join(projectRoot, "tb.logger.json"), `${JSON.stringify({ hideConsoleGroups: ["logger.initialize"] }, null, 2)}\n`, "utf8");
+    fs.writeFileSync(path.join(projectRoot, "tb.logger.json"), `${JSON.stringify({ hideConsoleGroups: ["trebired.logger.initialize"] }, null, 2)}\n`, "utf8");
 
     resetCreateLogStateForTests();
 
@@ -101,7 +101,7 @@ test("keeps package startup notices visible even when logger.initialize is hidde
           console: { colors: false, timestamp: false, metadata: false },
         });
         log = createdLog;
-        createdLog.info("logger.initialize", "user hidden");
+        createdLog.info("trebired.logger.initialize", "user hidden");
       }));
 
     expect(output).toContain("@trebired/logger initialized");

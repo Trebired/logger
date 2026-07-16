@@ -17,7 +17,7 @@ test("uses the configured success level for the package greeting", () => {
 
     expect(output).toContain("@trebired/logger initialized");
     expect(output).toContain(activeStorageBackendNotice());
-    expect(output).toContain("logger.initialize");
+    expect(output).toContain("trebired.logger.initialize");
     expect(output).toContain("\x1b[38;2;18;52;86mYAY\x1b[0m");
   });
 

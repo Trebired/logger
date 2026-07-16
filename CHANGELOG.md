@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.6
+
+- Moved package-owned logger startup notices under the `trebired.logger.initialize` group root while leaving caller-supplied log groups unchanged.
+
 ## 2.5.5
 
 - Added `@trebired/result` as the internal outcome surface for touched logger backend operations so rotation, finalization, and related flows no longer maintain duplicate package-local result types.
