@@ -1,3 +1,11 @@
+import {
+  buildPackageLogGroup,
+  PACKAGE_NAME,
+} from "#qz1iteme01ng";
+
+const LOGGER_LOG_GROUP = buildPackageLogGroup();
+const LOGGER_PACKAGE_NAME = PACKAGE_NAME;
+
 let nodeRuntimeNoticeShown = false;
 
 function isBunRuntime(): boolean {
@@ -28,10 +36,14 @@ function writePackageNotice(message: string): void {
 function maybeShowNodeRuntimeNotice(quiet?: boolean): void {
   if (quiet === true || nodeRuntimeNoticeShown || !isNodeRuntime()) return;
   nodeRuntimeNoticeShown = true;
+  const message = [
+    `[${LOGGER_LOG_GROUP}] Running on Node.js.`,
+    `${LOGGER_PACKAGE_NAME} is compatible with Node.js and Bun, but Bun is recommended for best startup and file I/O performance.`,
+    "Bun is the future-facing JavaScript runtime this package is optimized for.",
+    "Pass quiet: true to hide package notices.",
+  ].join(" ");
 
-  writePackageNotice(
-    "[package.logger] Running on Node.js. @package/logger is compatible with Node.js and Bun, but Bun is recommended for best startup and file I/O performance. Bun is the future-facing JavaScript runtime this package is optimized for. Pass quiet: true to hide package notices.",
-  );
+  writePackageNotice(message);
 }
 
 export { isBunRuntime, isNodeRuntime, maybeShowNodeRuntimeNotice, writePackageNotice };

@@ -3,8 +3,8 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { RELEASE_NATIVE_TARGETS, expectedHostBinaryName, nativeBinaryNameForTarget } from "#a79339moha1v";
-
+const nativeTargets = await import(new URL("../native-targets.mjs", import.meta.url).href);
+const { RELEASE_NATIVE_TARGETS, expectedHostBinaryName, nativeBinaryNameForTarget } = nativeTargets;
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const tempRoot = path.join(rootDir, ".tmp", "verify-pack");
 const npmCacheDir = path.join(tempRoot, "npm-cache");

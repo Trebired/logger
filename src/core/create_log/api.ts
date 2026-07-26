@@ -16,6 +16,13 @@ import type {
   CreateLogRuntime,
   CreateLogSharedState,
 } from "./runtime.js";
+import {
+  buildPackageLogGroup,
+  PACKAGE_NAME,
+} from "#qz1iteme01ng";
+
+const LOGGER_LOG_GROUP = buildPackageLogGroup();
+const LOGGER_PACKAGE_NAME = PACKAGE_NAME;
 
 function createFinalizeDependencies(runtime: CreateLogRuntime) {
   return {
@@ -228,11 +235,11 @@ function maybeShowInitializationNotices(
 
   sharedState.packageGreetingShown = true;
   runtime.withConsoleVisibilityBypass(() => {
-    api.success("package.logger.initialize", "@package/logger initialized");
+    api.success(`${LOGGER_LOG_GROUP}.initialize`, `${LOGGER_PACKAGE_NAME} initialized`);
 
     if (!sharedState.storageBackendNoticeShown) {
       sharedState.storageBackendNoticeShown = true;
-      api.info("package.logger.initialize", activeStorageBackendNotice());
+      api.info(`${LOGGER_LOG_GROUP}.initialize`, activeStorageBackendNotice());
     }
   });
 }

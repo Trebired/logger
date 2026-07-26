@@ -65,7 +65,7 @@ function createFinalizePartitionResult(args: {
             partition: args.partition,
           },
         })
-      : result.ok("Partition finalized.", {
+      : result.ok("partition-finalized", {
           data: {
             action: args.action,
             partition: args.partition,

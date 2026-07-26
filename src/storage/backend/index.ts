@@ -1,5 +1,6 @@
 import { jsStorageBackend } from "./js.js";
 import { nativeStorageBackend } from "./native.js";
+import { PACKAGE_NAME } from "#qz1iteme01ng";
 import type { StorageBackend, StorageBackendName } from "./types.js";
 
 let preferredBackend: StorageBackendName | null = null;
@@ -20,8 +21,8 @@ function getStorageBackend(): StorageBackend {
 
 function activeStorageBackendNotice(): string {
   return getStorageBackend().name === "native"
-    ? "@package/logger using native storage backend"
-    : "@package/logger using JS fallback storage backend";
+    ? `${PACKAGE_NAME} using native storage backend`
+    : `${PACKAGE_NAME} using JS fallback storage backend`;
 }
 
 export { activeStorageBackendNotice, getStorageBackend, setStorageBackendPreferenceForTests };

@@ -81,7 +81,7 @@ async function partitionInfoFromRecord(record: PartitionRecord): Promise<Partiti
     updated_at: record.marker.updated_at,
     last_activity_at: summary?.lastActivityAt || null,
     total: partitionTotalsFromSummary(summary),
-    result: result.ok("Partition info resolved.", {
+    result: result.ok("partition-info-resolved", {
       data: {
         name: record.name,
         temporary: record.marker.temporary,

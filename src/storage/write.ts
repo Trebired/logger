@@ -7,6 +7,9 @@ import { toString } from "#ycytzc4gr3f7";
 import { cleanupLogs } from "./retention.js";
 import { fileStampForEntry, makeLogFileName } from "./names.js";
 import { touchPartitionMarkerSync } from "./partitions.js";
+import { buildPackageLogGroup } from "#qz1iteme01ng";
+
+const LOGGER_LOG_GROUP = buildPackageLogGroup();
 
 type WriterOptions = {
   dir: string;
@@ -162,7 +165,7 @@ class FileWriter {
   }
 
   private fail(message: string): void {
-    if (typeof this.onError === "function") this.onError(`[package.logger] ${message}`);
+    if (typeof this.onError === "function") this.onError(`[${LOGGER_LOG_GROUP}] ${message}`);
   }
 
   private resolvePath(entry: LogEntry): string {

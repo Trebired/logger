@@ -154,6 +154,9 @@
       "#qqlp8cyr3105": [
         "../../src/storage/partitions/delete.ts"
       ],
+      "#qz1iteme01ng": [
+        "../../src/package-metadata.ts"
+      ],
       "#s4l4nv1qv1d7": [
         "../../scripts/prepare-dist.mjs"
       ],

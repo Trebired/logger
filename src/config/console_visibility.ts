@@ -4,8 +4,10 @@ import path from "node:path";
 import { normGroup } from "#8xmnu037caa7";
 import { resolveNativeConsoleVisibilityConfig } from "#ho6lw68jfenw";
 import { isPlainObject } from "#ycytzc4gr3f7";
+import { buildPackageLogGroup } from "#qz1iteme01ng";
 
 const CONFIG_FILE_NAME = "tb.logger.json";
+const LOGGER_LOG_GROUP = buildPackageLogGroup();
 
 type ResolvedConsoleVisibilityPayload = {
   sourcePath: string | null;
@@ -18,17 +20,17 @@ type ConsoleVisibilityPolicy = ResolvedConsoleVisibilityPayload & {
 };
 
 function warningForInvalidShape(filePath: string): string {
-  return `[package.logger] invalid ${CONFIG_FILE_NAME} at ${filePath}: expected an object with a hideConsoleGroups string array`;
+  return `[${LOGGER_LOG_GROUP}] invalid ${CONFIG_FILE_NAME} at ${filePath}: expected an object with a hideConsoleGroups string array`;
 }
 
 function warningForReadError(filePath: string, error: unknown): string {
   const detail = error instanceof Error ? error.message : String(error);
-  return `[package.logger] failed to read ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
+  return `[${LOGGER_LOG_GROUP}] failed to read ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
 }
 
 function warningForParseError(filePath: string, error: unknown): string {
   const detail = error instanceof Error ? error.message : String(error);
-  return `[package.logger] invalid JSON in ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
+  return `[${LOGGER_LOG_GROUP}] invalid JSON in ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
 }
 
 function normalizeHideConsoleGroups(input: string[]): string[] {

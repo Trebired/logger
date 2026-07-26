@@ -15,6 +15,9 @@ import type { CreateLogOptions, LogInstance } from "#tvzweoxg5ahk";
 import { normalizeTimeZone } from "#0c4ri7nq63zi";
 import { maybeShowNodeRuntimeNotice, writePackageNotice } from "#nmfh3v2le5vp";
 import { toString } from "#ycytzc4gr3f7";
+import { buildPackageLogGroup } from "#qz1iteme01ng";
+
+const LOGGER_LOG_GROUP = buildPackageLogGroup();
 
 type TemporaryPartitionRegistration = {
   dir: string;
@@ -157,7 +160,7 @@ function scheduleTemporaryPartitionCleanup(
   void cleanupTemporaryPartitions(runtime, sharedState, dir).catch((error) => {
     writeConsole(
       "stderr",
-      `[package.logger] temporary partition cleanup failed: ${cleanupErrorMessage(error)}`,
+      `[${LOGGER_LOG_GROUP}] temporary partition cleanup failed: ${cleanupErrorMessage(error)}`,
     );
   });
 }

@@ -2,8 +2,7 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { RELEASE_NATIVE_TARGETS } from "#a79339moha1v";
-
+const { RELEASE_NATIVE_TARGETS } = await import(new URL("../native-targets.mjs", import.meta.url).href);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const cliTargets = process.argv.slice(2);

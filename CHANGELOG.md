@@ -4,6 +4,12 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.9
+
+- Added package-owned organization metadata and derived logger package notices from `package.json`.
+- Kept browser-facing logger constants free of package metadata filesystem reads.
+- Updated internal package dependency ranges to the current sibling package releases.
+
 ## 2.5.8
 
 - Removed dead test scripts and stale test commands from publish workflows and maintainer docs.

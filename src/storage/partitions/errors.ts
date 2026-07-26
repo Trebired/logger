@@ -41,7 +41,7 @@ function createPartitionError(
   if (details.to) error.to = details.to;
   error.result = code === "partition-already-exists"
     ? result.conflict(code, { details })
-    : result.error(400, code, { details });
+    : result.error(code, 400, { details });
   return error;
 }
 
