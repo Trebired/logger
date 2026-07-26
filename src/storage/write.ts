@@ -162,7 +162,7 @@ class FileWriter {
   }
 
   private fail(message: string): void {
-    if (typeof this.onError === "function") this.onError(`[trebired.logger] ${message}`);
+    if (typeof this.onError === "function") this.onError(`[package.logger] ${message}`);
   }
 
   private resolvePath(entry: LogEntry): string {

@@ -30,7 +30,7 @@ function maybeShowNodeRuntimeNotice(quiet?: boolean): void {
   nodeRuntimeNoticeShown = true;
 
   writePackageNotice(
-    "[trebired.logger] Running on Node.js. @trebired/logger is compatible with Node.js and Bun, but Bun is recommended for best startup and file I/O performance. Bun is the future-facing JavaScript runtime this package is optimized for. Pass quiet: true to hide package notices.",
+    "[package.logger] Running on Node.js. @package/logger is compatible with Node.js and Bun, but Bun is recommended for best startup and file I/O performance. Bun is the future-facing JavaScript runtime this package is optimized for. Pass quiet: true to hide package notices.",
   );
 }
 

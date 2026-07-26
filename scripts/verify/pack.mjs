@@ -3,9 +3,9 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { RELEASE_NATIVE_TARGETS, expectedHostBinaryName, nativeBinaryNameForTarget } from "./native-targets.mjs";
+import { RELEASE_NATIVE_TARGETS, expectedHostBinaryName, nativeBinaryNameForTarget } from "#a79339moha1v";
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const tempRoot = path.join(rootDir, ".tmp", "verify-pack");
 const npmCacheDir = path.join(tempRoot, "npm-cache");
 const packageJsonBackupPath = path.join(rootDir, ".tmp", "package.json.backup");
@@ -195,21 +195,32 @@ async function runConsumerSmokeTest(tarballPath) {
     recursive: true,
   });
 
+  await writeConsumerPackageJson(consumerDir, tarballPath);
+  await writeConsumerSourceFiles(consumerDir);
+  await writeConsumerTsconfig(consumerDir);
+  runConsumerInstall(consumerDir);
+  runConsumerTypecheck(consumerDir);
+  runConsumerRuntimes(consumerDir);
+}
+
+async function writeConsumerPackageJson(consumerDir, tarballPath) {
   await fs.writeFile(path.join(consumerDir, "package.json"), JSON.stringify({
     name: "logger-pack-smoke",
     private: true,
     type: "module",
     dependencies: {
-      "@trebired/logger": `file:${tarballPath}`,
+      "@package/logger": `file:${tarballPath}`,
     },
     devDependencies: {
       "@types/node": `file:${nodeTypesDir}`,
     },
   }, null, 2));
+}
 
+async function writeConsumerSourceFiles(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "index.ts"), [
-    'import { createLog } from "@trebired/logger";',
-    'import { createBrowserLog } from "@trebired/logger/browser";',
+    'import { createLog } from "@package/logger";',
+    'import { createBrowserLog } from "@package/logger/browser";',
     "",
     "const serverLog = createLog;",
     "const browserLog = createBrowserLog;",
@@ -218,17 +229,19 @@ async function runConsumerSmokeTest(tarballPath) {
   ].join("\n"));
 
   await fs.writeFile(path.join(consumerDir, "runtime-main.ts"), [
-    'import * as mod from "@trebired/logger";',
+    'import * as mod from "@package/logger";',
     "",
     "console.log(typeof mod.createLog, Object.keys(mod).length > 0);",
   ].join("\n"));
 
   await fs.writeFile(path.join(consumerDir, "runtime-browser.ts"), [
-    'import * as mod from "@trebired/logger/browser";',
+    'import * as mod from "@package/logger/browser";',
     "",
     "console.log(typeof mod.createBrowserLog, Object.keys(mod).length > 0);",
   ].join("\n"));
+}
 
+async function writeConsumerTsconfig(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "tsconfig.json"), JSON.stringify({
     compilerOptions: {
       lib: [
@@ -246,17 +259,23 @@ async function runConsumerSmokeTest(tarballPath) {
       "./index.ts",
     ],
   }, null, 2));
+}
 
+function runConsumerInstall(consumerDir) {
   execFileSync("npm", ["install", "--ignore-scripts"], {
     ...createNpmOptions(consumerDir),
     stdio: "inherit",
   });
+}
 
+function runConsumerTypecheck(consumerDir) {
   execFileSync(process.execPath, [tscBin, "-p", "tsconfig.json"], {
     cwd: consumerDir,
     stdio: "inherit",
   });
+}
 
+function runConsumerRuntimes(consumerDir) {
   execFileSync("bun", ["runtime-main.ts"], {
     cwd: consumerDir,
     stdio: "inherit",

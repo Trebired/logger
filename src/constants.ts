@@ -1,7 +1,7 @@
 import type { LogLevelConfig } from "./types.js";
 
 const TOP_LEVEL = "top-level";
-const PARTITION_MARKER_FILE = ".trebired-partition.json";
+const PARTITION_MARKER_FILE = ".package-partition.json";
 
 const DEFAULT_LEVELS: Record<string, LogLevelConfig> = Object.freeze({
   debug: { weight: 10, label: "DEBUG", color: "#b7c063", stream: "stdout", showStack: false, bold: false },

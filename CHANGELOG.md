@@ -4,6 +4,13 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.7
+
+- Removed package test suites and banned committed `*.spec.ts`/`*.spec.tsx` files through Code Discipline.
+- Added Code Discipline enforcement for hardcoded `trebired` strings outside package metadata.
+- Migrated Code Discipline to `.code-discipline/config.ts` with alias-map sync output.
+- Updated package-generated artifact ignores and internal package dependency ranges.
+
 ## 2.5.6
 
 - Moved package-owned logger startup notices under the `trebired.logger.initialize` group root while leaving caller-supplied log groups unchanged.

@@ -3,9 +3,9 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { nativeBinaryNameForTarget } from "./native-targets.mjs";
+import { nativeBinaryNameForTarget } from "#a79339moha1v";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const manifestPath = path.join(repoRoot, "native", "logger-native", "Cargo.toml");
 const crateRoot = path.dirname(manifestPath);
 

@@ -20,8 +20,8 @@ function getStorageBackend(): StorageBackend {
 
 function activeStorageBackendNotice(): string {
   return getStorageBackend().name === "native"
-    ? "@trebired/logger using native storage backend"
-    : "@trebired/logger using JS fallback storage backend";
+    ? "@package/logger using native storage backend"
+    : "@package/logger using JS fallback storage backend";
 }
 
 export { activeStorageBackendNotice, getStorageBackend, setStorageBackendPreferenceForTests };

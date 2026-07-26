@@ -1,4 +1,4 @@
-import { result } from "@trebired/result";
+import { result } from "@package/result";
 import type {
   FinalizePartitionAction,
   FinalizePartitionOptions,
@@ -59,7 +59,7 @@ function createFinalizePartitionResult(args: {
     temporaryBefore: args.temporaryBefore,
     temporaryAfter: false,
     result: args.action === "already-finalized"
-      ? result.noop("partition-already-finalized", "Partition was already finalized.", {
+      ? result.noop("partition-already-finalized", {
           data: {
             action: args.action,
             partition: args.partition,

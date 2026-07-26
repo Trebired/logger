@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use chrono::{DateTime, Utc};
 
-pub const PARTITION_MARKER_FILE: &str = ".trebired-partition.json";
+pub const PARTITION_MARKER_FILE: &str = ".package-partition.json";
 pub const TOP_LEVEL: &str = "top-level";
 
 pub fn err(message: impl Into<String>) -> napi::Error {

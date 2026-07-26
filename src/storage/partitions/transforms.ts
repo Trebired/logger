@@ -29,7 +29,7 @@ async function transformPartition(options: PartitionTransformOptions): Promise<P
     throw createPartitionError("partition-already-exists", { partition: targetName });
   }
 
-  const tempRoot = path.join(targetDir, `.trebired-partition-build-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const tempRoot = path.join(targetDir, `.package-partition-build-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const backend = getStorageBackend();
   try {
     await fs.promises.mkdir(targetDir, { recursive: true });

@@ -2,9 +2,9 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { RELEASE_NATIVE_TARGETS } from "./native-targets.mjs";
+import { RELEASE_NATIVE_TARGETS } from "#a79339moha1v";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const cliTargets = process.argv.slice(2);
 const requestedTargets = cliTargets.length
@@ -17,7 +17,7 @@ const requestedTargets = cliTargets.length
 const targets = requestedTargets.length ? requestedTargets : RELEASE_NATIVE_TARGETS;
 
 for (const target of targets) {
-  const result = spawnSync("node", ["./scripts/build-native.mjs", "--target", target], {
+  const result = spawnSync("node", ["./scripts/build/native.mjs", "--target", target], {
     cwd: repoRoot,
     stdio: "inherit",
     env: process.env,

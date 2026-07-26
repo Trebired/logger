@@ -157,7 +157,7 @@ function scheduleTemporaryPartitionCleanup(
   void cleanupTemporaryPartitions(runtime, sharedState, dir).catch((error) => {
     writeConsole(
       "stderr",
-      `[trebired.logger] temporary partition cleanup failed: ${cleanupErrorMessage(error)}`,
+      `[package.logger] temporary partition cleanup failed: ${cleanupErrorMessage(error)}`,
     );
   });
 }

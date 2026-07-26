@@ -35,7 +35,7 @@ fn output_with_warning(file_path: &Path, warning: String) -> ConsoleVisibilityCo
 
 fn warning_for_invalid_shape(file_path: &Path) -> String {
   format!(
-    "[trebired.logger] invalid {} at {}: expected an object with a hideConsoleGroups string array",
+    "[package.logger] invalid {} at {}: expected an object with a hideConsoleGroups string array",
     CONFIG_FILE_NAME,
     file_path.display()
   )
@@ -43,7 +43,7 @@ fn warning_for_invalid_shape(file_path: &Path) -> String {
 
 fn warning_for_read_error(file_path: &Path, message: impl Into<String>) -> String {
   format!(
-    "[trebired.logger] failed to read {} at {}: {}",
+    "[package.logger] failed to read {} at {}: {}",
     CONFIG_FILE_NAME,
     file_path.display(),
     message.into()
@@ -52,7 +52,7 @@ fn warning_for_read_error(file_path: &Path, message: impl Into<String>) -> Strin
 
 fn warning_for_parse_error(file_path: &Path, message: impl Into<String>) -> String {
   format!(
-    "[trebired.logger] invalid JSON in {} at {}: {}",
+    "[package.logger] invalid JSON in {} at {}: {}",
     CONFIG_FILE_NAME,
     file_path.display(),
     message.into()

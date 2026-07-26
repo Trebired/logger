@@ -228,11 +228,11 @@ function maybeShowInitializationNotices(
 
   sharedState.packageGreetingShown = true;
   runtime.withConsoleVisibilityBypass(() => {
-    api.success("trebired.logger.initialize", "@trebired/logger initialized");
+    api.success("package.logger.initialize", "@package/logger initialized");
 
     if (!sharedState.storageBackendNoticeShown) {
       sharedState.storageBackendNoticeShown = true;
-      api.info("trebired.logger.initialize", activeStorageBackendNotice());
+      api.info("package.logger.initialize", activeStorageBackendNotice());
     }
   });
 }

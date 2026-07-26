@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { result } from "@trebired/result";
+import { result } from "@package/result";
 
 import type { PartitionAggregateTotals, PartitionInfo, PartitionListResult, PartitionTotals } from "#tvzweoxg5ahk";
 import { bytesToMegabytes } from "#unnkpg8o07bp";

@@ -18,17 +18,17 @@ type ConsoleVisibilityPolicy = ResolvedConsoleVisibilityPayload & {
 };
 
 function warningForInvalidShape(filePath: string): string {
-  return `[trebired.logger] invalid ${CONFIG_FILE_NAME} at ${filePath}: expected an object with a hideConsoleGroups string array`;
+  return `[package.logger] invalid ${CONFIG_FILE_NAME} at ${filePath}: expected an object with a hideConsoleGroups string array`;
 }
 
 function warningForReadError(filePath: string, error: unknown): string {
   const detail = error instanceof Error ? error.message : String(error);
-  return `[trebired.logger] failed to read ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
+  return `[package.logger] failed to read ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
 }
 
 function warningForParseError(filePath: string, error: unknown): string {
   const detail = error instanceof Error ? error.message : String(error);
-  return `[trebired.logger] invalid JSON in ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
+  return `[package.logger] invalid JSON in ${CONFIG_FILE_NAME} at ${filePath}: ${detail}`;
 }
 
 function normalizeHideConsoleGroups(input: string[]): string[] {
