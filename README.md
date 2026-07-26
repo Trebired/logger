@@ -176,7 +176,7 @@ If you already have a full custom partition string, pass it directly with `parti
 
 Temporary partitions are now self-cleaning: once a logger switches away from a temporary partition, promotes it, or closes, any temporary partition in that log directory that is no longer current is deleted automatically.
 
-If you want the logger to own the common “temp first, final later” lifecycle, call `finalizePartition()` instead of open-coding a `promotePartition()` plus fallback sequence:
+If you want the logger to own the common "temp first, final later" lifecycle, call `finalizePartition()` instead of open-coding a `promotePartition()` plus fallback sequence:
 
 ```ts
 const result = await log.finalizePartition(final, {
@@ -601,11 +601,12 @@ logStream.on("log", (entry, context) => {
 ```sh
 bun install
 bun run demo
-bun test
 bun run typecheck
 bun run build
 ```
 
+Committed `*.spec.ts` and `*.spec.tsx` files are banned by Code Discipline, so this package does not expose a test script.
+
 `bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs into the repo under `.demo-logs/dummy`. Microslop Windows is not supported.
 
-The npm package exports compiled files from `dist`. Publishing runs `typecheck`, tests, and `build` through `prepublishOnly`.
+The npm package exports compiled files from `dist`. Publishing runs `typecheck` and package verification through `prepublishOnly`.

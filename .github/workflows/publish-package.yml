@@ -127,10 +127,9 @@ jobs:
       - name: Verify packaged binaries
         run: ls -la native
 
-      - name: Test and build package
+      - name: Verify and build package
         run: |
           bun run typecheck
-          bun test
           bun run build
 
       - name: Verify packed release contents

@@ -1,28 +1,17 @@
 {
-  "bugs": {
-    "url": "https://github.com/Trebired/logger/issues"
-  },
-  "dependencies": {
-    "@package/result": "npm:@trebired/result@^1.0.1",
-    "fflate": "^0.8.3",
-    "tar-stream": "^3.2.0"
-  },
+  "name": "@trebired/logger",
+  "version": "2.5.8",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
-  "devDependencies": {
-    "@trebired/code-discipline": "^4.7.1",
-    "@types/bun": "^1.3.4",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.2",
-    "@types/react-test-renderer": "^19.1.0",
-    "@types/tar-stream": "^3.1.4",
-    "react": "^19.2.0",
-    "react-test-renderer": "^19.2.0",
-    "typescript": "^6.0.2"
-  },
+  "type": "module",
+  "private": false,
+  "license": "AGPL-3.0-only",
+  "packageManager": "bun@1.3.12",
   "engines": {
     "bun": ">=1.0.0",
     "node": ">=18"
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -44,7 +33,43 @@
     "LICENSE",
     "README.md"
   ],
-  "homepage": "https://github.com/Trebired/logger#readme",
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node ./scripts/prepare-dist.mjs prepare-dist",
+    "build:native": "bun ./scripts/build/native.mjs",
+    "build:native:matrix": "bun ./scripts/build/native-matrix.mjs",
+    "demo": "bun run examples/dummy.ts",
+    "postpack": "node ./scripts/prepare-dist.mjs postpack",
+    "prepack": "bun run build && node ./scripts/prepare-dist.mjs prepack",
+    "prepublishOnly": "bun run typecheck && bun ./scripts/verify/publish.mjs",
+    "publish:npm": "bun run build:native:matrix && npm publish",
+    "publish:npm:host": "bun run build:native && TB_LOGGER_ALLOW_HOST_ONLY_PUBLISH=1 npm publish",
+    "typecheck": "tsc --noEmit",
+    "verify:pack": "bun ./scripts/verify/pack.mjs"
+  },
+  "dependencies": {
+    "@package/result": "npm:@trebired/result@^1.0.1",
+    "fflate": "^0.8.3",
+    "tar-stream": "^3.2.0"
+  },
+  "devDependencies": {
+    "@trebired/code-discipline": "^4.7.1",
+    "@types/bun": "^1.3.4",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.2",
+    "@types/react-test-renderer": "^19.1.0",
+    "@types/tar-stream": "^3.1.4",
+    "react": "^19.2.0",
+    "react-test-renderer": "^19.2.0",
+    "typescript": "^6.0.2"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "keywords": [
     "logger",
     "logging",
@@ -56,41 +81,15 @@
     "node",
     "bun"
   ],
-  "license": "AGPL-3.0-only",
-  "main": "./dist/index.js",
-  "name": "@trebired/logger",
-  "packageManager": "bun@1.3.12",
-  "peerDependencies": {
-    "react": ">=18"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    }
-  },
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Trebired/logger"
   },
-  "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && node ./scripts/prepare-dist.mjs prepare-dist",
-    "build:native": "bun ./scripts/build/native.mjs",
-    "build:native:matrix": "bun ./scripts/build/native-matrix.mjs",
-    "demo": "bun run examples/dummy.ts",
-    "postpack": "node ./scripts/prepare-dist.mjs postpack",
-    "prepack": "bun run build && node ./scripts/prepare-dist.mjs prepack",
-    "prepublishOnly": "bun run typecheck && bun test && bun ./scripts/verify/publish.mjs",
-    "publish:npm": "bun run build:native:matrix && npm publish",
-    "publish:npm:host": "bun run build:native && TB_LOGGER_ALLOW_HOST_ONLY_PUBLISH=1 npm publish",
-    "test": "bun -e \"console.log(\\\"No tests configured.\\\")\"",
-    "typecheck": "tsc --noEmit",
-    "verify:pack": "bun ./scripts/verify/pack.mjs"
+  "homepage": "https://github.com/Trebired/logger#readme",
+  "bugs": {
+    "url": "https://github.com/Trebired/logger/issues"
   },
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "version": "2.5.7"
+  "publishConfig": {
+    "access": "public"
+  }
 }

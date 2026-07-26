@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.8
+
+- Removed dead test scripts and stale test commands from publish workflows and maintainer docs.
+
 ## 2.5.7
 
 - Removed package test suites and banned committed `*.spec.ts`/`*.spec.tsx` files through Code Discipline.
@@ -135,3 +139,5 @@ This project follows semantic versioning once published.
 - Added group-based JSONL storage with ISO-style filenames.
 - Added retention cleanup, max-size rolling, optional gzip compression, redaction, serializers, sampling, request middleware, stream events, and query helpers.
 - Initial public release.
+
+- Standardized package metadata ordering and contributing guidance around the Trebired writing style.
