@@ -57,7 +57,7 @@
     "tar-stream": "^3.2.0"
   },
   "devDependencies": {
-    "@trebired/code-discipline": "^4.7.3",
+    "@trebired/code-discipline": "^4.8.0",
     "@types/bun": "^1.3.4",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.2",
