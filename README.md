@@ -8,22 +8,6 @@ Local-first JSONL logger with human-browsable group folders, durable writes, ret
 
 Runtime support: Bun 1+.
 
-The package can use bundled native binaries for supported Linux and macOS targets to speed up large storage/export workloads. Consumers still install a single package:
-
-```txt
-@trebired/logger
-  dist/
-  native/
-    linux-x64-gnu.node
-    linux-arm64-gnu.node
-    darwin-arm64.node
-    darwin-x64.node
-```
-
-At runtime the JS wrapper always tries the matching `.node` file first when one is bundled for the current platform, and falls back to the built-in JS backend if native loading is unavailable or fails. Bundled native binaries are currently published for Linux GNU (`x64` and `arm64`) and macOS targets. End users do not need Rust installed.
-
-Set `TB_LOGGER_DISABLE_NATIVE=1` only when you explicitly want to force the JS backend.
-
 ```sh
 bun i @trebired/logger
 ```
@@ -50,58 +34,9 @@ import { createBrowserLog } from "@trebired/logger/browser";
 import { LogProvider, useLog } from "@trebired/logger/browser/react";
 ```
 
-## Browser Runtime
+## Concepts
 
-Use `@trebired/logger/browser` when you want the same levels, metadata conventions, grouping rules, and scoped logger behavior in browser code:
-
-```ts
-import { createBrowserLog } from "@trebired/logger/browser";
-
-const log = createBrowserLog({
-  group: "frontend.app",
-  metadata: {
-    deploymentId: "deploy-42",
-    requestId: "req-abc",
-  },
-});
-
-log.info("frontend boot");
-await log.flush();
-```
-
-The first browser release ships with console delivery built in. It also supports custom browser transports with in-memory batching so you can add fetch, beacon, websocket, or other delivery later without changing the logger API.
-
-There is no built-in SSR bootstrap helper in this release. If you want browser correlation data such as `requestId`, `sessionId`, or `deploymentId`, pass it explicitly through `metadata` or per-log metadata.
-
-## React Adapter
-
-`@trebired/logger/browser/react` is intentionally thin. It does not create a logger for you. It only helps wire an existing browser logger into React context:
-
-```tsx
-import { createRoot } from "react-dom/client";
-import { createBrowserLog } from "@trebired/logger/browser";
-import { LogProvider, useLog } from "@trebired/logger/browser/react";
-
-const log = createBrowserLog({
-  group: "frontend.app",
-  metadata: { deploymentId: "deploy-42" },
-});
-
-function SaveButton() {
-  const scopedLog = useLog("ui.save_button");
-  return <button onClick={() => scopedLog.info("clicked")}>Save</button>;
-}
-
-createRoot(document.getElementById("root")!).render(
-  <LogProvider log={log}>
-    <SaveButton />
-  </LogProvider>,
-);
-```
-
-`LogErrorBoundary` is also available from `@trebired/logger/browser/react` when you want render errors logged with the shared event shape.
-
-## Why This Logger
+### Why This Logger
 
 Most loggers either write to stdout and expect an external collector, or provide a very broad transport system. This package is intentionally opinionated around a simpler operational workflow:
 
@@ -190,140 +125,7 @@ if (result.action === "switched") {
 }
 ```
 
-## Partition Lifecycle
-
-You can manage partitions either from a live logger or with standalone helpers:
-
-```ts
-import {
-  copyPartition,
-  createPartition,
-  deleteLogs,
-  getPartitionInfo,
-  listPartitions,
-  renamePartition,
-} from "@trebired/logger";
-
-await createPartition("/var/log/my-app", "2026-05-17-12-00-00-1-staged", {
-  temporary: true,
-});
-
-const partitions = await listPartitions("/var/log/my-app");
-console.log(partitions.total.megabytes);
-console.log(partitions[0]?.total.megabytes);
-
-await renamePartition("/var/log/my-app", {
-  from: "2026-05-17-12-00-00-1-staged",
-  to: "2026-05-17-12-00-00-1-final",
-});
-
-await copyPartition({
-  fromDir: "/var/log/my-app",
-  from: "2026-05-17-12-00-00-1-final",
-  toDir: "/var/log/archive",
-  to: "2026-05-17-12-00-00-1-final-copy",
-});
-
-await deleteLogs("/var/log/my-app", {
-  partition: "2026-05-17-12-00-00-1-final",
-  groupKey: "jobs.queue",
-  level: "warn",
-  olderThanDays: 7,
-});
-
-console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-00-00-1-final"));
-```
-
-For live loggers, the package now exposes two layers:
-
-- `promotePartition()` stays the lower-level explicit primitive. By default it still errors on target conflicts unless you pass `merge: true` or `ifExists`.
-- `finalizePartition()` is the higher-level lifecycle helper for idempotent temp-to-final transitions.
-
-`finalizePartition()` returns structured outcomes instead of forcing application code to catch expected conflicts:
-
-```ts
-const result = await log.finalizePartition("2026-05-17-12-00-00-1-final", {
-  ifExists: "switch",
-});
-
-result.action;
-// "renamed" | "merged" | "switched" | "activated-target"
-// "marked-permanent" | "already-finalized"
-```
-
-Conflict policies:
-
-- `ifExists: "error"` keeps strict low-level behavior
-- `ifExists: "merge"` merges the active source partition into the existing target
-- `ifExists: "switch"` activates the existing target without merging the current source
-
-For advanced callers that still use the lower-level primitives directly, `getPartitionErrorCode()` and `isPartitionError()` can inspect partition lifecycle errors without parsing raw message strings.
-
-## Core API
-
-```ts
-const log = createLog({
-  dir: "/var/log/my-app",
-  save: true,
-  console: true,
-  timeZone: "America/New_York",
-  source: "api",
-});
-
-log.debug("app.boot", "config loaded");
-log.info("app.boot", "ready");
-log.success("job.import", "finished", { rows: 1200 });
-log.warn("http.request", "slow request", { took_ms: 842 });
-log.fail("job.import", "failed validation");
-log.error("app.runtime", "uncaught error");
-```
-
-`save` defaults to `true` when `dir` is provided. If no `dir` is provided, the logger can still emit console output and live stream events.
-
-If you log without passing a group, the logger always uses `"default"`.
-
-`@trebired/logger` runs on both Bun. It may print one-time package notices for runtime-specific guidance or important future package messages. For example, Pass `quiet: true` to suppress package notices:
-
-```ts
-const log = createLog({
-  quiet: true,
-});
-```
-
-When `quiet` is not `true`, the package also prints a one-time startup greeting using the same console logger style as normal entries.
-
-`timeZone` is a top-level logger option because it controls the actual local moment used for saved file names and console timestamps. It defaults to the host timezone, then falls back to `America/New_York`.
-
-Console output is configurable. `level` and `message` are always shown; timestamp, group, and metadata can be hidden. `console.locale` only controls display formatting. When `locale` is omitted or invalid, the logger passes `undefined` to `Intl.DateTimeFormat`, so JavaScript uses the runtime or system default locale:
-
-```ts
-const log = createLog({
-  timeZone: "America/New_York",
-  console: {
-    colors: true,
-    timestamp: true,
-    group: false,
-    metadata: false,
-    locale: "en-US",
-  },
-});
-```
-
-Use `timeZone` for the local hour and `console.locale` for the display style.
-
-Server runtimes also auto-discover a top-level `tb.logger.json` file by walking up from `process.cwd()`. When present, it overrides console group visibility in both development and production without affecting saved logs:
-
-```json
-{
-  "hideConsoleGroups": ["blog.post", "http.request"]
-}
-```
-
-Each configured group hides both the exact group and descendants such as `blog.post.comment`. Invalid files print a warning and are ignored.
-
-European dot-date locales such as `cs-CZ` and `de-DE` are formatted consistently as `03.05.2026, 15:59:23`.
-
-## Full API Example
+### Full API Example
 
 ```ts
 import { createLog } from "@trebired/logger";
@@ -397,7 +199,7 @@ await log.flush();
 await log.close();
 ```
 
-## Custom Levels
+### Custom Levels
 
 Levels are weighted. `minLevel` filters out entries with lower weight.
 
@@ -418,7 +220,183 @@ Built-in levels are `debug`, `info`, `success`, `warn`, `fail`, and `error`. A c
 
 Custom level methods are available at runtime. In TypeScript, the logger exposes dynamic level methods through an index signature, so custom names work but are not exhaustively autocompleted from the `levels` object yet.
 
-## Async Writes, Flush, and Close
+### Scoped Loggers
+
+```ts
+const jobs = log.group("jobs.queue");
+jobs.info("started", { jobId: "job_1" });
+
+const worker = log.withScope("worker", "jobs.queue", 2);
+worker.error("failed", { jobId: "job_1" });
+```
+
+### Express-Style Middleware
+
+`requestLogger()` is compatible with Express-style middleware and attaches `req.log` by default.
+
+```ts
+app.use(log.requestLogger({
+  group: "http.request",
+  idHeader: "x-request-id",
+}));
+
+app.get("/", (req, res) => {
+  req.log.info("handled");
+  res.end("ok");
+});
+```
+
+### Live Stream
+
+```ts
+import { logStream } from "@trebired/logger";
+
+logStream.on("log", (entry, context) => {
+  // context.dir is the active log directory, if one is configured
+});
+```
+
+## Runtime
+
+### Install Notes
+
+The package can use bundled native binaries for supported Linux and macOS targets to speed up large storage/export workloads. Consumers still install a single package:
+
+```txt
+@trebired/logger
+  dist/
+  native/
+    linux-x64-gnu.node
+    linux-arm64-gnu.node
+    darwin-arm64.node
+    darwin-x64.node
+```
+
+At runtime the JS wrapper always tries the matching `.node` file first when one is bundled for the current platform, and falls back to the built-in JS backend if native loading is unavailable or fails. Bundled native binaries are currently published for Linux GNU (`x64` and `arm64`) and macOS targets. End users do not need Rust installed.
+
+Set `TB_LOGGER_DISABLE_NATIVE=1` only when you explicitly want to force the JS backend.
+
+### Browser Runtime
+
+Use `@trebired/logger/browser` when you want the same levels, metadata conventions, grouping rules, and scoped logger behavior in browser code:
+
+```ts
+import { createBrowserLog } from "@trebired/logger/browser";
+
+const log = createBrowserLog({
+  group: "frontend.app",
+  metadata: {
+    deploymentId: "deploy-42",
+    requestId: "req-abc",
+  },
+});
+
+log.info("frontend boot");
+await log.flush();
+```
+
+The first browser release ships with console delivery built in. It also supports custom browser transports with in-memory batching so you can add fetch, beacon, websocket, or other delivery later without changing the logger API.
+
+There is no built-in SSR bootstrap helper in this release. If you want browser correlation data such as `requestId`, `sessionId`, or `deploymentId`, pass it explicitly through `metadata` or per-log metadata.
+
+### React Adapter
+
+`@trebired/logger/browser/react` is intentionally thin. It does not create a logger for you. It only helps wire an existing browser logger into React context:
+
+```tsx
+import { createRoot } from "react-dom/client";
+import { createBrowserLog } from "@trebired/logger/browser";
+import { LogProvider, useLog } from "@trebired/logger/browser/react";
+
+const log = createBrowserLog({
+  group: "frontend.app",
+  metadata: { deploymentId: "deploy-42" },
+});
+
+function SaveButton() {
+  const scopedLog = useLog("ui.save_button");
+  return <button onClick={() => scopedLog.info("clicked")}>Save</button>;
+}
+
+createRoot(document.getElementById("root")!).render(
+  <LogProvider log={log}>
+    <SaveButton />
+  </LogProvider>,
+);
+```
+
+`LogErrorBoundary` is also available from `@trebired/logger/browser/react` when you want render errors logged with the shared event shape.
+
+### Partition Lifecycle
+
+You can manage partitions either from a live logger or with standalone helpers:
+
+```ts
+import {
+  copyPartition,
+  createPartition,
+  deleteLogs,
+  getPartitionInfo,
+  listPartitions,
+  renamePartition,
+} from "@trebired/logger";
+
+await createPartition("/var/log/my-app", "2026-05-17-12-00-00-1-staged", {
+  temporary: true,
+});
+
+const partitions = await listPartitions("/var/log/my-app");
+console.log(partitions.total.megabytes);
+console.log(partitions[0]?.total.megabytes);
+
+await renamePartition("/var/log/my-app", {
+  from: "2026-05-17-12-00-00-1-staged",
+  to: "2026-05-17-12-00-00-1-final",
+});
+
+await copyPartition({
+  fromDir: "/var/log/my-app",
+  from: "2026-05-17-12-00-00-1-final",
+  toDir: "/var/log/archive",
+  to: "2026-05-17-12-00-00-1-final-copy",
+});
+
+await deleteLogs("/var/log/my-app", {
+  partition: "2026-05-17-12-00-00-1-final",
+  groupKey: "jobs.queue",
+  level: "warn",
+  olderThanDays: 7,
+});
+
+console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-00-00-1-final"));
+```
+
+For live loggers, the package now exposes two layers:
+
+- `promotePartition()` stays the lower-level explicit primitive. By default it still errors on target conflicts unless you pass `merge: true` or `ifExists`.
+- `finalizePartition()` is the higher-level lifecycle helper for idempotent temp-to-final transitions.
+
+`finalizePartition()` returns structured outcomes instead of forcing application code to catch expected conflicts:
+
+```ts
+const result = await log.finalizePartition("2026-05-17-12-00-00-1-final", {
+  ifExists: "switch",
+});
+
+result.action;
+// "renamed" | "merged" | "switched" | "activated-target"
+// "marked-permanent" | "already-finalized"
+```
+
+Conflict policies:
+
+- `ifExists: "error"` keeps strict low-level behavior
+- `ifExists: "merge"` merges the active source partition into the existing target
+- `ifExists: "switch"` activates the existing target without merging the current source
+
+For advanced callers that still use the lower-level primitives directly, `getPartitionErrorCode()` and `isPartitionError()` can inspect partition lifecycle errors without parsing raw message strings.
+
+### Async Writes, Flush, and Close
 
 File writes are async queued by default.
 
@@ -454,7 +432,7 @@ const log = createLog({
 });
 ```
 
-## Retention and Rolling
+### Retention and Rolling
 
 Defaults:
 
@@ -486,7 +464,7 @@ When a file exceeds the configured size, the logger rolls to the next sequence i
 2026-05-03-13-00-00-3-info.jsonl
 ```
 
-## Redaction and Serializers
+### Redaction and Serializers
 
 Common sensitive keys are redacted by default: password, token, secret, authorization, cookie, api_key, and related variants.
 
@@ -508,33 +486,7 @@ log.info("account.update", "saved", {
 });
 ```
 
-## Scoped Loggers
-
-```ts
-const jobs = log.group("jobs.queue");
-jobs.info("started", { jobId: "job_1" });
-
-const worker = log.withScope("worker", "jobs.queue", 2);
-worker.error("failed", { jobId: "job_1" });
-```
-
-## Express-Style Middleware
-
-`requestLogger()` is compatible with Express-style middleware and attaches `req.log` by default.
-
-```ts
-app.use(log.requestLogger({
-  group: "http.request",
-  idHeader: "x-request-id",
-}));
-
-app.get("/", (req, res) => {
-  req.log.info("handled");
-  res.end("ok");
-});
-```
-
-## Query Saved Logs
+### Query Saved Logs
 
 Old query names are not supported anymore. Use `getLogsForDir()`, `getAllLogs()`, and `getAllLogsAcrossPartitions()`. Do not use `getEntriesForDir()` or `getAll()`.
 
@@ -576,7 +528,7 @@ console.log(merged.logs);
 console.log(merged.metadata.partitions.items);
 ```
 
-## Sampling
+### Sampling
 
 ```ts
 const log = createLog({
@@ -588,17 +540,7 @@ const selective = createLog({
 });
 ```
 
-## Live Stream
-
-```ts
-import { logStream } from "@trebired/logger";
-
-logStream.on("log", (entry, context) => {
-  // context.dir is the active log directory, if one is configured
-});
-```
-
-## Development
+### Development
 
 ```sh
 bun install
@@ -612,3 +554,81 @@ Committed `*.spec.ts` and `*.spec.tsx` files are banned by Code Discipline, so t
 `bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs into the repo under `.demo-logs/dummy`. Microslop Windows is not supported.
 
 The published package exports compiled files from `dist`. Publishing runs `typecheck` and package verification through `prepublishOnly`.
+
+## Public API
+
+### Core API
+
+```ts
+const log = createLog({
+  dir: "/var/log/my-app",
+  save: true,
+  console: true,
+  timeZone: "America/New_York",
+  source: "api",
+});
+
+log.debug("app.boot", "config loaded");
+log.info("app.boot", "ready");
+log.success("job.import", "finished", { rows: 1200 });
+log.warn("http.request", "slow request", { took_ms: 842 });
+log.fail("job.import", "failed validation");
+log.error("app.runtime", "uncaught error");
+```
+
+`save` defaults to `true` when `dir` is provided. If no `dir` is provided, the logger can still emit console output and live stream events.
+
+If you log without passing a group, the logger always uses `"default"`.
+
+`@trebired/logger` runs on both Bun. It may print one-time package notices for runtime-specific guidance or important future package messages. For example, Pass `quiet: true` to suppress package notices:
+
+```ts
+const log = createLog({
+  quiet: true,
+});
+```
+
+When `quiet` is not `true`, the package also prints a one-time startup greeting using the same console logger style as normal entries.
+
+`timeZone` is a top-level logger option because it controls the actual local moment used for saved file names and console timestamps. It defaults to the host timezone, then falls back to `America/New_York`.
+
+Console output is configurable. `level` and `message` are always shown; timestamp, group, and metadata can be hidden. `console.locale` only controls display formatting. When `locale` is omitted or invalid, the logger passes `undefined` to `Intl.DateTimeFormat`, so JavaScript uses the runtime or system default locale:
+
+```ts
+const log = createLog({
+  timeZone: "America/New_York",
+  console: {
+    colors: true,
+    timestamp: true,
+    group: false,
+    metadata: false,
+    locale: "en-US",
+  },
+});
+```
+
+Use `timeZone` for the local hour and `console.locale` for the display style.
+
+Server runtimes also auto-discover a top-level `tb.logger.json` file by walking up from `process.cwd()`. When present, it overrides console group visibility in both development and production without affecting saved logs:
+
+```json
+{
+  "hideConsoleGroups": ["blog.post", "http.request"]
+}
+```
+
+Each configured group hides both the exact group and descendants such as `blog.post.comment`. Invalid files print a warning and are ignored.
+
+European dot-date locales such as `cs-CZ` and `de-DE` are formatted consistently as `03.05.2026, 15:59:23`.
+
+## What It Does Not Do
+
+This package does not:
+
+- replace a full observability stack
+- force one transport, server framework, or deployment model
+- infer product-specific redaction policy
+
+## License
+
+Licensed under AGPL-3.0-only. See [LICENSE](./LICENSE).
