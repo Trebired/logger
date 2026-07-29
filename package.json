@@ -5,6 +5,7 @@
   "type": "module",
   "private": false,
   "license": "AGPL-3.0-only",
+  "author": "Miroslav Machynka (Trebired)",
   "config": {
     "organization": {
       "name": "trebired"
@@ -12,8 +13,7 @@
   },
   "packageManager": "bun@1.3.12",
   "engines": {
-    "bun": ">=1.0.0",
-    "node": ">=18"
+    "bun": ">=1.0.0"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,15 +39,15 @@
     "README.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && node ./scripts/prepare-dist.mjs prepare-dist",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && bun ./scripts/prepare-dist.mjs prepare-dist",
     "build:native": "bun ./scripts/build/native.mjs",
     "build:native:matrix": "bun ./scripts/build/native-matrix.mjs",
     "demo": "bun run examples/dummy.ts",
-    "postpack": "node ./scripts/prepare-dist.mjs postpack",
-    "prepack": "bun run build && node ./scripts/prepare-dist.mjs prepack",
+    "postpack": "bun ./scripts/prepare-dist.mjs postpack",
+    "prepack": "bun run build && bun ./scripts/prepare-dist.mjs prepack",
     "prepublishOnly": "bun run typecheck && bun ./scripts/verify/publish.mjs",
-    "publish:npm": "bun run build:native:matrix && npm publish",
-    "publish:npm:host": "bun run build:native && TB_LOGGER_ALLOW_HOST_ONLY_PUBLISH=1 npm publish",
+    "publish:package": "bun run build:native:matrix && bun publish",
+    "publish:package:host": "bun run build:native && TB_LOGGER_ALLOW_HOST_ONLY_PUBLISH=1 bun publish",
     "typecheck": "tsc --noEmit",
     "verify:pack": "bun ./scripts/verify/pack.mjs"
   },
@@ -83,7 +83,6 @@
     "backend",
     "browser",
     "frontend",
-    "node",
     "bun"
   ],
   "repository": {

@@ -6,7 +6,7 @@ Local-first JSONL logger with human-browsable group folders, durable writes, ret
 
 ## Install
 
-Runtime support: Bun 1+ and Node.js 18+.
+Runtime support: Bun 1+.
 
 The package can use bundled native binaries for supported Linux and macOS targets to speed up large storage/export workloads. Consumers still install a single package:
 
@@ -25,8 +25,10 @@ At runtime the JS wrapper always tries the matching `.node` file first when one 
 Set `TB_LOGGER_DISABLE_NATIVE=1` only when you explicitly want to force the JS backend.
 
 ```sh
-npm install @trebired/logger
+bun i @trebired/logger
 ```
+
+## Quick Start
 
 ```ts
 import { createLog } from "@trebired/logger";
@@ -280,7 +282,7 @@ log.error("app.runtime", "uncaught error");
 
 If you log without passing a group, the logger always uses `"default"`.
 
-`@trebired/logger` runs on both Bun and Node.js. It may print one-time package notices for runtime-specific guidance or important future package messages. For example, when it detects Node.js, it recommends Bun for best startup and file I/O performance. Pass `quiet: true` to suppress package notices:
+`@trebired/logger` runs on both Bun. It may print one-time package notices for runtime-specific guidance or important future package messages. For example, Pass `quiet: true` to suppress package notices:
 
 ```ts
 const log = createLog({
@@ -609,4 +611,4 @@ Committed `*.spec.ts` and `*.spec.tsx` files are banned by Code Discipline, so t
 
 `bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs into the repo under `.demo-logs/dummy`. Microslop Windows is not supported.
 
-The npm package exports compiled files from `dist`. Publishing runs `typecheck` and package verification through `prepublishOnly`.
+The published package exports compiled files from `dist`. Publishing runs `typecheck` and package verification through `prepublishOnly`.

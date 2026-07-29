@@ -11,7 +11,7 @@ coverage/
 # Runtime and generated work files
 .tmp/
 .demo-logs/
-
+cd-report-*.txt
 # Native build output
 native/*/target/
 native/*.node
