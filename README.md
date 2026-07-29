@@ -628,7 +628,3 @@ This package does not:
 - replace a full observability stack
 - force one transport, server framework, or deployment model
 - infer product-specific redaction policy
-
-## License
-
-Licensed under AGPL-3.0-only. See [LICENSE](./LICENSE).
