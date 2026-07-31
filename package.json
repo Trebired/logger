@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "2.5.10",
+  "version": "2.5.11",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "type": "module",
   "private": false,
@@ -39,7 +39,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && bun ./scripts/prepare-dist.mjs prepare-dist",
+    "build": "bun run prepare:generated && rm -rf dist && tsc -p tsconfig.build.json && bun ./scripts/prepare-dist.mjs prepare-dist",
     "build:native": "bun ./scripts/build/native.mjs",
     "build:native:matrix": "bun ./scripts/build/native-matrix.mjs",
     "demo": "bun run examples/dummy.ts",
@@ -48,7 +48,8 @@
     "prepublishOnly": "bun run typecheck && bun ./scripts/verify/publish.mjs",
     "publish:package": "bun run build:native:matrix && bun publish",
     "publish:package:host": "bun run build:native && TB_LOGGER_ALLOW_HOST_ONLY_PUBLISH=1 bun publish",
-    "typecheck": "tsc --noEmit",
+    "prepare:generated": "bun ./scripts/build/generated/tsconfig.mjs",
+    "typecheck": "bun run prepare:generated && tsc --noEmit",
     "verify:pack": "bun ./scripts/verify/pack.mjs"
   },
   "dependencies": {
