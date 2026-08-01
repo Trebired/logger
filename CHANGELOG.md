@@ -4,6 +4,12 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.12
+
+- Updated Code Discipline configuration to the `imports` rule with dead import removal enabled.
+- Updated logger package metadata fallback so package-owned notices stay under the organization root when package metadata is unavailable.
+- Updated internal package dependency ranges to the current published sibling releases.
+
 ## 2.5.11
 
 - Fixed a broken published-package build: a fresh checkout has no committed `.code-discipline/generated/` output, and nothing regenerated it before `typecheck`/`build`, so every internal `#hash` import failed to resolve. `typecheck` and `build` now run `prepare:generated` first.

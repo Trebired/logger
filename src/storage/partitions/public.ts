@@ -1,4 +1,3 @@
-import fs from "node:fs";
 
 import type {
   CopyPartitionOptions,
@@ -13,7 +12,7 @@ import type {
 import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { createPartitionError } from "./errors.js";
 import { deletePartitions } from "./delete.js";
-import { readPartitionMarkerFromRoot, writePartitionMarker } from "./markers.js";
+import { writePartitionMarker } from "./markers.js";
 import { collectPartitionRecords, getPartitionRecord, partitionInfoFromRecord, partitionListResult, requirePartitionRecord } from "./records.js";
 import { mergePartitionRecord, transformPartition } from "./transforms.js";
 import { partitionRootPath, pathExists, resolveDir } from "./internal.js";

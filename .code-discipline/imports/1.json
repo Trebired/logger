@@ -60,6 +60,7 @@
   "#va6txcqwm0gh": "./src/format/console.ts",
   "#vpn8n9wiu1x0": "./src/backend/utils/normalize.ts",
   "#w1cc3mztq3ng": "./src/storage/write.ts",
+  "#x0v4gq61l4rs": "./scripts/build/generated/tsconfig.mjs",
   "#x2qkmwodgsce": "./src/storage/names.ts",
   "#xcylcir2d1qf": "./src/browser/console_transport.ts",
   "#xtaoa1f0kt5w": "./src/core/create_log/finalize.ts",

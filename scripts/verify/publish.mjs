@@ -29,14 +29,16 @@ function readPackageMetadata() {
       : "";
     const scopeSlashIndex = packageName.startsWith("@") ? packageName.indexOf("/") : -1;
     const packageSlugValue = scopeSlashIndex > 0 ? packageName.slice(scopeSlashIndex + 1) : packageName;
-    const organizationValue = organizationName || (scopeSlashIndex > 0 ? packageName.slice(1, scopeSlashIndex) : "package");
+    const organizationValue = organizationName || (scopeSlashIndex > 0 ? packageName.slice(1, scopeSlashIndex) : "");
 
     return {
-      group: `${cleanSegment(organizationValue)}.${cleanSegment(packageSlugValue)}`,
+      group: [cleanSegment(organizationValue), cleanSegment(packageSlugValue)].filter(Boolean).join("."),
     };
   } catch {
+    const fallback = cleanSegment(process.env.npm_package_name || "logger");
+    const slashIndex = fallback.startsWith("@") ? fallback.indexOf("/") : -1;
     return {
-      group: "package.logger",
+      group: slashIndex > 0 ? fallback.slice(slashIndex + 1) : fallback,
     };
   }
 }

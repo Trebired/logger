@@ -26,7 +26,8 @@ export default defineCodeDisciplineConfig({
     folderizeCompoundFiles: {},
     removeComments: {
     },
-    syncImports: {
+    imports: {
+      removeDeadImports: true,
       alias: {
         strategy: "random",
       },

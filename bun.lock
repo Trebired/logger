@@ -5,12 +5,12 @@
     "": {
       "name": "@trebired/logger",
       "dependencies": {
-        "@package/result": "npm:@trebired/result@^1.1.1",
+        "@package/result": "npm:@trebired/result@^1.1.4",
         "fflate": "^0.8.3",
         "tar-stream": "^3.2.0",
       },
       "devDependencies": {
-        "@trebired/code-discipline": "^4.8.0",
+        "@trebired/code-discipline": "^4.9.2",
         "@types/bun": "^1.3.4",
         "@types/node": "^24.10.1",
         "@types/react": "^19.2.2",
@@ -33,9 +33,9 @@
 
     "@package/logger-adapter": ["@trebired/logger-adapter@0.2.5", "", {}, "sha512-WO07uG71EjD+87AcHPLxtjzXcIKd/3LHdWMjIwBon6BTTC43esNesFfa6kzpnXk2OCEzibxigAjvw20T+F3TwQ=="],
 
-    "@package/result": ["@trebired/result@1.1.1", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.5" } }, "sha512-UI+1uDey44cLK9uTaRt7x9vUi1Gug0NMf3xAB/dwQLB2aceN7p66WOi2gHJjI0ZTDIih+i6TwAnNIDkqisUFIw=="],
+    "@package/result": ["@trebired/result@1.1.4", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.5" } }, "sha512-h6QzscjWYRfSm8/JqOw/MXw5ImL/Y8ON2nfCP8RXwLklKeahCGVqAhk+m19pKQCIH3sAuys7SqneG/gHhCKreg=="],
 
-    "@trebired/code-discipline": ["@trebired/code-discipline@4.8.0", "", { "dependencies": { "@package/logger": "npm:@trebired/logger@^2.5.6", "@package/result": "npm:@trebired/result@^1.1.1", "prettier": "3.9.6", "typescript": "^6.0.3" }, "bin": { "code-discipline": "dist/cli.js" } }, "sha512-zLkQY+rhNFGAic6cJ8TTXg5OmBQdhWKrINxNsFWHKbiXUjdbMR/aXjBX3eGr9XhpVAsjIXXQQ7VMaXPpk/cX5g=="],
+    "@trebired/code-discipline": ["@trebired/code-discipline@4.9.2", "", { "dependencies": { "@package/logger": "npm:@trebired/logger@^2.5.6", "@package/result": "npm:@trebired/result@^1.1.1", "prettier": "3.9.6", "typescript": "^6.0.3" }, "bin": { "code-discipline": "dist/cli.js" } }, "sha512-JrnaDZ+j3zOMxNQfR1trtCYZjA95TOZHUEELMl25mkEYDSXh1q17/4M/9Aa7Gn8FrHnAoDZ/6ugkwRNopCS6qA=="],
 
     "@trebired/logger-adapter": ["@trebired/logger-adapter@0.2.3", "", {}, "sha512-OSEvegTz5LNy+7NdwgwEcrLF2Ku38vavIvs3bPru+6zzeUMme/9ax+Y+hzpy1jxtvgrowpXRkd/HGdLoRylM5Q=="],
 
