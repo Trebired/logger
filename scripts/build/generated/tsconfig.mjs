@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const importsDir = path.join(repoRoot, ".code-discipline", "imports");
-const generatedPath = path.join(repoRoot, ".code-discipline", "generated", "tsconfig.paths.json");
+const importsDir = path.join(repoRoot, ".trebired/code-discipline", "imports");
+const generatedPath = path.join(repoRoot, ".trebired/code-discipline", "generated", "tsconfig.paths.json");
 
 function normalizeDotTarget(value) {
   const normalized = value.replaceAll(path.sep, path.posix.sep).replace(/^\.\/+/u, "").replace(/\/+/gu, "/");

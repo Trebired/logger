@@ -22,7 +22,7 @@
   "exclude": [
     "node_modules"
   ],
-  "extends": "./.code-discipline/generated/tsconfig.paths.json",
+  "extends": "./.trebired/code-discipline/generated/tsconfig.paths.json",
   "include": [
     "examples/**/*.ts",
     "src/**/*.ts"

@@ -32,7 +32,7 @@ There is no package test script. Committed `*.spec.ts` and `*.spec.tsx` files ar
 
 ## Code Discipline
 
-- Keep the config at `.code-discipline/config.ts`.
+- Keep the config at `.trebired/code-discipline/config.ts`.
 - Use `syncImports.output.type: "alias-map"`.
 - Keep `allowRelative: ["./"]`.
 - Do not add rule-level excludes to bypass discipline.

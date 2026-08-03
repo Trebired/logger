@@ -20,4 +20,4 @@ native/*.node
 .env
 .env.*
 !.env.example
-.code-discipline/generated/
+.trebired/code-discipline/generated/

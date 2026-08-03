@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(rootDir, "dist");
 const packageJsonPath = path.join(rootDir, "package.json");
-const aliasMapDir = path.join(rootDir, ".code-discipline", "imports");
+const aliasMapDir = path.join(rootDir, ".trebired/code-discipline", "imports");
 const tempDir = path.join(rootDir, ".tmp");
 const backupPath = path.join(tempDir, "package.json.backup");
 
