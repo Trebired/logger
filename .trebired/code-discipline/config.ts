@@ -1,7 +1,7 @@
-import { defineCodeDisciplineConfig } from "@trebired/code-discipline";
+import { defineConfig } from "@trebired/code-discipline";
 
-export default defineCodeDisciplineConfig({
+export default defineConfig({
   presets: {
-    use: ["trebired"],
+    use: ["@trebired/code-discipline-config"],
   },
 });

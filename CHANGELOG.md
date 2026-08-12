@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.18
+
+- Adopted the external `@trebired/code-discipline-config` preset and updated Code Discipline tooling to `@trebired/code-discipline@^6.0.9`.
+
 ## 2.5.17
 
 - Updated the Code Discipline devDependency and lockfile to public `@trebired/code-discipline@^5.5.2`.
