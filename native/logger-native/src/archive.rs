@@ -46,33 +46,33 @@ fn write_zip_archive(input: &ArchiveCreateInput) -> Result<()> {
     generated.sort_by(|a, b| a.archive_path.cmp(&b.archive_path));
     for item in generated {
         writer
-            .start_file(
-                format!("{}/{}", input.root_name, item.archive_path),
-                options,
-            )
-            .map_err(|error| err(error.to_string()))?;
+        .start_file(
+            format!("{}/{}", input.root_name, item.archive_path),
+            options,
+        )
+        .map_err(|error| err(error.to_string()))?;
         writer
-            .write_all(item.content.as_bytes())
-            .map_err(|error| err(error.to_string()))?;
+        .write_all(item.content.as_bytes())
+        .map_err(|error| err(error.to_string()))?;
     }
 
     let mut sources = input.source_files.iter().collect::<Vec<_>>();
     sources.sort_by(|a, b| a.archive_path.cmp(&b.archive_path));
     for item in sources {
         writer
-            .start_file(
-                format!("{}/{}", input.root_name, item.archive_path),
-                options,
-            )
-            .map_err(|error| err(error.to_string()))?;
+        .start_file(
+            format!("{}/{}", input.root_name, item.archive_path),
+            options,
+        )
+        .map_err(|error| err(error.to_string()))?;
         let mut source = File::open(&item.source_path).map_err(|error| err(error.to_string()))?;
         let mut buffer = Vec::new();
         source
-            .read_to_end(&mut buffer)
-            .map_err(|error| err(error.to_string()))?;
+        .read_to_end(&mut buffer)
+        .map_err(|error| err(error.to_string()))?;
         writer
-            .write_all(&buffer)
-            .map_err(|error| err(error.to_string()))?;
+        .write_all(&buffer)
+        .map_err(|error| err(error.to_string()))?;
     }
 
     writer.finish().map_err(|error| err(error.to_string()))?;
@@ -90,14 +90,14 @@ fn write_tar_gz_archive(input: &ArchiveCreateInput) -> Result<()> {
         let bytes = item.content.as_bytes();
         let mut header = tar::Header::new_gnu();
         header
-            .set_path(format!("{}/{}", input.root_name, item.archive_path))
-            .map_err(|error| err(error.to_string()))?;
+        .set_path(format!("{}/{}", input.root_name, item.archive_path))
+        .map_err(|error| err(error.to_string()))?;
         header.set_size(bytes.len() as u64);
         header.set_mode(0o644);
         header.set_cksum();
         builder
-            .append(&header, Cursor::new(bytes))
-            .map_err(|error| err(error.to_string()))?;
+        .append(&header, Cursor::new(bytes))
+        .map_err(|error| err(error.to_string()))?;
     }
 
     let mut sources = input.source_files.iter().collect::<Vec<_>>();
@@ -106,27 +106,27 @@ fn write_tar_gz_archive(input: &ArchiveCreateInput) -> Result<()> {
         let bytes = fs::read(&item.source_path).map_err(|error| err(error.to_string()))?;
         let mut header = tar::Header::new_gnu();
         header
-            .set_path(format!("{}/{}", input.root_name, item.archive_path))
-            .map_err(|error| err(error.to_string()))?;
+        .set_path(format!("{}/{}", input.root_name, item.archive_path))
+        .map_err(|error| err(error.to_string()))?;
         header.set_size(bytes.len() as u64);
         header.set_mode(0o644);
         header.set_cksum();
         builder
-            .append(&header, Cursor::new(bytes))
-            .map_err(|error| err(error.to_string()))?;
+        .append(&header, Cursor::new(bytes))
+        .map_err(|error| err(error.to_string()))?;
     }
 
     builder.finish().map_err(|error| err(error.to_string()))?;
     let encoder = builder
-        .into_inner()
-        .map_err(|error| err(error.to_string()))?;
+    .into_inner()
+    .map_err(|error| err(error.to_string()))?;
     encoder.finish().map_err(|error| err(error.to_string()))?;
     Ok(())
 }
 
 pub fn create_archive_json(request_json: String) -> Result<()> {
     let input: ArchiveCreateInput =
-        serde_json::from_str(&request_json).map_err(|error| err(error.to_string()))?;
+    serde_json::from_str(&request_json).map_err(|error| err(error.to_string()))?;
     let output_path = PathBuf::from(&input.output_path);
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent).map_err(|error| err(error.to_string()))?;

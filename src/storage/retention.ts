@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 
-import type { NormalizedRetentionOptions } from "#tvzweoxg5ahk";
+import type { NormalizedRetentionOptions } from "#e1h3ay0cyhgl";
 import { nowFileStamp } from "./names.js";
 import { readPartitionMarkerFromRoot } from "./partitions.js";
 import { walkLogFiles } from "./walk.js";
@@ -62,15 +62,15 @@ async function cleanupLogs(dir: string, options: NormalizedRetentionOptions): Pr
   if (options.maxPartitions == null) return;
 
   const roots = await listPartitionRoots(dir);
-  const ranked = await Promise.all(roots.map(async (rootDir) => {
-    let lastActivity = partitionActivity.get(rootDir) || 0;
-    if (!lastActivity) {
-      try {
-        const stat = await fs.promises.stat(rootDir);
-        lastActivity = stat.mtimeMs;
-      } catch {}
-    }
-    return { rootDir, lastActivity };
+  const ranked = await Promise.all(roots.map(async(rootDir) => {
+        let lastActivity = partitionActivity.get(rootDir) || 0;
+        if (!lastActivity) {
+          try {
+            const stat = await fs.promises.stat(rootDir);
+            lastActivity = stat.mtimeMs;
+          } catch {}
+        }
+        return { rootDir, lastActivity };
   }));
 
   ranked.sort((a, b) => b.lastActivity - a.lastActivity);
@@ -129,8 +129,8 @@ function shouldCompressFile(
 ): boolean {
   return (
     options.compressOldFiles &&
-    !file.compressed &&
-    (file.day !== now.day || file.hour !== now.hour)
+      !file.compressed &&
+      (file.day !== now.day || file.hour !== now.hour)
   );
 }
 

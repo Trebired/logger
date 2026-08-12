@@ -1,5 +1,5 @@
 import { DEFAULT_LEVELS } from "#cuh2x5snaefd";
-import type { LogLevelConfig } from "#tvzweoxg5ahk";
+import type { LogLevelConfig } from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 
 function assertLevelName(name: string): void {
@@ -27,8 +27,8 @@ function normalizeLevels(input?: Record<string, LogLevelConfig>): Record<string,
       label: toString(cfg && cfg.label) || existing.label || name.toUpperCase(),
       color: toString(cfg && cfg.color) || existing.color || "#ffffff",
       stream: cfg && cfg.stream === "stderr" ? "stderr" : cfg && cfg.stream === "stdout" ? "stdout" : existing.stream || "stdout",
-      showStack: typeof (cfg && cfg.showStack) === "boolean" ? Boolean(cfg && cfg.showStack) : Boolean(existing.showStack),
-      bold: typeof (cfg && cfg.bold) === "boolean" ? Boolean(cfg && cfg.bold) : Boolean(existing.bold),
+      showStack: typeof(cfg && cfg.showStack) === "boolean" ? Boolean(cfg && cfg.showStack) : Boolean(existing.showStack),
+      bold: typeof(cfg && cfg.bold) === "boolean" ? Boolean(cfg && cfg.bold) : Boolean(existing.bold),
     };
   }
 

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { PartitionInfo } from "#tvzweoxg5ahk";
+import type { PartitionInfo } from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 import type { WalkedLogFile } from "#x2qkmwodgsce";
 

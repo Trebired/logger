@@ -1,4 +1,4 @@
-import type { LogEntry, LogLevelConfig, LogStreamName, NormalizedConsoleOptions } from "#tvzweoxg5ahk";
+import type { LogEntry, LogLevelConfig, LogStreamName, NormalizedConsoleOptions } from "#e1h3ay0cyhgl";
 import { formatDisplayTimestamp } from "#0c4ri7nq63zi";
 import { toString } from "#ycytzc4gr3f7";
 import { normalizeConsoleOptions } from "./options.js";
@@ -8,10 +8,10 @@ function hexToAnsi(hex: string, bold = false): string {
   const normalized = raw.length >= 6 ? raw.slice(0, 6) : "";
   if (!/^[a-f0-9]{6}$/i.test(normalized)) return bold ? "\x1b[1m" : "";
 
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
-  return `${bold ? "\x1b[1m" : ""}\x1b[38;2;${r};${g};${b}m`;
+  const red = parseInt(normalized.slice(0, 2), 16);
+  const green = parseInt(normalized.slice(2, 4), 16);
+  const blue = parseInt(normalized.slice(4, 6), 16);
+  return `${bold ? "\x1b[1m" : ""}\x1b[38;2;${red};${green};${blue}m`;
 }
 
 function color(options: NormalizedConsoleOptions, hex: string | undefined, value: unknown, bold = false): string {
@@ -20,7 +20,7 @@ function color(options: NormalizedConsoleOptions, hex: string | undefined, value
   return `${hexToAnsi(hex || "", bold)}${text}\x1b[0m`;
 }
 
-function inlineMetadata(entry: LogEntry, includeStack: boolean): Record<string, unknown> | null {
+function inlineMetadata(entry: LogEntry, includeStack: boolean): Record<string, unknown>|null {
   const metadata = entry.metadata;
   if (!metadata || !Object.keys(metadata).length) return null;
   if (includeStack || !Object.prototype.hasOwnProperty.call(metadata, "stack")) return metadata;
@@ -51,7 +51,10 @@ function formatConsole(entry: LogEntry, levelConfig: LogLevelConfig, options: No
 
   if (options.group) bracketParts.push(color(options, "#5c5c5c", entry.group));
 
-  let line = `${color(options, "#ffffff", "[")}${bracketParts.join(color(options, "#5c5c5c", ", "))}${color(options, "#ffffff", "]")} ${entry.message}`;
+  const openBracket = color(options, "#ffffff", "[");
+  const separator = color(options, "#5c5c5c", ", ");
+  const closeBracket = color(options, "#ffffff", "]");
+  let line = `${openBracket}${bracketParts.join(separator)}${closeBracket} ${entry.message}`;
 
   if (options.timestamp) {
     const when = color(options, "#8e8e8e", `|${formatDisplayTimestamp(entry.recorded_at, options.locale, timeZone)}|`);
@@ -59,11 +62,11 @@ function formatConsole(entry: LogEntry, levelConfig: LogLevelConfig, options: No
   }
 
   const stackText = levelConfig.showStack === true && entry.metadata && entry.metadata.stack
-    ? String(entry.metadata.stack)
-    : "";
+  ? String(entry.metadata.stack)
+  : "";
   const metadata = options.metadata
-    ? inlineMetadata(entry, !stackText)
-    : null;
+  ? inlineMetadata(entry, !stackText)
+  : null;
 
   if (metadata) {
     line += ` ${color(options, "#5c5c5c", JSON.stringify(metadata))}`;

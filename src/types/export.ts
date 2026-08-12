@@ -10,7 +10,7 @@ type ExportCommonOptions = {
 
 type ExportPartitionOptions = ExportCommonOptions;
 
-type ExportPartitionsOptions = ExportCommonOptions & {
+type ExportPartitionsOptions = ExportCommonOptions& {
   partitions?: string[];
 };
 

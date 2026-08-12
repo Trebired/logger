@@ -12,13 +12,13 @@ function parseSize(value: string | number | undefined, fallback: number): number
 
   const unit = match[2] || "b";
   const factor =
-    unit === "gb" || unit === "gib"
-      ? 1024 * 1024 * 1024
-      : unit === "mb" || unit === "mib"
-        ? 1024 * 1024
-        : unit === "kb" || unit === "kib"
-          ? 1024
-          : 1;
+  unit === "gb" || unit === "gib"
+  ? 1024 * 1024 * 1024
+  : unit === "mb" || unit === "mib"
+  ? 1024 * 1024
+  : unit === "kb" || unit === "kib"
+  ? 1024
+  : 1;
 
   return Math.max(1, Math.floor(amount * factor));
 }

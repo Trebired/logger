@@ -16,14 +16,14 @@ function parseArgValue(flag) {
 
 function detectHostTarget() {
   const result = spawnSync("rustc", ["-vV"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
   });
   if (result.status !== 0) process.exit(result.status || 1);
   const line = String(result.stdout || "")
-    .split("\n")
-    .find((item) => item.startsWith("host:"));
+  .split("\n")
+  .find((item) => item.startsWith("host:"));
   const host = line ? line.slice(5).trim() : "";
   if (!host) throw new Error("unable-to-detect-rust-host-target");
   return host;
@@ -38,8 +38,8 @@ const requestedTarget = process.env.TB_LOGGER_NATIVE_TARGET || parseArgValue("--
 const binaryName = nativeBinaryNameForTarget(requestedTarget);
 const targetDir = path.join(crateRoot, "target", requestedTarget, "release");
 const result = spawnSync("cargo", ["build", "--release", "--target", requestedTarget, "--manifest-path", manifestPath], {
-  cwd: repoRoot,
-  stdio: "inherit",
+    cwd: repoRoot,
+    stdio: "inherit",
 });
 
 if (result.status !== 0) process.exit(result.status || 1);

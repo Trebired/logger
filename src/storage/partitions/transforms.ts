@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { PartitionInfo } from "#tvzweoxg5ahk";
+import type { PartitionInfo } from "#e1h3ay0cyhgl";
 import { getStorageBackend } from "#1qrb8ldbr5aj";
 import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { createPartitionError } from "./errors.js";
@@ -17,10 +17,10 @@ async function transformPartition(options: PartitionTransformOptions): Promise<P
 
   if (options.source.path === targetRoot) {
     await writePartitionMarker(targetRoot, {
-      name: targetName,
-      temporary: options.targetTemporary,
-      created_at: options.source.marker.created_at,
-      updated_at: new Date().toISOString(),
+        name: targetName,
+        temporary: options.targetTemporary,
+        created_at: options.source.marker.created_at,
+        updated_at: new Date().toISOString(),
     });
     return (await getPartitionInfo(targetDir, targetName)) as PartitionInfo;
   }
@@ -34,22 +34,22 @@ async function transformPartition(options: PartitionTransformOptions): Promise<P
   try {
     await fs.promises.mkdir(targetDir, { recursive: true });
     await backend.rewritePartitionFiles({
-      sourceRoot: options.source.path,
-      targetRoot: tempRoot,
-      targetName,
-      merge: false,
+        sourceRoot: options.source.path,
+        targetRoot: tempRoot,
+        targetName,
+        merge: false,
     });
     await writePartitionMarker(tempRoot, {
-      name: targetName,
-      temporary: options.targetTemporary,
-      created_at: options.preserveSourceCreatedAt ? options.source.marker.created_at : new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+        name: targetName,
+        temporary: options.targetTemporary,
+        created_at: options.preserveSourceCreatedAt ? options.source.marker.created_at : new Date().toISOString(),
+        updated_at: new Date().toISOString(),
     });
     await fs.promises.rename(tempRoot, targetRoot);
     if (options.deleteSource) await fs.promises.rm(options.source.path, { recursive: true, force: true });
     return (await getPartitionInfo(targetDir, targetName)) as PartitionInfo;
   } catch (error) {
-    await fs.promises.rm(tempRoot, { recursive: true, force: true }).catch(() => {});
+    await fs.promises.rm(tempRoot, { recursive: true, force: true }).catch (() => {});
     throw error;
   }
 }
@@ -59,16 +59,16 @@ async function mergePartitionRecord(source: PartitionRecord, target: PartitionRe
     throw createPartitionError("partition-merge-target-same-as-source", { partition: source.name });
   }
   await getStorageBackend().rewritePartitionFiles({
-    sourceRoot: source.path,
-    targetRoot: target.path,
-    targetName: target.name,
-    merge: true,
+      sourceRoot: source.path,
+      targetRoot: target.path,
+      targetName: target.name,
+      merge: true,
   });
   await writePartitionMarker(target.path, {
-    name: target.name,
-    temporary,
-    created_at: target.marker.created_at,
-    updated_at: new Date().toISOString(),
+      name: target.name,
+      temporary,
+      created_at: target.marker.created_at,
+      updated_at: new Date().toISOString(),
   });
   await fs.promises.rm(source.path, { recursive: true, force: true });
   return (await getPartitionInfo(target.dir, target.name)) as PartitionInfo;

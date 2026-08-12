@@ -1,4 +1,4 @@
-import type { ConsoleOptions, NormalizedConsoleOptions } from "#tvzweoxg5ahk";
+import type { ConsoleOptions, NormalizedConsoleOptions } from "#e1h3ay0cyhgl";
 import { normalizeLocale } from "#0c4ri7nq63zi";
 
 function normalizeConsoleOptions(input: boolean | ConsoleOptions | undefined): NormalizedConsoleOptions {

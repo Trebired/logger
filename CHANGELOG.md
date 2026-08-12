@@ -4,6 +4,19 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.17
+
+- Updated the Code Discipline devDependency and lockfile to public `@trebired/code-discipline@^5.5.2`.
+## 2.5.16
+
+- Adopted the shared Trebired Code Discipline preset so package configs only keep repo-specific policy.
+- Updated the Code Discipline devDependency and lockfile to public `@trebired/code-discipline@^5.5.1`.
+
+## 2.5.15
+
+- Updated the package Code Discipline config to the platform-aligned rule set, including formatting, redundant path segment cleanup, removable comment checks, structural blank lines, and dry checks.
+- Updated the Code Discipline devDependency and lockfile to the current public `@trebired/code-discipline@^5.3.0`.
+
 ## 2.5.14
 
 - Refreshed package dependency ranges and lockfile state with `bun update` after adopting the `.trebired/code-discipline` structure.

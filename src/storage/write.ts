@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { normGroup } from "#8xmnu037caa7";
-import type { LogEntry, LogStats, NormalizedRetentionOptions, NormalizedWriteOptions } from "#tvzweoxg5ahk";
+import type { LogEntry, LogStats, NormalizedRetentionOptions, NormalizedWriteOptions } from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 import { cleanupLogs } from "./retention.js";
 import { fileStampForEntry, makeLogFileName } from "./names.js";
@@ -28,9 +28,9 @@ class FileWriter {
   private timeZone: string;
   private queue: LogEntry[] = [];
   private processing = false;
-  private waiters: Array<() => void> = [];
+  private waiters: Array<()=>void> = [];
   private closed = false;
-  private cleanupTimer: ReturnType<typeof setInterval> | null = null;
+  private cleanupTimer: ReturnType<typeof setInterval>|null = null;
   private onError?: (message: string) => void;
   private stats: LogStats;
 
@@ -114,8 +114,8 @@ class FileWriter {
   async flush(): Promise<void> {
     if (!this.processing && this.queue.length === 0) return;
     await new Promise<void>((resolve) => {
-      this.waiters.push(resolve);
-      this.processQueue();
+        this.waiters.push(resolve);
+        this.processQueue();
     });
   }
 
@@ -133,10 +133,10 @@ class FileWriter {
     if (!this.save || !this.dir || !this.retention.enabled) return;
     if (this.retention.maxAgeDays == null && this.retention.maxPartitions == null && !this.retention.compressOldFiles) return;
 
-    cleanupLogs(this.dir, this.retention).catch(() => {});
+    cleanupLogs(this.dir, this.retention).catch (() => {});
     this.cleanupTimer = setInterval(() => {
-      cleanupLogs(this.dir, this.retention).catch(() => {});
-    }, this.retention.cleanupIntervalMs);
+        cleanupLogs(this.dir, this.retention).catch (() => {});
+      }, this.retention.cleanupIntervalMs);
 
     if (typeof this.cleanupTimer.unref === "function") this.cleanupTimer.unref();
   }
@@ -145,22 +145,22 @@ class FileWriter {
     if (this.processing || this.writeOptions.mode !== "async") return;
     this.processing = true;
 
-    queueMicrotask(async () => {
-      while (this.queue.length) {
-        const entry = this.queue.shift() as LogEntry;
-        try {
-          await this.writeNow(entry);
-          this.stats.written += 1;
-        } catch (error) {
-          this.stats.failed += 1;
-          this.fail(`save failed for ${entry.group}: ${error instanceof Error ? error.message : String(error)}`);
+    queueMicrotask(async() => {
+        while (this.queue.length) {
+          const entry = this.queue.shift() as LogEntry;
+          try {
+            await this.writeNow(entry);
+            this.stats.written += 1;
+          } catch (error) {
+            this.stats.failed += 1;
+            this.fail(`save failed for ${entry.group}: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          this.stats.queueLength = this.queue.length;
         }
-        this.stats.queueLength = this.queue.length;
-      }
 
-      this.processing = false;
-      const waiters = this.waiters.splice(0);
-      for (const resolve of waiters) resolve();
+        this.processing = false;
+        const waiters = this.waiters.splice(0);
+        for (const resolve of waiters) resolve();
     });
   }
 
@@ -172,14 +172,14 @@ class FileWriter {
     const normalized = normGroup(entry.group);
     const partition = toString(entry.partition);
     const groupDir = partition
-      ? path.join(this.dir, partition, ...normalized.parts)
-      : path.join(this.dir, ...normalized.parts);
+    ? path.join(this.dir, partition, ...normalized.parts)
+    : path.join(this.dir, ...normalized.parts);
     if (partition) touchPartitionMarkerSync(this.dir, partition);
     fs.mkdirSync(groupDir, { recursive: true });
     const stamp = fileStampForEntry(entry, this.timeZone);
 
     let sequence = 1;
-    for (;;) {
+    for (;; ) {
       const filePath = path.join(groupDir, makeLogFileName(stamp, sequence, entry.level));
       try {
         const stat = fs.statSync(filePath);

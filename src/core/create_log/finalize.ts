@@ -5,7 +5,7 @@ import type {
   FinalizePartitionResult,
   PartitionExistsPolicy,
   PromotePartitionOptions,
-} from "#tvzweoxg5ahk";
+} from "#e1h3ay0cyhgl";
 import { createPartitionError, isPartitionError } from "#h0uexrz2k072";
 import {
   getPartitionInfo as getStoredPartitionInfo,
@@ -35,7 +35,7 @@ function resolvePartitionExistsPolicy(
     return options.ifExists;
   }
 
-  if (options && typeof options === "object" && "merge" in options && options.merge === true) {
+  if (options && typeof options === "object" && "merge"in options && options.merge === true) {
     return "merge";
   }
 
@@ -43,12 +43,12 @@ function resolvePartitionExistsPolicy(
 }
 
 function createFinalizePartitionResult(args: {
-  action: FinalizePartitionAction;
-  partition: string;
-  previousPartition: string | null;
-  sourceExisted: boolean;
-  targetExisted: boolean;
-  temporaryBefore: boolean;
+    action: FinalizePartitionAction;
+    partition: string;
+    previousPartition: string | null;
+    sourceExisted: boolean;
+    targetExisted: boolean;
+    temporaryBefore: boolean;
 }): FinalizePartitionResult {
   return {
     partition: args.partition,
@@ -59,18 +59,18 @@ function createFinalizePartitionResult(args: {
     temporaryBefore: args.temporaryBefore,
     temporaryAfter: false,
     result: args.action === "already-finalized"
-      ? result.noop("partition-already-finalized", {
-          data: {
-            action: args.action,
-            partition: args.partition,
-          },
-        })
-      : result.ok("partition-finalized", {
-          data: {
-            action: args.action,
-            partition: args.partition,
-          },
-        }),
+    ? result.noop("partition-already-finalized", {
+        data: {
+          action: args.action,
+          partition: args.partition,
+        },
+    })
+    : result.ok("partition-finalized", {
+        data: {
+          action: args.action,
+          partition: args.partition,
+        },
+    }),
   };
 }
 
@@ -87,24 +87,24 @@ async function finalizeWithoutStorage(
     deps.setTemporary(false);
 
     return createFinalizePartitionResult({
-      action,
-      partition: nextPartition,
-      previousPartition,
-      sourceExisted: false,
-      targetExisted: false,
-      temporaryBefore,
+        action,
+        partition: nextPartition,
+        previousPartition,
+        sourceExisted: false,
+        targetExisted: false,
+        temporaryBefore,
     });
   }
 
   await deps.applyActivePartition(nextPartition, false);
 
   return createFinalizePartitionResult({
-    action: "activated-target",
-    partition: nextPartition,
-    previousPartition,
-    sourceExisted: false,
-    targetExisted: false,
-    temporaryBefore,
+      action: "activated-target",
+      partition: nextPartition,
+      previousPartition,
+      sourceExisted: false,
+      targetExisted: false,
+      temporaryBefore,
   });
 }
 
@@ -122,41 +122,41 @@ async function finalizeSamePartition(
   await deps.cleanupTemporaryPartitions();
 
   return createFinalizePartitionResult({
-    action: temporaryBefore ? "marked-permanent" : "already-finalized",
-    partition,
-    previousPartition,
-    sourceExisted: true,
-    targetExisted: true,
-    temporaryBefore,
+      action: temporaryBefore ? "marked-permanent" : "already-finalized",
+      partition,
+      previousPartition,
+      sourceExisted: true,
+      targetExisted: true,
+      temporaryBefore,
   });
 }
 
 async function activateTargetPartition(args: {
-  deps: FinalizePartitionDependencies;
-  action: FinalizePartitionAction;
-  partition: string;
-  previousPartition: string | null;
-  sourceExisted: boolean;
-  targetExisted: boolean;
-  temporaryBefore: boolean;
+    deps: FinalizePartitionDependencies;
+    action: FinalizePartitionAction;
+    partition: string;
+    previousPartition: string | null;
+    sourceExisted: boolean;
+    targetExisted: boolean;
+    temporaryBefore: boolean;
 }): Promise<FinalizePartitionResult> {
   await args.deps.applyActivePartition(args.partition, false);
 
   return createFinalizePartitionResult({
-    action: args.action,
-    partition: args.partition,
-    previousPartition: args.previousPartition,
-    sourceExisted: args.sourceExisted,
-    targetExisted: args.targetExisted,
-    temporaryBefore: args.temporaryBefore,
+      action: args.action,
+      partition: args.partition,
+      previousPartition: args.previousPartition,
+      sourceExisted: args.sourceExisted,
+      targetExisted: args.targetExisted,
+      temporaryBefore: args.temporaryBefore,
   });
 }
 
 async function handleMissingSourcePartition(args: {
-  deps: FinalizePartitionDependencies;
-  dir: string;
-  ifExists: PartitionExistsPolicy;
-  nextPartition: string;
+    deps: FinalizePartitionDependencies;
+    dir: string;
+    ifExists: PartitionExistsPolicy;
+    nextPartition: string;
 }): Promise<FinalizePartitionResult> {
   const previousPartition = args.deps.getPartition();
   const temporaryBefore = args.deps.isTemporary();
@@ -165,37 +165,37 @@ async function handleMissingSourcePartition(args: {
   if (targetInfo) {
     if (args.ifExists === "error") {
       throw createPartitionError("partition-already-exists", {
-        partition: args.nextPartition,
+          partition: args.nextPartition,
       });
     }
 
     return activateTargetPartition({
-      deps: args.deps,
-      action: args.ifExists === "switch" ? "switched" : "activated-target",
-      partition: args.nextPartition,
-      previousPartition,
-      sourceExisted: false,
-      targetExisted: true,
-      temporaryBefore,
+        deps: args.deps,
+        action: args.ifExists === "switch" ? "switched" : "activated-target",
+        partition: args.nextPartition,
+        previousPartition,
+        sourceExisted: false,
+        targetExisted: true,
+        temporaryBefore,
     });
   }
 
   return activateTargetPartition({
-    deps: args.deps,
-    action: "activated-target",
-    partition: args.nextPartition,
-    previousPartition,
-    sourceExisted: false,
-    targetExisted: false,
-    temporaryBefore,
+      deps: args.deps,
+      action: "activated-target",
+      partition: args.nextPartition,
+      previousPartition,
+      sourceExisted: false,
+      targetExisted: false,
+      temporaryBefore,
   });
 }
 
 async function handleExistingTargetPartition(args: {
-  deps: FinalizePartitionDependencies;
-  dir: string;
-  ifExists: PartitionExistsPolicy;
-  nextPartition: string;
+    deps: FinalizePartitionDependencies;
+    dir: string;
+    ifExists: PartitionExistsPolicy;
+    nextPartition: string;
 }): Promise<FinalizePartitionResult> {
   const activePartition = args.deps.getPartition();
   const previousPartition = activePartition;
@@ -203,43 +203,43 @@ async function handleExistingTargetPartition(args: {
 
   if (args.ifExists === "switch") {
     return activateTargetPartition({
-      deps: args.deps,
-      action: "switched",
-      partition: args.nextPartition,
-      previousPartition,
-      sourceExisted: true,
-      targetExisted: true,
-      temporaryBefore,
+        deps: args.deps,
+        action: "switched",
+        partition: args.nextPartition,
+        previousPartition,
+        sourceExisted: true,
+        targetExisted: true,
+        temporaryBefore,
     });
   }
 
   if (args.ifExists === "merge" && activePartition) {
     await mergePartition(args.dir, {
-      from: activePartition,
-      to: args.nextPartition,
+        from: activePartition,
+        to: args.nextPartition,
     });
 
     return activateTargetPartition({
-      deps: args.deps,
-      action: "merged",
-      partition: args.nextPartition,
-      previousPartition,
-      sourceExisted: true,
-      targetExisted: true,
-      temporaryBefore,
+        deps: args.deps,
+        action: "merged",
+        partition: args.nextPartition,
+        previousPartition,
+        sourceExisted: true,
+        targetExisted: true,
+        temporaryBefore,
     });
   }
 
   throw createPartitionError("partition-already-exists", {
-    partition: args.nextPartition,
+      partition: args.nextPartition,
   });
 }
 
 async function finalizeStoredPartition(args: {
-  deps: FinalizePartitionDependencies;
-  dir: string;
-  ifExists: PartitionExistsPolicy;
-  nextPartition: string;
+    deps: FinalizePartitionDependencies;
+    dir: string;
+    ifExists: PartitionExistsPolicy;
+    nextPartition: string;
 }): Promise<FinalizePartitionResult> {
   const activePartition = args.deps.getPartition();
   if (!activePartition) {
@@ -256,8 +256,8 @@ async function finalizeStoredPartition(args: {
 
   try {
     await renamePartition(args.dir, {
-      from: activePartition,
-      to: args.nextPartition,
+        from: activePartition,
+        to: args.nextPartition,
     });
   } catch (error) {
     if (!isPartitionError(error, "partition-already-exists")) {
@@ -268,13 +268,13 @@ async function finalizeStoredPartition(args: {
   }
 
   return activateTargetPartition({
-    deps: args.deps,
-    action: "renamed",
-    partition: args.nextPartition,
-    previousPartition: activePartition,
-    sourceExisted: true,
-    targetExisted: false,
-    temporaryBefore: args.deps.isTemporary(),
+      deps: args.deps,
+      action: "renamed",
+      partition: args.nextPartition,
+      previousPartition: activePartition,
+      sourceExisted: true,
+      targetExisted: false,
+      temporaryBefore: args.deps.isTemporary(),
   });
 }
 
@@ -304,10 +304,10 @@ async function finalizeActivePartition(
   }
 
   return finalizeStoredPartition({
-    deps,
-    dir,
-    ifExists,
-    nextPartition,
+      deps,
+      dir,
+      ifExists,
+      nextPartition,
   });
 }
 

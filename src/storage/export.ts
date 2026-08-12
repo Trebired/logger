@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { ExportFormat, ExportManifest, ExportPartitionOptions, ExportPartitionsOptions, ExportResult } from "#tvzweoxg5ahk";
+import type { ExportFormat, ExportManifest, ExportPartitionOptions, ExportPartitionsOptions, ExportResult } from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 import { getStorageBackend } from "./backend/index.js";
 import { collectPartitionRecords } from "./partitions/records.js";
@@ -53,21 +53,21 @@ function buildManifest(dir: string, snapshot: Awaited<ReturnType<ReturnType<type
     dir,
     partitions: snapshot.partitions.map((item) => item.name),
     partition_items: snapshot.partitions.map((item) => ({
-      name: item.name,
-      total: item.total,
-      last_activity_at: item.lastActivityAt,
+          name: item.name,
+          total: item.total,
+          last_activity_at: item.lastActivityAt,
     })),
     total: snapshot.total,
     files: snapshot.files.map((file) => ({
-      path: file.path,
-      partition: file.partition,
-      groupKey: file.groupKey,
-      day: file.day,
-      hour: file.hour,
-      level: file.level,
-      compressed: file.compressed,
-      bytes: file.bytes,
-      rows: file.rows,
+          path: file.path,
+          partition: file.partition,
+          groupKey: file.groupKey,
+          day: file.day,
+          hour: file.hour,
+          level: file.level,
+          compressed: file.compressed,
+          bytes: file.bytes,
+          rows: file.rows,
     })),
   };
 }
@@ -106,15 +106,15 @@ async function exportPartitions(dir: string, options: ExportPartitionsOptions): 
   ];
 
   await backend.createArchive({
-    outputPath: normalized.outputPath,
-    format: normalized.format,
-    rootName: normalized.rootName,
-    overwrite: normalized.overwrite,
-    generatedFiles,
-    sourceFiles: snapshot.files.map((file) => ({
-      sourcePath: file.absPath,
-      archivePath: path.posix.join("logs", file.path),
-    })),
+      outputPath: normalized.outputPath,
+      format: normalized.format,
+      rootName: normalized.rootName,
+      overwrite: normalized.overwrite,
+      generatedFiles,
+      sourceFiles: snapshot.files.map((file) => ({
+            sourcePath: file.absPath,
+            archivePath: path.posix.join("logs", file.path),
+      })),
   });
 
   return {
@@ -131,8 +131,8 @@ async function exportPartitions(dir: string, options: ExportPartitionsOptions): 
 
 async function exportPartition(dir: string, partition: string, options: ExportPartitionOptions): Promise<ExportResult> {
   return exportPartitions(dir, {
-    ...options,
-    partitions: [sanitizePartitionName(partition)],
+      ...options,
+      partitions: [sanitizePartitionName(partition)],
   });
 }
 

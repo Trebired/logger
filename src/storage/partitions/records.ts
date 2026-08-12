@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { result } from "@package/result";
 
-import type { PartitionAggregateTotals, PartitionInfo, PartitionListResult, PartitionTotals } from "#tvzweoxg5ahk";
+import type { PartitionAggregateTotals, PartitionInfo, PartitionListResult, PartitionTotals } from "#e1h3ay0cyhgl";
 import { bytesToMegabytes } from "#unnkpg8o07bp";
 import { getStorageBackend } from "#1qrb8ldbr5aj";
 import { sanitizePartitionName } from "#x2qkmwodgsce";
@@ -33,7 +33,7 @@ async function collectPartitionRecords(dir: string): Promise<PartitionRecord[]> 
   return out;
 }
 
-async function getPartitionRecord(dir: string, partition: string): Promise<PartitionRecord | null> {
+async function getPartitionRecord(dir: string, partition: string): Promise<PartitionRecord|null> {
   const baseDir = resolveDir(dir);
   if (!baseDir) return null;
   const name = sanitizePartitionName(partition);
@@ -50,13 +50,13 @@ async function requirePartitionRecord(dir: string, partition: string): Promise<P
 }
 
 function partitionTotalsFromSummary(summary?: {
-  total?: {
-    logs?: number;
-    dirs?: number;
-    files?: number;
-    bytes?: number;
-    megabytes?: number;
-  };
+    total?: {
+      logs?: number;
+      dirs?: number;
+      files?: number;
+      bytes?: number;
+      megabytes?: number;
+    };
 }): PartitionTotals {
   const bytes = summary?.total?.bytes || 0;
   return {
@@ -82,33 +82,33 @@ async function partitionInfoFromRecord(record: PartitionRecord): Promise<Partiti
     last_activity_at: summary?.lastActivityAt || null,
     total: partitionTotalsFromSummary(summary),
     result: result.ok("partition-info-resolved", {
-      data: {
-        name: record.name,
-        temporary: record.marker.temporary,
-      },
-      details: {
-        bytes: summary?.total?.bytes || 0,
-        logs: summary?.total?.logs || 0,
-      },
+        data: {
+          name: record.name,
+          temporary: record.marker.temporary,
+        },
+        details: {
+          bytes: summary?.total?.bytes || 0,
+          logs: summary?.total?.logs || 0,
+        },
     }),
   };
 }
 
 function partitionListResult(items: PartitionInfo[]): PartitionListResult {
   const total = items.reduce<PartitionAggregateTotals>((acc, item) => ({
-    partitions: acc.partitions + 1,
-    logs: acc.logs + item.total.logs,
-    dirs: acc.dirs + item.total.dirs,
-    files: acc.files + item.total.files,
-    bytes: acc.bytes + item.total.bytes,
-    megabytes: acc.megabytes + item.total.megabytes,
-  }), {
-    partitions: 0,
-    logs: 0,
-    dirs: 0,
-    files: 0,
-    bytes: 0,
-    megabytes: 0,
+        partitions: acc.partitions + 1,
+        logs: acc.logs + item.total.logs,
+        dirs: acc.dirs + item.total.dirs,
+        files: acc.files + item.total.files,
+        bytes: acc.bytes + item.total.bytes,
+        megabytes: acc.megabytes + item.total.megabytes,
+    }), {
+      partitions: 0,
+      logs: 0,
+      dirs: 0,
+      files: 0,
+      bytes: 0,
+      megabytes: 0,
   });
 
   return Object.assign(items, { total }) as PartitionListResult;

@@ -10,9 +10,9 @@ type BrowserBatchOptions = {
 type BrowserTransport = {
   name: string;
   available?: () => boolean;
-  write(entries: LogEntry[], context: BrowserTransportContext): void | Promise<void>;
-  flush?(): void | Promise<void>;
-  close?(): void | Promise<void>;
+  write(entries: LogEntry[], context: BrowserTransportContext): void |Promise<void>;
+  flush ? () : void |Promise<void>;
+  close ? () : void |Promise<void>;
 };
 
 type BrowserConsoleTransportOptions = {
@@ -31,9 +31,9 @@ type BrowserLogOptions = {
   levels?: Record<string, LogLevelConfig>;
   minLevel?: string | number;
   redact?: RedactOptions;
-  serializers?: Record<string, (value: unknown) => unknown>;
+  serializers?: Record<string, (value:unknown)=>unknown>;
   sample?: number | ((entry: LogEntry) => boolean);
-  transports?: Array<"console" | BrowserTransport>;
+  transports?: Array<"console"|BrowserTransport>;
   batch?: BrowserBatchOptions;
 };
 
@@ -47,7 +47,7 @@ type BrowserLogStats = {
   transports: string[];
 };
 
-type BrowserLogInstance = Record<string, any> & {
+type BrowserLogInstance = Record<string, any>& {
   group(groupName?: string): Record<string, any>;
   withScope(source?: string | null, groupName?: string, instance?: string | number | null): Record<string, any>;
   setEnabled(flag: boolean): void;

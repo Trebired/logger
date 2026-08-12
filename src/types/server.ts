@@ -1,6 +1,26 @@
-import type { ConsoleOptions, LogEntry, LogLevelConfig, RedactOptions, RequestLoggerOptions, RetentionOptions, ServerLogStreamContext, WriteOptions } from "./common.js";
-import type { ExportPartitionOptions, ExportPartitionsOptions, ExportResult } from "./export.js";
-import type { FinalizePartitionOptions, FinalizePartitionResult, PartitionInfo, PartitionListResult, PromotePartitionOptions, SetPartitionOptions } from "./partitions.js";
+import type {
+  ConsoleOptions,
+  LogEntry,
+  LogLevelConfig,
+  RedactOptions,
+  RequestLoggerOptions,
+  RetentionOptions,
+  ServerLogStreamContext,
+  WriteOptions,
+} from "./common.js";
+import type {
+  ExportPartitionOptions,
+  ExportPartitionsOptions,
+  ExportResult,
+} from "./export.js";
+import type {
+  FinalizePartitionOptions,
+  FinalizePartitionResult,
+  PartitionInfo,
+  PartitionListResult,
+  PromotePartitionOptions,
+  SetPartitionOptions,
+} from "./partitions.js";
 import type { LogQueryOptions, LogQueryResult } from "./query.js";
 
 type CreateLogOptions = {
@@ -17,7 +37,7 @@ type CreateLogOptions = {
   write?: WriteOptions;
   retention?: RetentionOptions;
   redact?: RedactOptions;
-  serializers?: Record<string, (value: unknown) => unknown>;
+  serializers?: Record<string, (value:unknown)=>unknown>;
   sample?: number | ((entry: LogEntry) => boolean);
   request?: RequestLoggerOptions;
 };
@@ -32,24 +52,54 @@ type LogStats = {
   closed: boolean;
 };
 
-type LogInstance = Record<string, any> & {
+type LogInstance = Record<string, any>& {
   group(groupName?: string): Record<string, any>;
-  withScope(source?: string | null, groupName?: string, instance?: string | number | null): Record<string, any>;
+  withScope(
+    source?: string | null,
+    groupName?: string,
+    instance?: string | number | null,
+  ): Record<string, any>;
   setEnabled(flag: boolean): void;
   getDir(): string;
   setDir(nextDir: string): void;
   getPartition(): string | null;
-  setPartition(partition: string | null, options?: SetPartitionOptions): Promise<void>;
-  finalizePartition(partition: string, options?: FinalizePartitionOptions): Promise<FinalizePartitionResult>;
-  promotePartition(partition: string, options?: PromotePartitionOptions): Promise<FinalizePartitionResult>;
-  exportPartition(partition?: string, options?: Omit<ExportPartitionOptions, "outputPath"> & { outputPath: string }): Promise<ExportResult>;
-  exportPartitions(options: Omit<ExportPartitionsOptions, "outputPath"> & { outputPath: string }): Promise<ExportResult>;
+  setPartition(
+    partition: string | null,
+    options?: SetPartitionOptions,
+  ): Promise<void>;
+  finalizePartition(
+    partition: string,
+    options?: FinalizePartitionOptions,
+  ): Promise<FinalizePartitionResult>;
+  promotePartition(
+    partition: string,
+    options?: PromotePartitionOptions,
+  ): Promise<FinalizePartitionResult>;
+  exportPartition(
+    partition?: string,
+    options?: Omit<ExportPartitionOptions, "outputPath">& {
+      outputPath: string;
+    },
+  ): Promise<ExportResult>;
+  exportPartitions(
+    options: Omit<ExportPartitionsOptions, "outputPath">& {
+      outputPath: string;
+    },
+  ): Promise<ExportResult>;
   listPartitions(): Promise<PartitionListResult>;
-  getPartitionInfo(partition?: string): Promise<PartitionInfo | null>;
-  requestLogger(options?: RequestLoggerOptions): (req: any, res: any, next: () => void) => void;
-  logError(error: unknown, metadata?: Record<string, unknown>, source?: string): void;
+  getPartitionInfo(partition?: string): Promise<PartitionInfo|null>;
+  requestLogger(
+    options?: RequestLoggerOptions,
+  ): (req: any, res: any, next: () => void) => void;
+  logError(
+    error: unknown,
+    metadata?: Record<string, unknown>,
+    source?: string,
+  ): void;
   getAllLogs(options?: LogQueryOptions): Promise<LogQueryResult>;
-  getAllLogsAcrossPartitions(options?: LogQueryOptions): Promise<LogQueryResult>;
+  getAllLogsAcrossPartitions(
+    options?: LogQueryOptions,
+  ): Promise<LogQueryResult>;
   flush(): Promise<void>;
   close(): Promise<void>;
   getStats(): LogStats;

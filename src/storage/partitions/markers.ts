@@ -19,7 +19,7 @@ function markerPath(rootDir: string): string {
   return path.join(rootDir, PARTITION_MARKER_FILE);
 }
 
-async function readPartitionMarkerFromRoot(rootDir: string, expectedName?: string): Promise<PartitionMarker | null> {
+async function readPartitionMarkerFromRoot(rootDir: string, expectedName?: string): Promise<PartitionMarker|null> {
   try {
     const text = await fs.promises.readFile(markerPath(rootDir), "utf8");
     const parsed = JSON.parse(text);
@@ -42,10 +42,10 @@ function readPartitionMarkerFromRootSync(rootDir: string, expectedName?: string)
 function nextMarker(existing: PartitionMarker | null, name: string, options: PartitionWriteOptions = {}): PartitionMarker {
   const now = options.updatedAt || new Date().toISOString();
   const created_at = options.createdAt
-    || ((options.preserveCreatedAt !== false && existing?.created_at) ? existing.created_at : now);
+  ||((options.preserveCreatedAt !== false && existing?.created_at) ? existing.created_at : now);
   const temporary = typeof options.temporary === "boolean"
-    ? options.temporary
-    : (options.preserveTemporary !== false && existing ? existing.temporary : false);
+  ? options.temporary
+  : (options.preserveTemporary !== false && existing ? existing.temporary : false);
 
   return {
     name,

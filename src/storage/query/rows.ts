@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import zlib from "node:zlib";
 
-import type { LogEntry } from "#tvzweoxg5ahk";
+import type { LogEntry } from "#e1h3ay0cyhgl";
 import type { WalkedLogFile } from "#x2qkmwodgsce";
 
 async function readLogRows(filePath: string, compressed: boolean): Promise<LogEntry[]> {
@@ -26,11 +26,11 @@ async function readLogRows(filePath: string, compressed: boolean): Promise<LogEn
 
 function sortByRecordedAtAsc(entries: LogEntry[]): LogEntry[] {
   entries.sort((a, b) => {
-    const aTime = Date.parse(a && a.recorded_at ? a.recorded_at : "");
-    const bTime = Date.parse(b && b.recorded_at ? b.recorded_at : "");
-    const av = Number.isFinite(aTime) ? aTime : 0;
-    const bv = Number.isFinite(bTime) ? bTime : 0;
-    return av - bv;
+      const aTime = Date.parse(a && a.recorded_at ? a.recorded_at : "");
+      const bTime = Date.parse(b && b.recorded_at ? b.recorded_at : "");
+      const av = Number.isFinite(aTime) ? aTime : 0;
+      const bv = Number.isFinite(bTime) ? bTime : 0;
+      return av - bv;
   });
   return entries;
 }

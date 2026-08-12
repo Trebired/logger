@@ -1,6 +1,6 @@
 import React, { Component, createContext, useContext } from "react";
 
-import type { BrowserLogInstance } from "#tvzweoxg5ahk";
+import type { BrowserLogInstance } from "#e1h3ay0cyhgl";
 
 type LogProviderProps = {
   log: BrowserLogInstance;
@@ -19,7 +19,7 @@ type LogErrorBoundaryState = {
   error: Error | null;
 };
 
-const LogContext = createContext<BrowserLogInstance | null>(null);
+const LogContext = createContext<BrowserLogInstance|null>(null);
 
 function LogProvider({ log, children }: LogProviderProps) {
   return React.createElement(LogContext.Provider, { value: log }, children);

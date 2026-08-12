@@ -86,6 +86,12 @@ async function walkLogFiles(baseDir: string): Promise<WalkedLogFile[]> {
   return out;
 }
 
+async function walkPartitionFiles(rootDir: string, partition: string): Promise<WalkedLogFile[]> {
+  const out: WalkedLogFile[] = [];
+  await walkTree(rootDir, rootDir, rootDir, partition, out);
+  return out.sort((a, b) => a.absPath.localeCompare(b.absPath));
+}
+
 function walkLogFilesSync(baseDir: string): WalkedLogFile[] {
   const out: WalkedLogFile[] = [];
   let entries: fs.Dirent[] = [];
@@ -113,4 +119,4 @@ function walkLogFilesSync(baseDir: string): WalkedLogFile[] {
   return out;
 }
 
-export { walkLogFiles, walkLogFilesSync };
+export { walkLogFiles, walkLogFilesSync, walkPartitionFiles };

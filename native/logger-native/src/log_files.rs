@@ -35,19 +35,19 @@ pub fn parse_log_name(file_name: &str) -> Option<ParsedLogFile> {
     .ok()?;
     let captures = regex.captures(file_name)?;
     Some(ParsedLogFile {
-        day: captures.get(1)?.as_str().to_string(),
-        hour: captures.get(2)?.as_str().to_string(),
-        minute: captures.get(3)?.as_str().to_string(),
-        second: captures.get(4)?.as_str().to_string(),
-        sequence: captures
+            day: captures.get(1)?.as_str().to_string(),
+            hour: captures.get(2)?.as_str().to_string(),
+            minute: captures.get(3)?.as_str().to_string(),
+            second: captures.get(4)?.as_str().to_string(),
+            sequence: captures
             .get(5)?
             .as_str()
             .parse::<u64>()
             .ok()
             .unwrap_or(1)
             .max(1),
-        level: captures.get(6)?.as_str().to_string(),
-        compressed: captures.get(7).is_some(),
+            level: captures.get(6)?.as_str().to_string(),
+            compressed: captures.get(7).is_some(),
     })
 }
 
@@ -82,18 +82,18 @@ pub fn group_key_from_dir(rel_dir: &str) -> String {
         return TOP_LEVEL.to_string();
     }
     trimmed
-        .split('/')
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join(".")
+    .split('/')
+    .filter(|part| !part.is_empty())
+    .collect::<Vec<_>>()
+    .join(".")
 }
 
 pub fn collect_partition_files(root: &Path) -> Vec<PartitionFileEntry> {
     let mut files = Vec::new();
 
     for entry in WalkDir::new(root)
-        .into_iter()
-        .filter_map(|entry| entry.ok())
+    .into_iter()
+    .filter_map(|entry| entry.ok())
     {
         if !entry.file_type().is_file() {
             continue;
@@ -109,16 +109,16 @@ pub fn collect_partition_files(root: &Path) -> Vec<PartitionFileEntry> {
 
         let abs_path = entry.path().to_path_buf();
         let rel_parent = abs_path
-            .parent()
-            .and_then(|parent| parent.strip_prefix(root).ok())
-            .unwrap_or_else(|| Path::new(""));
+        .parent()
+        .and_then(|parent| parent.strip_prefix(root).ok())
+        .unwrap_or_else(|| Path::new(""));
         let rel_dir = rel_parent.to_string_lossy().replace('\\', "/");
 
         files.push(PartitionFileEntry {
-            abs_path,
-            file_name,
-            rel_dir,
-            parsed,
+                abs_path,
+                file_name,
+                rel_dir,
+                parsed,
         });
     }
 
@@ -205,11 +205,11 @@ pub fn write_jsonl_rows(
         String::new()
     } else {
         let mut lines = rows
-            .iter()
-            .map(|row| serde_json::to_string(row))
-            .collect::<std::result::Result<Vec<_>, _>>()
-            .map_err(std::io::Error::other)?
-            .join("\n");
+        .iter()
+        .map(|row| serde_json::to_string(row))
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(std::io::Error::other)?
+        .join("\n");
         lines.push('\n');
         lines
     };

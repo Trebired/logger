@@ -6,7 +6,7 @@ import type {
   LogQueryOptions,
   LogQueryResult,
   LogQueryTotals,
-} from "#tvzweoxg5ahk";
+} from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 import type { WalkedLogFile } from "#x2qkmwodgsce";
 import { fileMatchesFilters, partitionKey, type PartitionSummaryState } from "./shared.js";
@@ -33,12 +33,12 @@ function buildAggregateTotals(items: Map<string, PartitionSummaryState>): LogPar
 
 function buildPartitionItems(items: Map<string, PartitionSummaryState>, counts: Map<string, number>): LogPartitionSummary[] {
   return Array.from(items.values())
-    .sort((a, b) => (a.partition || "").localeCompare(b.partition || ""))
-    .map((item) => ({
-      partition: item.partition,
-      count: counts.get(partitionKey(item.partition)) || 0,
-      total: item.total,
-    }));
+  .sort((a, b) => (a.partition || "").localeCompare(b.partition || ""))
+  .map((item) => ({
+        partition: item.partition,
+        count: counts.get(partitionKey(item.partition)) || 0,
+        total: item.total,
+  }));
 }
 
 function buildQueryResult(
@@ -109,7 +109,7 @@ async function summarizeFiles(files: WalkedLogFile[]): Promise<Map<string, Parti
   return items;
 }
 
-async function readFilteredLogs(files: WalkedLogFile[], options: LogQueryOptions): Promise<{ logs: LogEntry[]; counts: Map<string, number> }> {
+async function readFilteredLogs(files: WalkedLogFile[], options: LogQueryOptions): Promise<{logs:LogEntry[];counts:Map<string, number>}> {
   let logs: LogEntry[] = [];
   const counts = new Map<string, number>();
 

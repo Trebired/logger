@@ -6,10 +6,10 @@ import zlib from "node:zlib";
 import { zipSync, strToU8 } from "fflate";
 import tar from "tar-stream";
 
-import { PARTITION_MARKER_FILE } from "#cuh2x5snaefd";
 import { bytesToMegabytes } from "#unnkpg8o07bp";
-import { walkedFileFromPath, type WalkedLogFile } from "#x2qkmwodgsce";
+import type { WalkedLogFile } from "#x2qkmwodgsce";
 import { readPartitionMarkerFromRoot } from "#60bftlbj9ito";
+import { walkPartitionFiles } from "#o3jnvqp377lh";
 import { resolveDir } from "#08atyj8ixt0i";
 import { rewritePartitionFiles as rewritePartitionFilesToTarget } from "#nal3wuve8edd";
 import type { ArchiveCreateInput, StorageBackend, StorageScanFile, StorageScanPartition, StorageScanSnapshot } from "./types.js";
@@ -17,10 +17,10 @@ import type { ArchiveCreateInput, StorageBackend, StorageScanFile, StorageScanPa
 function countRows(text: string): number {
   if (!text.trim()) return 0;
   return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .length;
+  .split("\n")
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .length;
 }
 
 async function countRowsInFile(filePath: string, compressed: boolean): Promise<number> {
@@ -29,41 +29,12 @@ async function countRowsInFile(filePath: string, compressed: boolean): Promise<n
   return countRows(text);
 }
 
-async function collectPartitionFiles(baseDir: string, partition: string): Promise<WalkedLogFile[]> {
-  const rootDir = path.join(baseDir, partition);
-  const out: WalkedLogFile[] = [];
-  const stack = [rootDir];
-
-  while (stack.length) {
-    const current = stack.pop() || "";
-    let entries: fs.Dirent[] = [];
-    try {
-      entries = await fs.promises.readdir(current, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-
-    for (const entry of entries) {
-      const absPath = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        stack.push(absPath);
-        continue;
-      }
-      if (!entry.isFile() || entry.name === PARTITION_MARKER_FILE) continue;
-      const walked = walkedFileFromPath(rootDir, absPath, partition, rootDir);
-      if (walked) out.push(walked);
-    }
-  }
-
-  return out.sort((a, b) => a.absPath.localeCompare(b.absPath));
-}
-
-async function scanPartition(baseDir: string, partition: string): Promise<{ files: StorageScanFile[]; item: StorageScanPartition }> {
+async function scanPartition(baseDir: string, partition: string): Promise<{files:StorageScanFile[];item:StorageScanPartition}> {
   const rootDir = path.join(baseDir, partition);
   const marker = await readPartitionMarkerFromRoot(rootDir, partition);
   if (!marker) throw new Error(`partition-not-found: ${partition}`);
 
-  const walked = await collectPartitionFiles(baseDir, partition);
+  const walked = await walkPartitionFiles(rootDir, partition);
   const files: StorageScanFile[] = [];
   const dirs = new Set<string>();
   const summary = await collectScannedPartitionFiles(files, dirs, walked, partition);
@@ -89,7 +60,7 @@ async function collectScannedPartitionFiles(
   dirs: Set<string>,
   walked: WalkedLogFile[],
   partition: string,
-): Promise<{ bytes: number; logs: number; lastActivityMs: number }> {
+): Promise<{bytes:number;logs:number;lastActivityMs:number}> {
   let bytes = 0;
   let logs = 0;
   let lastActivityMs = 0;
@@ -117,7 +88,7 @@ async function collectScannedPartitionFiles(
 async function scanPartitionFile(
   file: WalkedLogFile,
   partition: string,
-): Promise<{ file: StorageScanFile; lastActivityMs: number } | null> {
+): Promise<{file:StorageScanFile;lastActivityMs:number}|null> {
   let stat: fs.Stats;
   try {
     stat = await fs.promises.stat(file.absPath);
@@ -180,9 +151,9 @@ async function writeZipArchive(input: ArchiveCreateInput): Promise<void> {
   const entries: Record<string, Uint8Array> = {};
   const items = [
     ...input.generatedFiles.map((item) => ({ archivePath: item.archivePath, buffer: strToU8(item.content) })),
-    ...await Promise.all(input.sourceFiles.map(async (item) => ({
-      archivePath: item.archivePath,
-      buffer: new Uint8Array(await fs.promises.readFile(item.sourcePath)),
+    ...await Promise.all(input.sourceFiles.map(async(item) => ({
+            archivePath: item.archivePath,
+            buffer: new Uint8Array(await fs.promises.readFile(item.sourcePath)),
     }))),
   ].sort((a, b) => a.archivePath.localeCompare(b.archivePath));
 
@@ -200,19 +171,19 @@ async function writeTarGzArchive(input: ArchiveCreateInput): Promise<void> {
 
   const items = [
     ...input.generatedFiles.map((item) => ({ archivePath: item.archivePath, buffer: Buffer.from(item.content, "utf8") })),
-    ...await Promise.all(input.sourceFiles.map(async (item) => ({
-      archivePath: item.archivePath,
-      buffer: await fs.promises.readFile(item.sourcePath),
+    ...await Promise.all(input.sourceFiles.map(async(item) => ({
+            archivePath: item.archivePath,
+            buffer: await fs.promises.readFile(item.sourcePath),
     }))),
   ].sort((a, b) => a.archivePath.localeCompare(b.archivePath));
 
   for (const item of items) {
     await new Promise<void>((resolve, reject) => {
-      pack.entry(
-        { name: path.posix.join(input.rootName, item.archivePath), size: item.buffer.length, mode: 0o644 },
-        item.buffer,
-        (error) => (error ? reject(error) : resolve()),
-      );
+        pack.entry(
+          { name: path.posix.join(input.rootName, item.archivePath), size: item.buffer.length, mode: 0o644 },
+          item.buffer,
+          (error) => (error ? reject(error) : resolve()),
+        );
     });
   }
 
@@ -235,11 +206,11 @@ const jsStorageBackend: StorageBackend = {
   scanPartitions,
   async rewritePartitionFiles(input) {
     await rewritePartitionFilesToTarget({
-      sourceRoot: input.sourceRoot,
-      sourceName: path.basename(input.sourceRoot),
-      targetRoot: input.targetRoot,
-      targetName: input.targetName,
-      merge: input.merge,
+        sourceRoot: input.sourceRoot,
+        sourceName: path.basename(input.sourceRoot),
+        targetRoot: input.targetRoot,
+        targetName: input.targetName,
+        merge: input.merge,
     });
   },
   createArchive,

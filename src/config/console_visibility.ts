@@ -15,7 +15,7 @@ type ResolvedConsoleVisibilityPayload = {
   warning: string | null;
 };
 
-type ConsoleVisibilityPolicy = ResolvedConsoleVisibilityPayload & {
+type ConsoleVisibilityPolicy = ResolvedConsoleVisibilityPayload& {
   shouldHide(group: string): boolean;
 };
 

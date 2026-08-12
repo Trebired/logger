@@ -73,8 +73,8 @@ fn scan_dir_key(rel_dir: &str) -> String {
 fn update_last_activity(last_activity: &mut Option<SystemTime>, metadata: &fs::Metadata) {
     if let Ok(modified) = metadata.modified() {
         if last_activity
-            .map(|current| modified > current)
-            .unwrap_or(true)
+        .map(|current| modified > current)
+        .unwrap_or(true)
         {
             *last_activity = Some(modified);
         }
@@ -121,35 +121,35 @@ fn scan_single_partition(
         let logical_path = logical_partition_path(partition, &file.rel_dir, &file.file_name);
         let metadata = fs::metadata(&file.abs_path).map_err(|error| err(error.to_string()))?;
         let row_count = count_rows(&file.abs_path, file.parsed.compressed)
-            .map_err(|error| err(error.to_string()))?;
+        .map_err(|error| err(error.to_string()))?;
         bytes += metadata.len();
         logs += row_count;
         dirs.insert(scan_dir_key(&file.rel_dir));
         update_last_activity(&mut last_activity, &metadata);
         files.push(to_scan_file(
-            partition,
-            &file,
-            logical_path,
-            &metadata,
-            row_count,
+                partition,
+                &file,
+                logical_path,
+                &metadata,
+                row_count,
         ));
     }
 
     files.sort_by(|a, b| a.path.cmp(&b.path));
 
     Ok((
-        ScanPartition {
-            name: partition.to_string(),
-            total: ScanTotals {
-                logs,
-                dirs: dirs.len() as u64,
-                files: files.len() as u64,
-                bytes,
-                megabytes: bytes_to_megabytes(bytes),
+            ScanPartition {
+                name: partition.to_string(),
+                total: ScanTotals {
+                    logs,
+                    dirs: dirs.len() as u64,
+                    files: files.len() as u64,
+                    bytes,
+                    megabytes: bytes_to_megabytes(bytes),
+                },
+                last_activity_at: last_activity.map(to_iso_time),
             },
-            last_activity_at: last_activity.map(to_iso_time),
-        },
-        files,
+            files,
     ))
 }
 
@@ -195,9 +195,9 @@ pub fn scan_partitions_json(dir: String, partitions: Vec<String>) -> Result<Stri
     };
 
     serde_json::to_string(&ScanSnapshot {
-        partitions: partition_items,
-        files: file_items,
-        total,
+            partitions: partition_items,
+            files: file_items,
+            total,
     })
     .map_err(|error| err(error.to_string()))
 }

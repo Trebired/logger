@@ -21,8 +21,8 @@ function getStorageBackend(): StorageBackend {
 
 function activeStorageBackendNotice(): string {
   return getStorageBackend().name === "native"
-    ? `${PACKAGE_NAME} using native storage backend`
-    : `${PACKAGE_NAME} using JS fallback storage backend`;
+  ? `${PACKAGE_NAME} using native storage backend`
+  : `${PACKAGE_NAME} using JS fallback storage backend`;
 }
 
 export { activeStorageBackendNotice, getStorageBackend, setStorageBackendPreferenceForTests };

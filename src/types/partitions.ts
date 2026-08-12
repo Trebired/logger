@@ -36,12 +36,12 @@ type FinalizePartitionOptions = {
 };
 
 type FinalizePartitionAction =
-  | "activated-target"
-  | "already-finalized"
-  | "marked-permanent"
-  | "merged"
-  | "renamed"
-  | "switched";
+|"activated-target"
+|"already-finalized"
+|"marked-permanent"
+|"merged"
+|"renamed"
+|"switched";
 
 type FinalizePartitionResult = {
   partition: string;
@@ -82,11 +82,11 @@ type PartitionInfo = {
   }>;
 };
 
-type PartitionAggregateTotals = PartitionTotals & {
+type PartitionAggregateTotals = PartitionTotals& {
   partitions: number;
 };
 
-type PartitionListResult = PartitionInfo[] & {
+type PartitionListResult = PartitionInfo[]& {
   total: PartitionAggregateTotals;
 };
 

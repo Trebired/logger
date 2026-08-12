@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { PARTITION_MARKER_FILE } from "#cuh2x5snaefd";
-import type { DeleteLogsOptions } from "#tvzweoxg5ahk";
+import type { DeleteLogsOptions } from "#e1h3ay0cyhgl";
 import { normGroup } from "#8xmnu037caa7";
 import { toString } from "#ycytzc4gr3f7";
 import { walkedFileFromPath, type WalkedLogFile } from "#x2qkmwodgsce";
@@ -24,7 +24,7 @@ function fileMatchesDeleteFilters(file: WalkedLogFile, options: DeleteLogsOption
 
 async function listTopLevelFiles(baseDir: string): Promise<WalkedLogFile[]> {
   const out: WalkedLogFile[] = [];
-  const stack: Array<{ dir: string; rootDir: string; partition: string | null }> = [{ dir: baseDir, rootDir: baseDir, partition: null }];
+  const stack: Array<{dir:string;rootDir:string;partition:string|null}> = [{ dir: baseDir, rootDir: baseDir, partition: null }];
   const markers = await partitionMarkerMap(baseDir);
 
   while (stack.length) {

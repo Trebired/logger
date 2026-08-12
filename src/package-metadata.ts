@@ -58,9 +58,9 @@ const PACKAGE_SLUG = packageSlug(PACKAGE_NAME) || "logger";
 
 function buildPackageLogGroup(...parts: string[]): string {
   return [PACKAGE_ORGANIZATION_NAME, PACKAGE_SLUG, ...parts]
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(".");
+  .map((part) => part.trim())
+  .filter(Boolean)
+  .join(".");
 }
 
 export {

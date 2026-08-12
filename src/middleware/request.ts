@@ -1,4 +1,4 @@
-import type { RequestLoggerOptions } from "#tvzweoxg5ahk";
+import type { RequestLoggerOptions } from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 
 function requestId(): string {
@@ -16,9 +16,9 @@ function buildRequestMiddleware(log: any, defaults?: RequestLoggerOptions) {
 
     return (req: any, res: any, next: () => void) => {
       const headerValue =
-        idHeader && req && req.headers && req.headers[idHeader.toLowerCase()]
-          ? req.headers[idHeader.toLowerCase()]
-          : "";
+      idHeader && req && req.headers && req.headers[idHeader.toLowerCase()]
+      ? req.headers[idHeader.toLowerCase()]
+      : "";
       const req_id = toString(Array.isArray(headerValue) ? headerValue[0] : headerValue) || requestId();
       const commonMeta = {
         req_id,

@@ -41,11 +41,11 @@ class SimpleEmitter {
 const emitter = new SimpleEmitter();
 
 const logStream = Object.freeze({
-  emitter,
-  emit: emitter.emit.bind(emitter),
-  on: emitter.on.bind(emitter),
-  once: emitter.once.bind(emitter),
-  off: emitter.off.bind(emitter),
+    emitter,
+    emit: emitter.emit.bind(emitter),
+    on: emitter.on.bind(emitter),
+    once: emitter.once.bind(emitter),
+    off: emitter.off.bind(emitter),
 });
 
 export { emitter, logStream };

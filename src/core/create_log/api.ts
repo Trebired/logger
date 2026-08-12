@@ -10,7 +10,7 @@ import {
   listPartitions as listStoredPartitions,
 } from "#76iooq23kphm";
 import { getLogsForDir } from "#zgjmhffod2k1";
-import type { LogInstance } from "#tvzweoxg5ahk";
+import type { LogInstance } from "#e1h3ay0cyhgl";
 import { finalizeActivePartition } from "./finalize.js";
 import type {
   CreateLogRuntime,
@@ -36,7 +36,7 @@ function createFinalizeDependencies(runtime: CreateLogRuntime) {
     },
     unregisterTemporaryPartition: () => runtime.unregisterTemporaryPartition(),
     applyActivePartition: (partition: string | null, temporary: boolean) =>
-      runtime.applyActivePartition(partition, temporary),
+    runtime.applyActivePartition(partition, temporary),
     flush: () => runtime.writer.flush(),
   };
 }
@@ -110,14 +110,14 @@ function resolveExportPartitionArgs(
 ) {
   const hasPartitionArg = typeof partitionOrOptions === "string";
   const partition = hasPartitionArg
-    ? sanitizePartitionName(partitionOrOptions)
-    : activePartition;
+  ? sanitizePartitionName(partitionOrOptions)
+  : activePartition;
   const options =
-    (hasPartitionArg
-      ? maybeOptions
-      : partitionOrOptions && typeof partitionOrOptions === "object"
-        ? partitionOrOptions
-        : maybeOptions) || {};
+  (hasPartitionArg
+    ? maybeOptions
+    : partitionOrOptions && typeof partitionOrOptions === "object"
+    ? partitionOrOptions
+    : maybeOptions) || {};
 
   return {
     partition,
@@ -154,7 +154,7 @@ function createExportApi(runtime: CreateLogRuntime) {
 
 function buildLogsQuery(
   runtime: CreateLogRuntime,
-  options: Record<string, unknown> | undefined,
+  options: Record<string, unknown>|undefined,
 ): Record<string, unknown> {
   const query: Record<string, unknown> = {
     ...(options || {}),
@@ -174,8 +174,8 @@ function createQueryApi(runtime: CreateLogRuntime) {
   return {
     async getPartitionInfo(partition) {
       const target = partition == null
-        ? runtime.state.activePartition
-        : sanitizePartitionName(partition);
+      ? runtime.state.activePartition
+      : sanitizePartitionName(partition);
 
       if (!target) {
         return null;
@@ -190,9 +190,9 @@ function createQueryApi(runtime: CreateLogRuntime) {
     async getAllLogsAcrossPartitions(options) {
       await runtime.writer.flush();
       return getLogsForDir(runtime.writer.getDir(), {
-        ...(options || {}),
-        acrossPartitions: true,
-        levels: runtime.levels,
+          ...(options || {}),
+          acrossPartitions: true,
+          levels: runtime.levels,
       });
     },
   };
@@ -235,12 +235,12 @@ function maybeShowInitializationNotices(
 
   sharedState.packageGreetingShown = true;
   runtime.withConsoleVisibilityBypass(() => {
-    api.success(`${LOGGER_LOG_GROUP}.initialize`, `${LOGGER_PACKAGE_NAME} initialized`);
+      api.success(`${LOGGER_LOG_GROUP}.initialize`, `${LOGGER_PACKAGE_NAME} initialized`);
 
-    if (!sharedState.storageBackendNoticeShown) {
-      sharedState.storageBackendNoticeShown = true;
-      api.info(`${LOGGER_LOG_GROUP}.initialize`, activeStorageBackendNotice());
-    }
+      if (!sharedState.storageBackendNoticeShown) {
+        sharedState.storageBackendNoticeShown = true;
+        api.info(`${LOGGER_LOG_GROUP}.initialize`, activeStorageBackendNotice());
+      }
   });
 }
 

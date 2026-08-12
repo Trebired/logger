@@ -47,45 +47,45 @@ function makeRequest(tick: number): DemoRequest {
 
 function createDemoLog() {
   return createLog({
-    dir: rootDir,
-    console: {
-      colors: true,
-      timestamp: true,
-      group: true,
-      metadata: true,
-      locale: "en-US",
-    },
-    quiet: true,
-    timeZone: "Europe/Prague",
-    source: "dummy",
-    levels: {
-      audit: { weight: 35, label: "AUDIT", color: "#8b5cf6" },
-      panic: { weight: 100, label: "PANIC", color: "#dc2626", stream: "stderr", bold: true, showStack: true },
-    },
-    write: {
-      mode: "async",
-      maxQueue: 1000,
-      overflow: "drop-newest",
-    },
-    retention: {
-      enabled: true,
-      maxAgeDays: 3,
-      maxFileSize: "512kb",
-    },
-    redact: {
-      includeDefaultSensitiveKeys: true,
-      paths: ["user.ssn", /^payment\.card/i],
-      replacement: "[demo-redacted]",
-    },
-    serializers: {
-      durationMs: (value) => `${value}ms`,
-      error: (value) => (value instanceof Error ? { name: value.name, message: value.message } : value),
-    },
-    request: {
-      group: "http.request",
-      idHeader: "x-request-id",
-      attach: true,
-    },
+      dir: rootDir,
+      console: {
+        colors: true,
+        timestamp: true,
+        group: true,
+        metadata: true,
+        locale: "en-US",
+      },
+      quiet: true,
+      timeZone: "Europe/Prague",
+      source: "dummy",
+      levels: {
+        audit: { weight: 35, label: "AUDIT", color: "#8b5cf6" },
+        panic: { weight: 100, label: "PANIC", color: "#dc2626", stream: "stderr", bold: true, showStack: true },
+      },
+      write: {
+        mode: "async",
+        maxQueue: 1000,
+        overflow: "drop-newest",
+      },
+      retention: {
+        enabled: true,
+        maxAgeDays: 3,
+        maxFileSize: "512kb",
+      },
+      redact: {
+        includeDefaultSensitiveKeys: true,
+        paths: ["user.ssn", /^payment\.card/i],
+        replacement: "[demo-redacted]",
+      },
+      serializers: {
+        durationMs: (value) => `${value}ms`,
+        error: (value) => (value instanceof Error ? { name: value.name, message: value.message } : value),
+      },
+      request: {
+        group: "http.request",
+        idHeader: "x-request-id",
+        attach: true,
+      },
   });
 }
 
@@ -99,21 +99,21 @@ function createStreamHandler() {
 
 function createQuerySnapshotLogger(log: ReturnType<typeof createLog>) {
   let querying = false;
-  return async () => {
+  return async() => {
     if (querying) return;
     querying = true;
     try {
       const recent = await log.getAllLogs({ groupKey: "app.heartbeat", limit: 3 });
       log.debug("logs.query", "recent heartbeat query", {
-        count: recent.metadata.count,
-        levels: Object.keys(recent.levels),
-        latest: recent.logs.length ? recent.logs[recent.logs.length - 1].message : null,
+          count: recent.metadata.count,
+          levels: Object.keys(recent.levels),
+          latest: recent.logs.length ? recent.logs[recent.logs.length - 1].message : null,
       });
 
       const audit = await getLogsForDir(log.getDir(), { level: "audit", limit: 5, levels: recent.levels });
       log.debug("logs.query", "recent audit query", {
-        count: audit.metadata.count,
-        levelColor: audit.levels.audit.color,
+          count: audit.metadata.count,
+          levelColor: audit.levels.audit.color,
       });
     } finally {
       querying = false;
@@ -125,8 +125,8 @@ function logRequest(requestLogger: ReturnType<ReturnType<typeof createLog>["requ
   const req = makeRequest(tick);
   const res: DemoResponse = { locals: { currentSubdomain: "demo" } };
   requestLogger(req, res, () => {
-    req.log?.info("request accepted", { route: "/api/widgets" });
-    if (tick % 6 === 0) req.log?.warn("request was slow", { durationMs: 80 + tick, token: "secret-demo-token" });
+      req.log?.info("request accepted", { route: "/api/widgets" });
+      if (tick % 6 === 0) req.log?.warn("request was slow", { durationMs: 80 + tick, token: "secret-demo-token" });
   });
 }
 
@@ -144,9 +144,9 @@ function logTick(
 
   if (tick % 2 === 0) {
     log.audit("billing.invoice", "invoice exported", {
-      invoiceId: `inv_demo_${tick}`,
-      payment: { cardLast4: "4242" },
-      user: { ssn: "123-45-6789" },
+        invoiceId: `inv_demo_${tick}`,
+        payment: { cardLast4: "4242" },
+        user: { ssn: "123-45-6789" },
     });
   }
 
@@ -160,7 +160,7 @@ async function stopDemoSystem(
   log: ReturnType<typeof createLog>,
   signal: string,
   tick: number,
-  interval: ReturnType<typeof setInterval> | null,
+  interval: ReturnType<typeof setInterval>|null,
   streamHandler: ReturnType<typeof createStreamHandler>,
 ) {
   if (interval) clearInterval(interval);
@@ -181,18 +181,18 @@ function printStartup(log: ReturnType<typeof createLog>) {
 async function waitForStop(
   log: ReturnType<typeof createLog>,
   getTick: () => number,
-  interval: ReturnType<typeof setInterval> | null,
+  interval: ReturnType<typeof setInterval>|null,
   streamHandler: ReturnType<typeof createStreamHandler>,
 ) {
   let stopping = false;
   await new Promise<void>((resolve) => {
-    const done = (signal: string) => {
-      if (stopping) return;
-      stopping = true;
-      void stopDemoSystem(log, signal, getTick(), interval, streamHandler).finally(resolve);
-    };
-    process.once("SIGINT", () => done("SIGINT"));
-    process.once("SIGTERM", () => done("SIGTERM"));
+      const done = (signal: string) => {
+        if (stopping) return;
+        stopping = true;
+        void stopDemoSystem(log, signal, getTick(), interval, streamHandler).finally(resolve);
+      };
+      process.once("SIGINT", () => done("SIGINT"));
+      process.once("SIGTERM", () => done("SIGTERM"));
   });
 }
 
@@ -212,14 +212,14 @@ async function runDummySystem(): Promise<void> {
   logTick(log, tick, requestLogger, logQuerySnapshot);
 
   const interval = setInterval(() => {
-    tick += 1;
-    logTick(log, tick, requestLogger, logQuerySnapshot);
-  }, 1000);
+      tick += 1;
+      logTick(log, tick, requestLogger, logQuerySnapshot);
+    }, 1000);
 
   await waitForStop(log, () => tick, interval, streamHandler);
 }
 
-runDummySystem().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.stack || error.message : String(error)}\n`);
-  process.exitCode = 1;
+runDummySystem().catch ((error) => {
+    process.stderr.write(`${error instanceof Error ? error.stack || error.message : String(error)}\n`);
+    process.exitCode = 1;
 });

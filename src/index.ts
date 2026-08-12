@@ -78,5 +78,5 @@ export type {
   ServerLogStreamContext,
   SetPartitionOptions,
   WriteOptions,
-} from "./types.js";
+} from "./types/index.ts";
 export type { PartitionError, PartitionErrorCode } from "./storage/partitions/errors.js";

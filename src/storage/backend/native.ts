@@ -42,8 +42,8 @@ function nativeAddonCandidatePathsForCurrentPlatform(): string[] {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const binaryName = nativeBinaryBasenameForCurrentPlatform();
   const envOverride = process.env.TB_LOGGER_NATIVE_BINARY
-    ? path.resolve(process.env.TB_LOGGER_NATIVE_BINARY)
-    : "";
+  ? path.resolve(process.env.TB_LOGGER_NATIVE_BINARY)
+  : "";
 
   return [
     envOverride,

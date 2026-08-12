@@ -17,7 +17,7 @@ type LogQueryTotals = {
   files: number;
 };
 
-type LogPartitionTotals = LogQueryTotals & {
+type LogPartitionTotals = LogQueryTotals& {
   partitions: number;
 };
 

@@ -41,7 +41,7 @@ type RedactTransformArgs = {
 };
 
 type RedactOptions = {
-  paths?: Array<string | RegExp>;
+  paths?: Array<string|RegExp>;
   replacement?: string;
   includeDefaultSensitiveKeys?: boolean;
   transform?: (args: RedactTransformArgs) => unknown;

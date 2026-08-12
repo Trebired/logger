@@ -1,4 +1,4 @@
-import type { CreateLogOptions, LogInstance } from "#tvzweoxg5ahk";
+import type { CreateLogOptions, LogInstance } from "#e1h3ay0cyhgl";
 import {
   createBaseLogApi,
   createCreateLogRuntime,

@@ -1,4 +1,4 @@
-import type { LogQueryOptions, LogQueryResult } from "#tvzweoxg5ahk";
+import type { LogQueryOptions, LogQueryResult } from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 import { walkLogFiles } from "./walk.js";
 import { normalizePartitionFilter, scopeMatches } from "./query/shared.js";

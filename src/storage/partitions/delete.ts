@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-import type { DeleteLogsOptions, DeleteLogsResult, DeletePartitionResult, DeletePartitionsOptions } from "#tvzweoxg5ahk";
+import type { DeleteLogsOptions, DeleteLogsResult, DeletePartitionResult, DeletePartitionsOptions } from "#e1h3ay0cyhgl";
 import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { fileMatchesDeleteFilters, listTopLevelFiles, readLogRows } from "./files.js";
 import { collectPartitionRecords, partitionInfoFromRecord, partitionMarkerMap } from "./records.js";
@@ -14,16 +14,16 @@ async function collectPartitionDeleteCandidates(dir: string, options: DeletePart
   const wanted = new Set((options.partitions || []).map((item) => sanitizePartitionName(item)));
   const cutoff = cutoffMsForDays(options.olderThanDays);
   const records = await collectPartitionRecords(dir);
-  const items = await Promise.all(records.map(async (record) => ({
-    record,
-    info: await partitionInfoFromRecord(record),
+  const items = await Promise.all(records.map(async(record) => ({
+          record,
+          info: await partitionInfoFromRecord(record),
   })));
 
   return sortPartitionCandidates(items.filter(({ info }) => {
-    if (wanted.size && !wanted.has(info.name)) return false;
-    if (options.temporaryOnly === true && info.temporary !== true) return false;
-    if (cutoff != null && partitionAgeReferenceMs(info) >= cutoff) return false;
-    return true;
+        if (wanted.size && !wanted.has(info.name)) return false;
+        if (options.temporaryOnly === true && info.temporary !== true) return false;
+        if (cutoff != null && partitionAgeReferenceMs(info) >= cutoff) return false;
+        return true;
   }));
 }
 
@@ -64,9 +64,9 @@ async function fileDeleteCandidates(dir: string, options: DeleteLogsOptions = {}
 
     if (cutoff != null && stat.mtimeMs >= cutoff) continue;
     out.push({
-      file,
-      bytes: stat.size,
-      logs: (await readLogRows(file.absPath, file.compressed)).length,
+        file,
+        bytes: stat.size,
+        logs: (await readLogRows(file.absPath, file.compressed)).length,
     });
   }
 
@@ -122,10 +122,10 @@ async function deleteLogs(dir: string, options: DeleteLogsOptions = {}): Promise
     logs: candidates.reduce((sum, item) => sum + item.logs, 0),
     bytes: candidates.reduce((sum, item) => sum + item.bytes, 0),
     items: candidates.map((item) => ({
-      path: item.file.absPath,
-      partition: item.file.partition,
-      logs: item.logs,
-      bytes: item.bytes,
+          path: item.file.absPath,
+          partition: item.file.partition,
+          logs: item.logs,
+          bytes: item.bytes,
     })),
   };
 }

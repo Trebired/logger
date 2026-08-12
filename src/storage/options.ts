@@ -1,4 +1,4 @@
-import type { NormalizedRetentionOptions, NormalizedWriteOptions, RetentionOptions, WriteOptions } from "#tvzweoxg5ahk";
+import type { NormalizedRetentionOptions, NormalizedWriteOptions, RetentionOptions, WriteOptions } from "#e1h3ay0cyhgl";
 import { parseSize } from "#unnkpg8o07bp";
 
 function normalizeWriteOptions(input?: WriteOptions): NormalizedWriteOptions {
@@ -9,9 +9,9 @@ function normalizeWriteOptions(input?: WriteOptions): NormalizedWriteOptions {
     mode: cfg.mode === "sync" ? "sync" : "async",
     maxQueue: Number.isFinite(maxQueue) && maxQueue > 0 ? Math.floor(maxQueue) : 10000,
     overflow:
-      cfg.overflow === "drop-oldest" || cfg.overflow === "throw" || cfg.overflow === "drop-newest"
-        ? cfg.overflow
-        : "drop-newest",
+    cfg.overflow === "drop-oldest" || cfg.overflow === "throw" || cfg.overflow === "drop-newest"
+    ? cfg.overflow
+    : "drop-newest",
   };
 }
 

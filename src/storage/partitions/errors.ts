@@ -1,12 +1,12 @@
 import { result, type ResultLike } from "@package/result";
 
 type PartitionErrorCode =
-  | "missing-log-dir"
-  | "partition-already-exists"
-  | "partition-merge-target-same-as-source"
-  | "partition-not-set";
+|"missing-log-dir"
+|"partition-already-exists"
+|"partition-merge-target-same-as-source"
+|"partition-not-set";
 
-type PartitionError = Error & {
+type PartitionError = Error& {
   code: PartitionErrorCode;
   partition?: string;
   from?: string;
@@ -40,19 +40,19 @@ function createPartitionError(
   if (details.from) error.from = details.from;
   if (details.to) error.to = details.to;
   error.result = code === "partition-already-exists"
-    ? result.conflict(code, { details })
-    : result.error(code, 400, { details });
+  ? result.conflict(code, { details })
+  : result.error(code, 400, { details });
   return error;
 }
 
 function getPartitionErrorCode(error: unknown): PartitionErrorCode | null {
-  if (error && typeof error === "object" && typeof (error as { code?: unknown }).code === "string") {
+  if (error && typeof error === "object" && typeof(error as { code?: unknown }).code === "string") {
     const code = (error as { code: string }).code;
     if (
       code === "missing-log-dir"
-      || code === "partition-already-exists"
-      || code === "partition-merge-target-same-as-source"
-      || code === "partition-not-set"
+      ||code === "partition-already-exists"
+      ||code === "partition-merge-target-same-as-source"
+      ||code === "partition-not-set"
     ) {
       return code;
     }
@@ -62,11 +62,11 @@ function getPartitionErrorCode(error: unknown): PartitionErrorCode | null {
   if (!message) return null;
 
   for (const code of [
-    "missing-log-dir",
-    "partition-already-exists",
-    "partition-merge-target-same-as-source",
-    "partition-not-set",
-  ] as const) {
+      "missing-log-dir",
+      "partition-already-exists",
+      "partition-merge-target-same-as-source",
+      "partition-not-set",
+    ] as const) {
     if (message === code || message.startsWith(`${code}:`)) {
       return code;
     }

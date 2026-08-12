@@ -36,9 +36,9 @@ fn output_with_warning(file_path: &Path, warning: String) -> ConsoleVisibilityCo
 
 fn clean_segment(value: Option<&Value>) -> Option<String> {
     value
-        .and_then(|item| item.as_str())
-        .map(|item| item.trim().to_string())
-        .filter(|item| !item.is_empty())
+    .and_then(|item| item.as_str())
+    .map(|item| item.trim().to_string())
+    .filter(|item| !item.is_empty())
 }
 
 fn package_scope(name: &str) -> Option<String> {
@@ -66,11 +66,11 @@ fn package_slug(name: &str) -> Option<String> {
     }
 }
 
-fn discover_package_json_path(start_dir: &Path) -> Option<PathBuf> {
+fn find_ancestor_file(start_dir: &Path, file_name: &str) -> Option<PathBuf> {
     let mut current = PathBuf::from(start_dir);
 
     loop {
-        let candidate = current.join(PACKAGE_FILE_NAME);
+        let candidate = current.join(file_name);
         if candidate.is_file() {
             return Some(candidate);
         }
@@ -86,17 +86,17 @@ fn discover_package_json_path(start_dir: &Path) -> Option<PathBuf> {
 }
 
 fn package_log_prefix(start_dir: &Path) -> String {
-    let parsed = discover_package_json_path(start_dir)
-        .and_then(|file_path| fs::read_to_string(file_path).ok())
-        .and_then(|text| serde_json::from_str::<Value>(&text).ok());
+    let parsed = find_ancestor_file(start_dir, PACKAGE_FILE_NAME)
+    .and_then(|file_path| fs::read_to_string(file_path).ok())
+    .and_then(|text| serde_json::from_str::<Value>(&text).ok());
     let package_name = clean_segment(parsed.as_ref().and_then(|item| item.get("name")))
-        .unwrap_or_else(|| "@package/logger".to_string());
+    .unwrap_or_else(|| "@package/logger".to_string());
     let organization = clean_segment(
         parsed
-            .as_ref()
-            .and_then(|item| item.get("config"))
-            .and_then(|item| item.get("organization"))
-            .and_then(|item| item.get("name")),
+        .as_ref()
+        .and_then(|item| item.get("config"))
+        .and_then(|item| item.get("organization"))
+        .and_then(|item| item.get("name")),
     )
     .or_else(|| package_scope(&package_name))
     .unwrap_or_else(|| "package".to_string());
@@ -142,25 +142,6 @@ fn warning_for_parse_error(
     )
 }
 
-fn discover_config_path(start_dir: &Path) -> Option<PathBuf> {
-    let mut current = PathBuf::from(start_dir);
-
-    loop {
-        let candidate = current.join(CONFIG_FILE_NAME);
-        if candidate.is_file() {
-            return Some(candidate);
-        }
-
-        let Some(parent) = current.parent() else {
-            return None;
-        };
-        if parent == current {
-            return None;
-        }
-        current = parent.to_path_buf();
-    }
-}
-
 fn normalize_groups(values: &[Value]) -> Vec<String> {
     let mut out = Vec::new();
 
@@ -187,8 +168,8 @@ fn parse_config_object(
     };
 
     let Some(groups) = object
-        .get("hideConsoleGroups")
-        .and_then(|value| value.as_array())
+    .get("hideConsoleGroups")
+    .and_then(|value| value.as_array())
     else {
         return output_with_warning(file_path, warning_for_invalid_shape(log_prefix, file_path));
     };
@@ -231,7 +212,7 @@ fn parse_config_file(log_prefix: &str, file_path: &Path) -> ConsoleVisibilityCon
 pub fn resolve_console_visibility_config_json(start_dir: String) -> Result<String> {
     let start = PathBuf::from(start_dir);
     let log_prefix = package_log_prefix(&start);
-    let output = match discover_config_path(&start) {
+    let output = match find_ancestor_file(&start, CONFIG_FILE_NAME) {
         Some(file_path) => parse_config_file(&log_prefix, &file_path),
         None => empty_output(),
     };

@@ -1,5 +1,5 @@
 import { DEFAULT_SENSITIVE_KEYS, RESERVED_METADATA_KEYS } from "#cuh2x5snaefd";
-import type { RedactOptions } from "#tvzweoxg5ahk";
+import type { RedactOptions } from "#e1h3ay0cyhgl";
 import { asObject, clonePlain, isPlainObject, toString } from "#ycytzc4gr3f7";
 
 function sanitizeMetadata(input: unknown): Record<string, unknown> {
@@ -15,7 +15,7 @@ function sanitizeMetadata(input: unknown): Record<string, unknown> {
   return out;
 }
 
-function applySerializers(input: Record<string, unknown>, serializers?: Record<string, (value: unknown) => unknown>): Record<string, unknown> {
+function applySerializers(input: Record<string, unknown>, serializers?: Record<string, (value:unknown)=>unknown>): Record<string, unknown> {
   if (!serializers || typeof serializers !== "object") return input;
   const out = clonePlain(input) as Record<string, unknown>;
 
@@ -44,7 +44,7 @@ function applySerializers(input: Record<string, unknown>, serializers?: Record<s
   return visit(out, "") as Record<string, unknown>;
 }
 
-function shouldRedact(path: string, key: string, options: Required<Pick<RedactOptions, "includeDefaultSensitiveKeys">> & RedactOptions): boolean {
+function shouldRedact(path: string, key: string, options: Required<Pick<RedactOptions, "includeDefaultSensitiveKeys">>&RedactOptions): boolean {
   const lowerKey = key.toLowerCase();
   if (options.includeDefaultSensitiveKeys !== false && DEFAULT_SENSITIVE_KEYS.has(lowerKey)) return true;
 
@@ -88,7 +88,7 @@ function redactMetadata(input: Record<string, unknown>, options?: RedactOptions)
   return visit(input, "", "") as Record<string, unknown>;
 }
 
-function prepareMetadata(input: unknown, serializers?: Record<string, (value: unknown) => unknown>, redact?: RedactOptions): Record<string, unknown> {
+function prepareMetadata(input: unknown, serializers?: Record<string, (value:unknown)=>unknown>, redact?: RedactOptions): Record<string, unknown> {
   const sanitized = sanitizeMetadata(input);
   const serialized = applySerializers(sanitized, serializers);
   return redactMetadata(serialized, redact);

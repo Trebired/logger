@@ -9,7 +9,7 @@ import type {
   BrowserTransport,
   BrowserTransportContext,
   LogEntry,
-} from "#tvzweoxg5ahk";
+} from "#e1h3ay0cyhgl";
 import { normalizeTimeZone } from "#0c4ri7nq63zi";
 import { asObject, toString } from "#ycytzc4gr3f7";
 import { createConsoleTransport } from "./console_transport.js";
@@ -47,12 +47,12 @@ function resolveTransports(options: BrowserLogOptions, levels: ReturnType<typeof
     if (input === "console") {
       if (options.console === false) continue;
       resolved.push({
-        transport: createConsoleTransport({
-          console: options.console,
-          timeZone,
-          levels,
-        }),
-        immediate: true,
+          transport: createConsoleTransport({
+              console: options.console,
+              timeZone,
+              levels,
+          }),
+          immediate: true,
       });
       continue;
     }
@@ -70,8 +70,8 @@ class BrowserTransportManager {
   private batchedTransports: BrowserTransport[];
   private batchOptions: NormalizedBrowserBatchOptions;
   private queue: LogEntry[] = [];
-  private timer: ReturnType<typeof setTimeout> | null = null;
-  private flushing: Promise<void> | null = null;
+  private timer: ReturnType<typeof setTimeout>|null = null;
+  private flushing: Promise<void>|null = null;
   private closed = false;
   private stats: BrowserLogStats;
 
@@ -107,9 +107,9 @@ class BrowserTransportManager {
     for (const transport of this.immediateTransports) {
       try {
         const result = transport.write([entry], this.getContext());
-        if (result && typeof (result as Promise<void>).catch === "function") {
-          void (result as Promise<void>).catch(() => {
-            this.stats.failed += 1;
+        if (result && typeof(result as Promise<void>).catch === "function") {
+          void(result as Promise<void>).catch (() => {
+              this.stats.failed += 1;
           });
         }
         wroteImmediate = true;
@@ -183,9 +183,9 @@ class BrowserTransportManager {
   private ensureTimer(): void {
     if (this.timer || this.closed || this.batchOptions.delayMs <= 0) return;
     this.timer = setTimeout(() => {
-      this.timer = null;
-      void this.flushQueue();
-    }, this.batchOptions.delayMs);
+        this.timer = null;
+        void this.flushQueue();
+      }, this.batchOptions.delayMs);
   }
 
   private clearTimer(): void {
@@ -202,26 +202,26 @@ class BrowserTransportManager {
       return;
     }
 
-    this.flushing = (async () => {
-      while (this.queue.length > 0) {
-        const entries = this.queue.splice(0, this.queue.length);
-        this.stats.queueLength = this.queue.length;
-        let failed = false;
+    this.flushing = (async() => {
+        while (this.queue.length > 0) {
+          const entries = this.queue.splice(0, this.queue.length);
+          this.stats.queueLength = this.queue.length;
+          let failed = false;
 
-        for (const transport of this.batchedTransports) {
-          try {
-            await transport.write(entries, this.getContext());
-          } catch {
-            failed = true;
+          for (const transport of this.batchedTransports) {
+            try {
+              await transport.write(entries, this.getContext());
+            } catch {
+              failed = true;
+            }
           }
-        }
 
-        if (failed) this.stats.failed += entries.length;
-        else if (this.immediateTransports.length === 0) this.stats.written += entries.length;
-      }
+          if (failed) this.stats.failed += entries.length;
+          else if (this.immediateTransports.length === 0) this.stats.written += entries.length;
+        }
     })().finally(() => {
-      this.flushing = null;
-      this.stats.queueLength = this.queue.length;
+        this.flushing = null;
+        this.stats.queueLength = this.queue.length;
     });
 
     await this.flushing;
@@ -236,29 +236,29 @@ function createBrowserLog(options: BrowserLogOptions = {}): BrowserLogInstance {
   const manager = new BrowserTransportManager(transports, cfg.batch);
 
   const { api } = createCommonLogger<BrowserLogStats>({
-    levels,
-    minLevel: cfg.minLevel,
-    defaultSource: toString(cfg.source) || "browser",
-    defaultGroup: toString(cfg.group) || undefined,
-    defaultMetadata: asObject(cfg.metadata),
-    serializers: cfg.serializers,
-    redact: cfg.redact,
-    sample: cfg.sample,
-    writeEntry(entry) {
-      manager.write(entry);
-      try {
-        logStream.emit("log", entry, manager.getContext());
-      } catch {}
-    },
-    flush() {
-      return manager.flush();
-    },
-    close() {
-      return manager.close();
-    },
-    getStats() {
-      return manager.getStats();
-    },
+      levels,
+      minLevel: cfg.minLevel,
+      defaultSource: toString(cfg.source) || "browser",
+      defaultGroup: toString(cfg.group) || undefined,
+      defaultMetadata: asObject(cfg.metadata),
+      serializers: cfg.serializers,
+      redact: cfg.redact,
+      sample: cfg.sample,
+      writeEntry(entry) {
+        manager.write(entry);
+        try {
+          logStream.emit("log", entry, manager.getContext());
+        } catch {}
+      },
+      flush() {
+        return manager.flush();
+      },
+      close() {
+        return manager.close();
+      },
+      getStats() {
+        return manager.getStats();
+      },
   });
 
   return api as BrowserLogInstance;

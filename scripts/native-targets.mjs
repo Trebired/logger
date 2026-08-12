@@ -1,12 +1,12 @@
 import fs from "node:fs";
 
 const TARGET_BINARY_NAMES = new Map([
-  ["x86_64-unknown-linux-gnu", "linux-x64-gnu.node"],
-  ["x86_64-unknown-linux-musl", "linux-x64-musl.node"],
-  ["aarch64-unknown-linux-gnu", "linux-arm64-gnu.node"],
-  ["aarch64-unknown-linux-musl", "linux-arm64-musl.node"],
-  ["x86_64-apple-darwin", "darwin-x64.node"],
-  ["aarch64-apple-darwin", "darwin-arm64.node"],
+    ["x86_64-unknown-linux-gnu", "linux-x64-gnu.node"],
+    ["x86_64-unknown-linux-musl", "linux-x64-musl.node"],
+    ["aarch64-unknown-linux-gnu", "linux-arm64-gnu.node"],
+    ["aarch64-unknown-linux-musl", "linux-arm64-musl.node"],
+    ["x86_64-apple-darwin", "darwin-x64.node"],
+    ["aarch64-apple-darwin", "darwin-arm64.node"],
 ]);
 
 const RELEASE_NATIVE_TARGETS = [

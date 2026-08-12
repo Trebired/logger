@@ -4,9 +4,9 @@ import path from "node:path";
 
 function cleanSegment(value) {
   return value
-    .trim()
-    .split("")
-    .map((char) => {
+  .trim()
+  .split("")
+  .map((char) => {
       const code = char.charCodeAt(0);
       const isLower = code >= 97 && code <= 122;
       const isUpper = code >= 65 && code <= 90;
@@ -14,19 +14,19 @@ function cleanSegment(value) {
       const isSeparator = char === "." || char === "_" || char === "-";
 
       return isLower || isUpper || isDigit || isSeparator ? char : "-";
-    })
-    .join("");
+  })
+  .join("");
 }
 
 function readPackageMetadata() {
   try {
     const packageJson = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8"));
     const packageName = typeof packageJson.name === "string" && packageJson.name.trim()
-      ? packageJson.name.trim()
-      : "@package/logger";
+    ? packageJson.name.trim()
+    : "@package/logger";
     const organizationName = typeof packageJson.config?.organization?.name === "string"
-      ? packageJson.config.organization.name.trim()
-      : "";
+    ? packageJson.config.organization.name.trim()
+    : "";
     const scopeSlashIndex = packageName.startsWith("@") ? packageName.indexOf("/") : -1;
     const packageSlugValue = scopeSlashIndex > 0 ? packageName.slice(scopeSlashIndex + 1) : packageName;
     const organizationValue = organizationName || (scopeSlashIndex > 0 ? packageName.slice(1, scopeSlashIndex) : "");
@@ -48,12 +48,12 @@ const logPrefix = `[${packageMetadata.group}]`;
 
 function runVerify(scope) {
   const result = spawnSync("node", ["./scripts/verify/pack.mjs"], {
-    cwd: process.cwd(),
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      TB_LOGGER_VERIFY_NATIVE_SCOPE: scope,
-    },
+      cwd: process.cwd(),
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        TB_LOGGER_VERIFY_NATIVE_SCOPE: scope,
+      },
   });
 
   if (result.status !== 0) process.exit(result.status || 1);

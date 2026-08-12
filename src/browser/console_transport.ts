@@ -7,7 +7,7 @@ import type {
   LogEntry,
   LogLevelConfig,
   NormalizedConsoleOptions,
-} from "#tvzweoxg5ahk";
+} from "#e1h3ay0cyhgl";
 
 function consoleMethodName(level: string, levelConfig: LogLevelConfig): "debug" | "info" | "warn" | "error" | "log" {
   if (level === "debug") return "debug";

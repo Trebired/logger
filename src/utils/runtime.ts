@@ -9,14 +9,14 @@ const LOGGER_PACKAGE_NAME = PACKAGE_NAME;
 let nodeRuntimeNoticeShown = false;
 
 function isBunRuntime(): boolean {
-  return typeof globalThis !== "undefined" && typeof (globalThis as any).Bun !== "undefined";
+  return typeof globalThis !== "undefined" && typeof(globalThis as any).Bun !== "undefined";
 }
 
 function isNodeRuntime(): boolean {
   return (
     typeof process !== "undefined" &&
-    Boolean(process.versions && process.versions.node) &&
-    !isBunRuntime()
+      Boolean(process.versions && process.versions.node) &&
+      !isBunRuntime()
   );
 }
 

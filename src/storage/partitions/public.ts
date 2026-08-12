@@ -1,4 +1,3 @@
-
 import type {
   CopyPartitionOptions,
   CreatePartitionOptions,
@@ -8,7 +7,7 @@ import type {
   PartitionInfo,
   PartitionListResult,
   RenamePartitionOptions,
-} from "#tvzweoxg5ahk";
+} from "#e1h3ay0cyhgl";
 import { sanitizePartitionName } from "#x2qkmwodgsce";
 import { createPartitionError } from "./errors.js";
 import { deletePartitions } from "./delete.js";
@@ -24,10 +23,10 @@ async function createPartition(dir: string, partition: string, options: CreatePa
   const rootDir = partitionRootPath(baseDir, name);
   if (await pathExists(rootDir)) throw createPartitionError("partition-already-exists", { partition: name });
   await writePartitionMarker(rootDir, {
-    name,
-    temporary: options.temporary === true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+      name,
+      temporary: options.temporary === true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
   });
   return (await getPartitionInfo(baseDir, name)) as PartitionInfo;
 }
@@ -38,7 +37,7 @@ async function listPartitions(dir: string): Promise<PartitionListResult> {
   return partitionListResult(items.sort((a, b) => a.name.localeCompare(b.name)));
 }
 
-async function getPartitionInfo(dir: string, partition: string): Promise<PartitionInfo | null> {
+async function getPartitionInfo(dir: string, partition: string): Promise<PartitionInfo|null> {
   const record = await getPartitionRecord(dir, partition);
   return record ? partitionInfoFromRecord(record) : null;
 }
@@ -46,12 +45,12 @@ async function getPartitionInfo(dir: string, partition: string): Promise<Partiti
 async function renamePartition(dir: string, options: RenamePartitionOptions): Promise<PartitionInfo> {
   const source = await requirePartitionRecord(dir, options.from);
   return transformPartition({
-    source,
-    targetDir: source.dir,
-    targetName: sanitizePartitionName(options.to),
-    deleteSource: true,
-    targetTemporary: source.marker.temporary,
-    preserveSourceCreatedAt: true,
+      source,
+      targetDir: source.dir,
+      targetName: sanitizePartitionName(options.to),
+      deleteSource: true,
+      targetTemporary: source.marker.temporary,
+      preserveSourceCreatedAt: true,
   });
 }
 
@@ -59,12 +58,12 @@ async function movePartition(options: MovePartitionOptions): Promise<PartitionIn
   const source = await requirePartitionRecord(options.fromDir, options.from);
   const targetName = sanitizePartitionName(options.to || source.name);
   return transformPartition({
-    source,
-    targetDir: resolveDir(options.toDir),
-    targetName,
-    deleteSource: true,
-    targetTemporary: source.marker.temporary,
-    preserveSourceCreatedAt: true,
+      source,
+      targetDir: resolveDir(options.toDir),
+      targetName,
+      deleteSource: true,
+      targetTemporary: source.marker.temporary,
+      preserveSourceCreatedAt: true,
   });
 }
 
@@ -76,12 +75,12 @@ async function copyPartition(options: CopyPartitionOptions): Promise<PartitionIn
     throw createPartitionError("partition-already-exists", { partition: targetName });
   }
   return transformPartition({
-    source,
-    targetDir,
-    targetName,
-    deleteSource: false,
-    targetTemporary: source.marker.temporary,
-    preserveSourceCreatedAt: false,
+      source,
+      targetDir,
+      targetName,
+      deleteSource: false,
+      targetTemporary: source.marker.temporary,
+      preserveSourceCreatedAt: false,
   });
 }
 

@@ -26,10 +26,10 @@ fn rewrite_partition_files_internal(input: &PartitionRewriteInput) -> Result<()>
 
     for file in files.iter() {
         let rows = read_jsonl_rows(&file.abs_path, file.parsed.compressed)
-            .map_err(|error| err(error.to_string()))?;
+        .map_err(|error| err(error.to_string()))?;
         let next_rows = rows
-            .into_iter()
-            .map(|row| match row {
+        .into_iter()
+        .map(|row| match row {
                 JsonValue::Object(mut object) => {
                     object.insert(
                         "partition".to_string(),
@@ -38,8 +38,8 @@ fn rewrite_partition_files_internal(input: &PartitionRewriteInput) -> Result<()>
                     JsonValue::Object(object)
                 }
                 other => other,
-            })
-            .collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
         let target_dir = if file.rel_dir.is_empty() {
             target_root.clone()
         } else {
@@ -52,7 +52,7 @@ fn rewrite_partition_files_internal(input: &PartitionRewriteInput) -> Result<()>
             target_dir.join(&file.file_name)
         };
         write_jsonl_rows(&target_path, &next_rows, file.parsed.compressed)
-            .map_err(|error| err(error.to_string()))?;
+        .map_err(|error| err(error.to_string()))?;
     }
 
     Ok(())
@@ -60,6 +60,6 @@ fn rewrite_partition_files_internal(input: &PartitionRewriteInput) -> Result<()>
 
 pub fn rewrite_partition_files_json(request_json: String) -> Result<()> {
     let input: PartitionRewriteInput =
-        serde_json::from_str(&request_json).map_err(|error| err(error.to_string()))?;
+    serde_json::from_str(&request_json).map_err(|error| err(error.to_string()))?;
     rewrite_partition_files_internal(&input)
 }

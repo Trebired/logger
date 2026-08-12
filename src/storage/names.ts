@@ -9,7 +9,7 @@ import type {
   PartitionSanitizeOptions,
   PartitionSanitizer,
   PartitionTimeValue,
-} from "#tvzweoxg5ahk";
+} from "#e1h3ay0cyhgl";
 import { getLocalDateTimeParts, normalizeTimeZone } from "#0c4ri7nq63zi";
 import { toString } from "#ycytzc4gr3f7";
 
@@ -23,7 +23,7 @@ type ParsedLogFile = {
   compressed: boolean;
 };
 
-type WalkedLogFile = ParsedLogFile & {
+type WalkedLogFile = ParsedLogFile& {
   absPath: string;
   relDir: string;
   groupDir: string;
@@ -33,11 +33,11 @@ type WalkedLogFile = ParsedLogFile & {
 
 function sanitizePartitionFragment(input: string): string {
   return toString(input)
-    .trim()
-    .replace(/[^a-zA-Z0-9_-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/_+/g, "_")
-    .replace(/^[-_]+|[-_]+$/g, "");
+  .trim()
+  .replace(/[^a-zA-Z0-9_-]+/g, "-")
+  .replace(/-+/g, "-")
+  .replace(/_+/g, "_")
+  .replace(/^[-_]+|[-_]+$/g, "");
 }
 
 function normalizePartitionValue(input: unknown, sanitizer?: PartitionSanitizer): string {
@@ -68,10 +68,10 @@ function buildPartitionName(options: PartitionNameOptions = {}): string {
   if (!suffix) return prefix;
 
   const preparedSuffix = options.sanitizeSuffix === false
-    ? suffix
-    : typeof options.sanitizeSuffix === "function"
-      ? options.sanitizeSuffix(suffix)
-      : suffix;
+  ? suffix
+  : typeof options.sanitizeSuffix === "function"
+  ? options.sanitizeSuffix(suffix)
+  : suffix;
 
   return sanitizePartitionName(`${prefix}-${preparedSuffix}`);
 }
@@ -83,10 +83,10 @@ function buildTemporaryPartitionName(options: PartitionNameOptions = {}): string
   if (!suffix) return sanitizePartitionName(`${prefix}-tmp-${random}`);
 
   const preparedSuffix = options.sanitizeSuffix === false
-    ? suffix
-    : typeof options.sanitizeSuffix === "function"
-      ? options.sanitizeSuffix(suffix)
-      : suffix;
+  ? suffix
+  : typeof options.sanitizeSuffix === "function"
+  ? options.sanitizeSuffix(suffix)
+  : suffix;
 
   return sanitizePartitionName(`${prefix}-${preparedSuffix}-tmp-${random}`);
 }

@@ -1,4 +1,4 @@
-import type { LogQueryOptions, LogQueryTotals } from "#tvzweoxg5ahk";
+import type { LogQueryOptions, LogQueryTotals } from "#e1h3ay0cyhgl";
 import { toString } from "#ycytzc4gr3f7";
 import { sanitizePartitionName, type WalkedLogFile } from "#x2qkmwodgsce";
 
