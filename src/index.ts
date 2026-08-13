@@ -1,4 +1,12 @@
 export { TOP_LEVEL, DEFAULT_LEVELS as defaultLevels } from "./constants.js";
+export {
+  defineConfig,
+  findConfig,
+  findConfigSync,
+  loadConfig,
+  loadConfigSync,
+  normalizeConfig,
+} from "./config/index.js";
 export { createLog } from "./core/create_log.js";
 export { normalizeLevels } from "./levels/index.js";
 export { getPartitionErrorCode, isPartitionError } from "./storage/partitions/errors.js";
@@ -79,4 +87,11 @@ export type {
   SetPartitionOptions,
   WriteOptions,
 } from "./types/index.ts";
+export type {
+  LoadLoggerConfigOptions,
+  LoadedLoggerConfig,
+  LoggerConfig,
+  LoggerDefaultOptions,
+  NormalizedLoggerConfig,
+} from "./config/index.js";
 export type { PartitionError, PartitionErrorCode } from "./storage/partitions/errors.js";

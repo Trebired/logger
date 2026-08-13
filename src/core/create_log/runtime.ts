@@ -15,6 +15,10 @@ import { normalizeTimeZone } from "#0c4ri7nq63zi";
 import { maybeShowNodeRuntimeNotice } from "#nmfh3v2le5vp";
 import { toString } from "#ycytzc4gr3f7";
 import { buildPackageLogGroup } from "#qz1iteme01ng";
+import {
+  loadCachedConfigSync,
+  mergeCreateLogOptions,
+} from "#oupu3ud6munp";
 
 const LOGGER_LOG_GROUP = buildPackageLogGroup();
 
@@ -202,7 +206,8 @@ function createCreateLogRuntime(
   options: CreateLogOptions = {},
   sharedState: CreateLogSharedState,
 ): CreateLogRuntime {
-  const cfg = options && typeof options === "object" ? options : {};
+  const input = options && typeof options === "object" ? options : {};
+  const cfg = mergeCreateLogOptions(loadCachedConfigSync().defaults, input);
   maybeShowNodeRuntimeNotice(cfg.quiet);
   const levels = normalizeLevels(cfg.levels);
   const consoleOptions = normalizeConsoleOptions(cfg.console);

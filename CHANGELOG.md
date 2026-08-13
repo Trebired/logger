@@ -4,6 +4,11 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.20
+
+- Added `.trebired/logger/config.ts` loading and normalization helpers through `@trebired/logger/config`.
+- Applied project logger defaults automatically when creating server logs while preserving caller-specific runtime options.
+
 ## 2.5.19
 
 - Removed top-level `tb.logger.json` console visibility discovery from server and native runtimes.

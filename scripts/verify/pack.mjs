@@ -2,9 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { validateNativeEntries } from "./pack-native.mjs";
 
-const nativeTargets = await import(new URL("../native-targets.mjs", import.meta.url).href);
-const { RELEASE_NATIVE_TARGETS, expectedHostBinaryName, nativeBinaryNameForTarget } = nativeTargets;
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const tempRoot = path.join(rootDir, ".tmp", "verify-pack");
 const npmCacheDir = path.join(tempRoot, "npm-cache");
@@ -21,7 +20,7 @@ async function main() {
 
   validatePackedEntrypoints(packedPackageJson, tarballEntries);
   validatePackedImports(packedPackageJson, tarballEntries);
-  validateNativeEntries(tarballEntries, resolveNativeScope());
+  validateNativeEntries(tarballEntries);
   await runConsumerSmokeTest(tarballPath);
 
   console.log("Pack verification succeeded.");
@@ -149,33 +148,6 @@ function validatePackedImports(packageJson, tarballEntries) {
   }
 }
 
-function validateNativeEntries(tarballEntries, scope) {
-  const expected = expectedNativePackPaths(scope);
-
-  for (const nativePath of expected) {
-    assertTarEntryExists(tarballEntries, nativePath, `Missing packed native binary: ${nativePath}`);
-  }
-}
-
-function expectedNativePackPaths(scope) {
-  if (scope === "matrix") {
-    return RELEASE_NATIVE_TARGETS.map((target) => `./native/${nativeBinaryNameForTarget(target)}`);
-  }
-
-  if (scope === "host") {
-    const hostBinary = expectedHostBinaryName();
-    return hostBinary ? [`./native/${hostBinary}`] : [];
-  }
-
-  return [];
-}
-
-function resolveNativeScope() {
-  return process.env.TB_LOGGER_VERIFY_NATIVE_SCOPE === "matrix"
-  ? "matrix"
-  : "host";
-}
-
 function assertTarEntryExists(tarballEntries, packagePath, message) {
   const normalized = normalizePackagePath(packagePath);
 
@@ -218,22 +190,67 @@ async function writeConsumerPackageJson(consumerDir, tarballPath) {
 }
 
 async function writeConsumerSourceFiles(consumerDir) {
+  await writeConsumerLoggerConfig(consumerDir);
+  await writeConsumerTypeSource(consumerDir);
+  await writeConsumerMainRuntime(consumerDir);
+  await writeConsumerBrowserRuntime(consumerDir);
+}
+
+async function writeConsumerLoggerConfig(consumerDir) {
+  await fs.mkdir(path.join(consumerDir, ".trebired", "logger"), {
+      recursive: true,
+  });
+  await fs.writeFile(path.join(consumerDir, ".trebired", "logger", "config.ts"), [
+      "export default {",
+      "  defaults: {",
+      "    console: false,",
+      "    minLevel: 'error',",
+      "  },",
+      "};",
+      "",
+    ].join("\n"));
+}
+
+async function writeConsumerTypeSource(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "index.ts"), [
       'import { createLog } from "@package/logger";',
+      'import { defineConfig } from "@package/logger/config";',
       'import { createBrowserLog } from "@package/logger/browser";',
       "",
       "const serverLog = createLog;",
       "const browserLog = createBrowserLog;",
+      "const loggerConfig = defineConfig({ defaults: { minLevel: 'warn' } });",
       "",
-      "console.log(Boolean(serverLog), Boolean(browserLog));",
+      "console.log(Boolean(serverLog), Boolean(browserLog), loggerConfig.defaults?.minLevel);",
     ].join("\n"));
+}
 
+async function writeConsumerMainRuntime(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "runtime-main.ts"), [
+      'import fs from "node:fs/promises";',
       'import * as mod from "@package/logger";',
+      'import { loadConfigSync } from "@package/logger/config";',
       "",
+      "const loaded = loadConfigSync(process.cwd());",
+      "if (loaded.config.defaults.minLevel !== 'error') throw new Error('config was not loaded');",
+      "const log = mod.createLog({ dir: './logs', source: 'consumer' });",
+      "log.info('consumer.test', 'skip');",
+      "log.error('consumer.test', 'keep');",
+      "await log.flush();",
+      "const files = await Array.fromAsync((async function* walk(dir) {",
+      "  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {",
+      "    const filePath = `${dir}/${entry.name}`;",
+      "    if (entry.isDirectory()) yield* walk(filePath);",
+      "    else if (entry.isFile() && filePath.endsWith('.jsonl')) yield filePath;",
+      "  }",
+      "})('./logs'));",
+      "const lines = (await Promise.all(files.map((file) => fs.readFile(file, 'utf8')))).join('').trim().split('\\n').filter(Boolean);",
+      "if (lines.length !== 1 || !lines[0].includes('keep')) throw new Error('config defaults were not applied');",
       "console.log(typeof mod.createLog, Object.keys(mod).length > 0);",
     ].join("\n"));
+}
 
+async function writeConsumerBrowserRuntime(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "runtime-browser.ts"), [
       'import * as mod from "@package/logger/browser";',
       "",

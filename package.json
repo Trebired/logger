@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "2.5.19",
+  "version": "2.5.20",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "type": "module",
   "private": false,
@@ -21,6 +21,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts"
     },
     "./browser": {
       "import": "./dist/browser/index.js",
