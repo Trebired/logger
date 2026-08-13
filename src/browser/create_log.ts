@@ -1,4 +1,4 @@
-import { createCommonLogger } from "#ubetf5s0pfc2";
+import { createCommonLogger, packageGroupPrefixFromSource } from "#ubetf5s0pfc2";
 import { normalizeLevels } from "#g4tupkl7rvk4";
 import { logStream } from "#iaj6xqns4o0s";
 import type {
@@ -230,6 +230,10 @@ class BrowserTransportManager {
 
 function createBrowserLog(options: BrowserLogOptions = {}): BrowserLogInstance {
   const cfg = options && typeof options === "object" ? options : {};
+  const defaultSource = toString(cfg.source) || "browser";
+  const groupPrefix = Object.prototype.hasOwnProperty.call(cfg, "prefix")
+  ? cfg.prefix
+  : packageGroupPrefixFromSource(defaultSource);
   const levels = normalizeLevels(cfg.levels);
   const timeZone = normalizeTimeZone(cfg.timeZone);
   const transports = resolveTransports(cfg, levels, timeZone);
@@ -238,8 +242,8 @@ function createBrowserLog(options: BrowserLogOptions = {}): BrowserLogInstance {
   const { api } = createCommonLogger<BrowserLogStats>({
       levels,
       minLevel: cfg.minLevel,
-      groupPrefix: cfg.prefix,
-      defaultSource: toString(cfg.source) || "browser",
+      groupPrefix,
+      defaultSource,
       defaultGroup: toString(cfg.group) || undefined,
       defaultMetadata: asObject(cfg.metadata),
       serializers: cfg.serializers,

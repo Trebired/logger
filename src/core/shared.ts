@@ -361,5 +361,13 @@ function applyGroupPrefix(group: string, prefix: false | string): string {
   return `${prefix}.${group}`;
 }
 
-export { DEFAULT_GROUP, buildOrigin, createCommonLogger, parseCallArguments, shouldKeepSample };
+function packageGroupPrefixFromSource(input: unknown): false | string {
+  const source = toString(input);
+  const scoped = new RegExp("^@([^/]+)/(.+)$", "u").exec(source);
+  if (!scoped) return false;
+  const name = scoped[2].replace(new RegExp("[/@]+", "g"), ".");
+  return normGroup(`${scoped[1]}.${name}`).key || false;
+}
+
+export { DEFAULT_GROUP, buildOrigin, createCommonLogger, packageGroupPrefixFromSource, parseCallArguments, shouldKeepSample };
 export type { CommonLoggerOptions };

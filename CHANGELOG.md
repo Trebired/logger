@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.24
+
+- Added browser runtime package-prefix inference for scoped package sources while keeping unscoped browser/app sources unprefixed.
+
 ## 2.5.22
 
 - Fixed `.trebired/logger/config.ts` loading from installed packages under `node_modules` so Node runtimes no longer hit native TypeScript type-stripping limits.
