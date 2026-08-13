@@ -234,14 +234,12 @@ function maybeShowInitializationNotices(
   }
 
   sharedState.packageGreetingShown = true;
-  runtime.withConsoleVisibilityBypass(() => {
-      api.success(`${LOGGER_LOG_GROUP}.initialize`, `${LOGGER_PACKAGE_NAME} initialized`);
+  api.success(`${LOGGER_LOG_GROUP}.initialize`, `${LOGGER_PACKAGE_NAME} initialized`);
 
-      if (!sharedState.storageBackendNoticeShown) {
-        sharedState.storageBackendNoticeShown = true;
-        api.info(`${LOGGER_LOG_GROUP}.initialize`, activeStorageBackendNotice());
-      }
-  });
+  if (!sharedState.storageBackendNoticeShown) {
+    sharedState.storageBackendNoticeShown = true;
+    api.info(`${LOGGER_LOG_GROUP}.initialize`, activeStorageBackendNotice());
+  }
 }
 
 export {

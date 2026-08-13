@@ -1,6 +1,5 @@
 import path from "node:path";
 
-import { resolveConsoleVisibilityPolicy } from "#jp65xdmizety";
 import { createCommonLogger } from "#ubetf5s0pfc2";
 import { formatConsole, writeConsole } from "#va6txcqwm0gh";
 import { normalizeConsoleOptions } from "#b2k4pfb67duj";
@@ -13,7 +12,7 @@ import { normalizeRetentionOptions, normalizeWriteOptions } from "#pngx4lcsdjmx"
 import { FileWriter } from "#w1cc3mztq3ng";
 import type { CreateLogOptions, LogInstance } from "#e1h3ay0cyhgl";
 import { normalizeTimeZone } from "#0c4ri7nq63zi";
-import { maybeShowNodeRuntimeNotice, writePackageNotice } from "#nmfh3v2le5vp";
+import { maybeShowNodeRuntimeNotice } from "#nmfh3v2le5vp";
 import { toString } from "#ycytzc4gr3f7";
 import { buildPackageLogGroup } from "#qz1iteme01ng";
 
@@ -27,7 +26,6 @@ type TemporaryPartitionRegistration = {
 type CreateLogRuntimeState = {
   activePartition: string | null;
   activeTemporary: boolean;
-  bypassConsoleVisibility: boolean;
   registeredTemporaryPartition: TemporaryPartitionRegistration | null;
 };
 
@@ -37,9 +35,7 @@ type CreateLogRuntime = {
   state: CreateLogRuntimeState;
   levels: ReturnType<typeof normalizeLevels>;
   consoleOptions: ReturnType<typeof normalizeConsoleOptions>;
-  consoleVisibility: ReturnType<typeof resolveConsoleVisibilityPolicy>;
   timeZone: string;
-  withConsoleVisibilityBypass: <T > (fn: () => T) => T;
   registerTemporaryPartition: () => void;
   unregisterTemporaryPartition: () => void;
   cleanupTemporaryPartitions: (dir?: string) => Promise<void>;
@@ -69,7 +65,6 @@ function createRuntimeState(cfg: CreateLogOptions): CreateLogRuntimeState {
   return {
     activePartition: normalizePartitionKey(cfg.partition) || null,
     activeTemporary: cfg.temporaryPartition === true,
-    bypassConsoleVisibility: false,
     registeredTemporaryPartition: null,
   };
 }
@@ -189,15 +184,6 @@ function createApplyActivePartition(runtime: Pick<CreateLogRuntime, "state"|"wri
   };
 }
 
-function withConsoleVisibilityBypass<T>(runtime: Pick<CreateLogRuntime, "state">, fn: () => T): T {
-  runtime.state.bypassConsoleVisibility = true;
-  try {
-    return fn();
-  } finally {
-    runtime.state.bypassConsoleVisibility = false;
-  }
-}
-
 function createTemporaryRuntime(
   cfg: CreateLogOptions,
 ) {
@@ -212,14 +198,6 @@ function createTemporaryRuntime(
   };
 }
 
-function writeConsoleVisibilityWarning(
-  consoleVisibility: ReturnType<typeof resolveConsoleVisibilityPolicy>,
-): void {
-  if (consoleVisibility.warning) {
-    writePackageNotice(consoleVisibility.warning);
-  }
-}
-
 function createCreateLogRuntime(
   options: CreateLogOptions = {},
   sharedState: CreateLogSharedState,
@@ -228,7 +206,6 @@ function createCreateLogRuntime(
   maybeShowNodeRuntimeNotice(cfg.quiet);
   const levels = normalizeLevels(cfg.levels);
   const consoleOptions = normalizeConsoleOptions(cfg.console);
-  const consoleVisibility = resolveConsoleVisibilityPolicy();
   const timeZone = normalizeTimeZone(cfg.timeZone);
   const { state, writer, tempRuntime } = createTemporaryRuntime(cfg);
   const applyActivePartition = createApplyActivePartition(tempRuntime, {
@@ -236,7 +213,6 @@ function createCreateLogRuntime(
       registerTemporaryPartition: () => registerTemporaryPartition(tempRuntime, sharedState),
       cleanupTemporaryPartitions: () => cleanupTemporaryPartitions(tempRuntime, sharedState),
   });
-  writeConsoleVisibilityWarning(consoleVisibility);
 
   return {
     cfg,
@@ -244,10 +220,8 @@ function createCreateLogRuntime(
     state,
     levels,
     consoleOptions,
-    consoleVisibility,
     timeZone,
     safeResolveDir,
-    withConsoleVisibilityBypass: (fn) => withConsoleVisibilityBypass({ state }, fn),
     applyActivePartition,
     syncTemporaryPartitionMarker() {
       if (state.activePartition && state.activeTemporary && writer.isSavingEnabled() && writer.getDir()) {
@@ -281,11 +255,7 @@ function createBaseLogApi(runtime: CreateLogRuntime): LogInstance {
       sample: runtime.cfg.sample,
       getPartition: () => runtime.state.activePartition,
       writeEntry(entry, levelConfig) {
-        if (
-          runtime.consoleOptions.enabled &&
-            (runtime.state.bypassConsoleVisibility ||
-              !runtime.consoleVisibility.shouldHide(entry.group))
-        ) {
+        if (runtime.consoleOptions.enabled) {
           writeConsole(
             levelConfig.stream,
             formatConsole(entry, levelConfig, runtime.consoleOptions, runtime.timeZone),

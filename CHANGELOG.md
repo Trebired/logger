@@ -4,6 +4,11 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.19
+
+- Removed top-level `tb.logger.json` console visibility discovery from server and native runtimes.
+- Kept console visibility controlled by explicit logger options only.
+
 ## 2.5.18
 
 - Adopted the external `@trebired/code-discipline-config` preset and updated Code Discipline tooling to `@trebired/code-discipline@^6.0.9`.

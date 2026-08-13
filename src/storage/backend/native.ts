@@ -4,13 +4,11 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 import type { ArchiveCreateInput, StorageBackend, StorageScanSnapshot } from "./types.js";
-import type { ResolvedConsoleVisibilityPayload } from "#jp65xdmizety";
 
 type NativeBinding = {
   scanPartitions(dir: string, partitions: string[]): string;
   rewritePartitionFiles(requestJson: string): void;
   createArchive(requestJson: string): void;
-  resolveConsoleVisibilityConfig(startDir: string): string;
 };
 
 let cachedBinding: NativeBinding | null | undefined;
@@ -100,16 +98,9 @@ function nativeStorageBackend(): StorageBackend | null {
   };
 }
 
-function resolveNativeConsoleVisibilityConfig(startDir: string): ResolvedConsoleVisibilityPayload | null {
-  const binding = loadBinding();
-  if (!binding || typeof binding.resolveConsoleVisibilityConfig !== "function") return null;
-  return JSON.parse(binding.resolveConsoleVisibilityConfig(startDir)) as ResolvedConsoleVisibilityPayload;
-}
-
 export {
   nativeAddonCandidatePathsForCurrentPlatform,
   nativeBinaryBasenameForCurrentPlatform,
   nativeStorageBackend,
-  resolveNativeConsoleVisibilityConfig,
   resetNativeBindingForTests,
 };
