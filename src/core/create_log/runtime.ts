@@ -19,6 +19,7 @@ import {
   loadCachedConfigSync,
   mergeCreateLogOptions,
 } from "#oupu3ud6munp";
+import { resolveCallerConfigStart } from "#s0mrne0yjht8";
 
 const LOGGER_LOG_GROUP = buildPackageLogGroup();
 
@@ -207,7 +208,14 @@ function createCreateLogRuntime(
   sharedState: CreateLogSharedState,
 ): CreateLogRuntime {
   const input = options && typeof options === "object" ? options : {};
-  const cfg = mergeCreateLogOptions(loadCachedConfigSync().defaults, input);
+  const loggerConfig = loadCachedConfigSync(resolveCallerConfigStart());
+  const groupPrefix = Object.prototype.hasOwnProperty.call(input, "prefix")
+  ? input.prefix
+  : loggerConfig.prefix;
+  const cfg = {
+    ...mergeCreateLogOptions(loggerConfig.defaults, input),
+    prefix: groupPrefix,
+  };
   maybeShowNodeRuntimeNotice(cfg.quiet);
   const levels = normalizeLevels(cfg.levels);
   const consoleOptions = normalizeConsoleOptions(cfg.console);
@@ -254,6 +262,7 @@ function createBaseLogApi(runtime: CreateLogRuntime): LogInstance {
   const { api } = createCommonLogger({
       levels: runtime.levels,
       minLevel: runtime.cfg.minLevel,
+      groupPrefix: runtime.cfg.prefix,
       defaultSource: runtime.cfg.source,
       serializers: runtime.cfg.serializers,
       redact: runtime.cfg.redact,

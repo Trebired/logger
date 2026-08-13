@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "2.5.20",
+  "version": "2.5.21",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "type": "module",
   "private": false,
@@ -36,6 +36,7 @@
     }
   },
   "files": [
+    ".trebired/logger/config.ts",
     "dist",
     "native/*.node",
     "CHANGELOG.md",

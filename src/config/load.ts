@@ -16,7 +16,7 @@ const WORKSPACE_CONFIG_DIR = ".trebired";
 const LOGGER_PROJECT_CONFIG_PATH = `${WORKSPACE_CONFIG_DIR}/logger/config.ts`;
 const EMPTY_CONFIG = Object.freeze(normalizeConfig({}));
 
-let cachedConfig: LoadedLoggerConfig | null = null;
+let cachedConfigs = new Map<string, LoadedLoggerConfig>();
 
 async function loadConfig(
   projectRoot = process.cwd(),
@@ -63,14 +63,19 @@ function loadConfigSync(
 }
 
 function loadCachedConfigSync(projectRoot = process.cwd()): NormalizedLoggerConfig {
-  const configPath = findConfigSync(projectRoot, projectRoot);
-  if (cachedConfig && cachedConfig.configPath === configPath) return cachedConfig.config;
-  cachedConfig = configPath ? loadConfigSync(projectRoot, { configPath }) : missingConfig();
-  return cachedConfig.config;
+  const root = path.resolve(projectRoot);
+  const configPath = findConfigSync(root);
+  const cacheKey = configPath || `missing:${root}`;
+  const cachedConfig = cachedConfigs.get(cacheKey);
+  if (cachedConfig) return cachedConfig.config;
+
+  const loaded = configPath ? loadConfigSync(root, { configPath }) : missingConfig();
+  cachedConfigs.set(cacheKey, loaded);
+  return loaded.config;
 }
 
 function resetConfigCacheForTests(): void {
-  cachedConfig = null;
+  cachedConfigs = new Map<string, LoadedLoggerConfig>();
 }
 
 async function findConfig(startDir = process.cwd(), boundaryDir?: string): Promise<string|null> {

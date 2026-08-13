@@ -24,6 +24,7 @@ type BrowserConsoleTransportOptions = {
 type BrowserLogOptions = {
   console?: boolean | ConsoleOptions;
   quiet?: boolean;
+  prefix?: false | string;
   timeZone?: string;
   source?: string;
   group?: string;

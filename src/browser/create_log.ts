@@ -238,6 +238,7 @@ function createBrowserLog(options: BrowserLogOptions = {}): BrowserLogInstance {
   const { api } = createCommonLogger<BrowserLogStats>({
       levels,
       minLevel: cfg.minLevel,
+      groupPrefix: cfg.prefix,
       defaultSource: toString(cfg.source) || "browser",
       defaultGroup: toString(cfg.group) || undefined,
       defaultMetadata: asObject(cfg.metadata),

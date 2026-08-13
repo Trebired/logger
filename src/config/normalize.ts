@@ -4,6 +4,8 @@ import type {
   LoggerDefaultOptions,
   NormalizedLoggerConfig,
 } from "./types.js";
+import { normGroup } from "#8xmnu037caa7";
+import { toString } from "#ycytzc4gr3f7";
 
 function defineConfig<TConfig extends LoggerConfig>(config: TConfig): TConfig {
   return config;
@@ -12,6 +14,7 @@ function defineConfig<TConfig extends LoggerConfig>(config: TConfig): TConfig {
 function normalizeConfig(config: LoggerConfig = {}): NormalizedLoggerConfig {
   return {
     defaults: normalizeDefaultOptions(config.defaults),
+    prefix: normalizePrefix(config.prefix),
   };
 }
 
@@ -47,6 +50,15 @@ function normalizeDefaultOptions(input: LoggerDefaultOptions | undefined): Logge
     timeZone: input.timeZone,
     write: cloneObject(input.write),
   };
+}
+
+function normalizePrefix(input: LoggerConfig["prefix"]): false | string {
+  if (input === false) return false;
+  const raw = toString(input);
+  if (!raw) return false;
+  const normalized = normGroup(raw).key;
+
+  return normalized || false;
 }
 
 function mergeConsoleOptions(

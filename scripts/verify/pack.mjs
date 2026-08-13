@@ -20,10 +20,19 @@ async function main() {
 
   validatePackedEntrypoints(packedPackageJson, tarballEntries);
   validatePackedImports(packedPackageJson, tarballEntries);
+  validatePackedLoggerConfig(tarballEntries);
   validateNativeEntries(tarballEntries);
   await runConsumerSmokeTest(tarballPath);
 
   console.log("Pack verification succeeded.");
+}
+
+function validatePackedLoggerConfig(tarballEntries) {
+  assertTarEntryExists(
+    tarballEntries,
+    ".trebired/logger/config.ts",
+    "Missing packed logger config.",
+  );
 }
 
 async function resetTempRoot() {
@@ -171,6 +180,7 @@ async function runConsumerSmokeTest(tarballPath) {
   await writeConsumerSourceFiles(consumerDir);
   await writeConsumerTsconfig(consumerDir);
   runConsumerInstall(consumerDir);
+  await writeConsumerPackageLoggerFixture(consumerDir);
   runConsumerTypecheck(consumerDir);
   runConsumerRuntimes(consumerDir);
 }
@@ -202,6 +212,7 @@ async function writeConsumerLoggerConfig(consumerDir) {
   });
   await fs.writeFile(path.join(consumerDir, ".trebired", "logger", "config.ts"), [
       "export default {",
+      "  prefix: 'consumer',",
       "  defaults: {",
       "    console: false,",
       "    minLevel: 'error',",
@@ -233,9 +244,10 @@ async function writeConsumerMainRuntime(consumerDir) {
       "",
       "const loaded = loadConfigSync(process.cwd());",
       "if (loaded.config.defaults.minLevel !== 'error') throw new Error('config was not loaded');",
+      "if (loaded.config.prefix !== 'consumer') throw new Error('config prefix was not loaded');",
       "const log = mod.createLog({ dir: './logs', source: 'consumer' });",
-      "log.info('consumer.test', 'skip');",
-      "log.error('consumer.test', 'keep');",
+      "log.info('runtime.test', 'skip');",
+      "log.error('runtime.test', 'keep');",
       "await log.flush();",
       "const files = await Array.fromAsync((async function* walk(dir) {",
       "  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {",
@@ -246,7 +258,59 @@ async function writeConsumerMainRuntime(consumerDir) {
       "})('./logs'));",
       "const lines = (await Promise.all(files.map((file) => fs.readFile(file, 'utf8')))).join('').trim().split('\\n').filter(Boolean);",
       "if (lines.length !== 1 || !lines[0].includes('keep')) throw new Error('config defaults were not applied');",
+      "const entry = JSON.parse(lines[0]);",
+      "if (entry.group !== 'consumer.runtime.test') throw new Error(`config prefix was not applied: ${entry.group}`);",
+      "const fixture = await import('@fixture/package-logger-user');",
+      "await fixture.runPackageLogger();",
+      "const packageFiles = await Array.fromAsync((async function* walk(dir) {",
+      "  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {",
+      "    const filePath = `${dir}/${entry.name}`;",
+      "    if (entry.isDirectory()) yield* walk(filePath);",
+      "    else if (entry.isFile() && filePath.endsWith('.jsonl')) yield filePath;",
+      "  }",
+      "})('./package-logs'));",
+      "const packageLines = (await Promise.all(packageFiles.map((file) => fs.readFile(file, 'utf8')))).join('').trim().split('\\n').filter(Boolean);",
+      "const packageEntry = JSON.parse(packageLines.find((line) => line.includes('package keep')) || '{}');",
+      "if (packageEntry.group !== 'trebired.bundler.build') throw new Error(`package config prefix was not applied: ${packageEntry.group}`);",
       "console.log(typeof mod.createLog, Object.keys(mod).length > 0);",
+    ].join("\n"));
+}
+
+async function writeConsumerPackageLoggerFixture(consumerDir) {
+  const fixtureDir = path.join(
+    consumerDir,
+    "node_modules",
+    "@fixture",
+    "package-logger-user",
+  );
+
+  await fs.mkdir(path.join(fixtureDir, ".trebired", "logger"), {
+      recursive: true,
+  });
+  await fs.writeFile(path.join(fixtureDir, "package.json"), JSON.stringify({
+        name: "@fixture/package-logger-user",
+        type: "module",
+        exports: "./index.mjs",
+      }, null, 2));
+  await fs.writeFile(path.join(fixtureDir, ".trebired", "logger", "config.ts"), [
+      "export default {",
+      "  prefix: 'trebired',",
+      "  defaults: {",
+      "    console: false,",
+      "    minLevel: 'error',",
+      "  },",
+      "};",
+      "",
+    ].join("\n"));
+  await fs.writeFile(path.join(fixtureDir, "index.mjs"), [
+      'import { createLog } from "@package/logger";',
+      "",
+      "export async function runPackageLogger() {",
+      "  const log = createLog({ dir: './package-logs', source: 'fixture' });",
+      "  log.error('bundler.build', 'package keep');",
+      "  await log.flush();",
+      "}",
+      "",
     ].join("\n"));
 }
 

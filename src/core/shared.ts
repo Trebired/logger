@@ -11,6 +11,7 @@ type CommonLoggerOptions<TStats> = {
   minLevel?: string | number;
   defaultSource?: string;
   defaultGroup?: string;
+  groupPrefix?: false | string;
   defaultMetadata?: Record<string, unknown>;
   serializers?: Record<string, (value:unknown)=>unknown>;
   redact?: RedactOptions;
@@ -64,7 +65,11 @@ function createCommonLogger<TStats>(options: CommonLoggerOptions<TStats>) {
   const levels = options.levels;
   const threshold = minLevelWeight(options.minLevel, levels);
   const defaultSource = toString(options.defaultSource) || "app";
-  const defaultGroup = normGroup(options.defaultGroup || DEFAULT_GROUP).key;
+  const groupPrefix = normalizeGroupPrefix(options.groupPrefix);
+  const defaultGroup = applyGroupPrefix(
+    normGroup(options.defaultGroup || DEFAULT_GROUP).key,
+    groupPrefix,
+  );
   const defaultMetadata = asObject(options.defaultMetadata);
 
   let enabled = true;
@@ -78,12 +83,14 @@ function createCommonLogger<TStats>(options: CommonLoggerOptions<TStats>) {
       levels,
       options,
       threshold,
+      groupPrefix,
   });
   const bindGroup = createGroupBinder({
       defaultGroup,
       defaultSource,
       levels,
       emit,
+      groupPrefix,
   });
   const api = createLoggerApi({
       bindGroup,
@@ -115,6 +122,7 @@ function createEmitter(args: {
     levels: Record<string, LogLevelConfig>;
     options: CommonLoggerOptions<unknown>;
     threshold: number;
+    groupPrefix: false | string;
 }) {
   return function emit(
     levelInput: string,
@@ -136,6 +144,7 @@ function createEmitter(args: {
         options: args.options,
         originInput,
         threshold: args.threshold,
+        groupPrefix: args.groupPrefix,
         levelInput,
     });
 
@@ -158,13 +167,17 @@ function createGroupBinder(args: {
       metadataInput?: unknown,
       originInput?: Partial<LogOrigin>,
     ) => void;
+    groupPrefix: false | string;
 }) {
   return function bindGroup(
     groupName: unknown,
     originInput?: Partial<LogOrigin>,
     extraMetadata?: Record<string, unknown>,
   ): Record<string, any> {
-    const boundGroup = normGroup(groupName || args.defaultGroup).key;
+    const boundGroup = applyGroupPrefix(
+      normGroup(groupName || args.defaultGroup).key,
+      args.groupPrefix,
+    );
     const mergedExtraMetadata = asObject(extraMetadata);
     const grouped: Record<string, any> = {};
 
@@ -292,6 +305,7 @@ function prepareEntry(args: {
     options: CommonLoggerOptions<unknown>;
     originInput?: Partial<LogOrigin>;
     threshold: number;
+    groupPrefix: false | string;
 }): { entry: LogEntry; levelConfig: LogLevelConfig } | null {
   const level = normalizeLevel(args.levelInput, args.levels);
   const levelConfig = args.levels[level] || args.levels.info;
@@ -312,7 +326,10 @@ function prepareEntry(args: {
   const entry: LogEntry = {
     recorded_at: recordedAt,
     level,
-    group: normGroup(args.groupInput || args.defaultGroup).key,
+    group: applyGroupPrefix(
+      normGroup(args.groupInput || args.defaultGroup).key,
+      args.groupPrefix,
+    ),
     message: typeof args.messageInput === "string" ? args.messageInput : String(args.messageInput ?? ""),
     origin: buildOrigin(originSource, originInstance),
   };
@@ -329,6 +346,19 @@ function prepareEntry(args: {
     entry,
     levelConfig,
   };
+}
+
+function normalizeGroupPrefix(input: false | string | undefined): false | string {
+  if (input === false) return false;
+  const rawPrefix = toString(input);
+  if (!rawPrefix) return false;
+  return normGroup(rawPrefix).key || false;
+}
+
+function applyGroupPrefix(group: string, prefix: false | string): string {
+  if (!prefix) return group;
+  if (group === prefix || group.startsWith(`${prefix}.`)) return group;
+  return `${prefix}.${group}`;
 }
 
 export { DEFAULT_GROUP, buildOrigin, createCommonLogger, parseCallArguments, shouldKeepSample };

@@ -28,6 +28,7 @@ type CreateLogOptions = {
   partition?: string;
   temporaryPartition?: boolean;
   save?: boolean;
+  prefix?: false | string;
   console?: boolean | ConsoleOptions;
   quiet?: boolean;
   timeZone?: string;
