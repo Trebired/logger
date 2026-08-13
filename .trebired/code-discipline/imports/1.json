@@ -49,6 +49,7 @@
   "#o520iruia9te": "./src/core/create_log/runtime.ts",
   "#oceupfj37qp3": "./src/browser/react.ts",
   "#oupu3ud6munp": "./src/config/index.ts",
+  "#oyn2imsu15xs": "./scripts/verify/consumer-node-runtime.mjs",
   "#pngx4lcsdjmx": "./src/storage/options.ts",
   "#qkc6be246w9i": "./src/browser/create_log.ts",
   "#qqlp8cyr3105": "./src/storage/partitions/delete.ts",

@@ -2,6 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import {
+  runConsumerRuntimes,
+  writeConsumerNodeRuntime,
+} from "./consumer-node-runtime.mjs";
 import { validateNativeEntries } from "./pack-native.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -203,6 +207,7 @@ async function writeConsumerSourceFiles(consumerDir) {
   await writeConsumerLoggerConfig(consumerDir);
   await writeConsumerTypeSource(consumerDir);
   await writeConsumerMainRuntime(consumerDir);
+  await writeConsumerNodeRuntime(consumerDir);
   await writeConsumerBrowserRuntime(consumerDir);
 }
 
@@ -351,18 +356,6 @@ function runConsumerInstall(consumerDir) {
 
 function runConsumerTypecheck(consumerDir) {
   execFileSync(process.execPath, [tscBin, "-p", "tsconfig.json"], {
-      cwd: consumerDir,
-      stdio: "inherit",
-  });
-}
-
-function runConsumerRuntimes(consumerDir) {
-  execFileSync("bun", ["runtime-main.ts"], {
-      cwd: consumerDir,
-      stdio: "inherit",
-  });
-
-  execFileSync("bun", ["runtime-browser.ts"], {
       cwd: consumerDir,
       stdio: "inherit",
   });

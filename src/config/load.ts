@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -10,7 +9,7 @@ import type {
   LoggerConfig,
   NormalizedLoggerConfig,
 } from "./types.js";
-import { normalizeConfig } from "./normalize.js";
+import { defineConfig, normalizeConfig } from "./normalize.js";
 
 const WORKSPACE_CONFIG_DIR = ".trebired";
 const LOGGER_PROJECT_CONFIG_PATH = `${WORKSPACE_CONFIG_DIR}/logger/config.ts`;
@@ -36,8 +35,8 @@ async function loadConfig(
     throw new Error(`logger config was not found: ${configPath}`);
   }
 
-  const imported = await import(pathToFileURL(configPath).href);
-  return loadedConfig(configPath, readDefaultConfig(imported, configPath));
+  const source = await fsPromises.readFile(configPath, "utf8");
+  return loadedConfig(configPath, readSourceConfig(source, configPath));
 }
 
 function loadConfigSync(
@@ -58,8 +57,7 @@ function loadConfigSync(
     throw new Error(`logger config was not found: ${configPath}`);
   }
 
-  const requireFromConfig = createRequire(pathToFileURL(configPath).href);
-  return loadedConfig(configPath, readDefaultConfig(requireFromConfig(configPath), configPath));
+  return loadedConfig(configPath, readSourceConfig(fs.readFileSync(configPath, "utf8"), configPath));
 }
 
 function loadCachedConfigSync(projectRoot = process.cwd()): NormalizedLoggerConfig {
@@ -128,16 +126,47 @@ function loadedConfig(configPath: string, config: LoggerConfig): LoadedLoggerCon
   };
 }
 
-function readDefaultConfig(imported: unknown, configPath: string): LoggerConfig {
-  const candidate = imported && typeof imported === "object"
-  ? (imported as { default?: unknown }).default
-  : undefined;
+function readSourceConfig(source: string, configPath: string): LoggerConfig {
+  const candidate = runConfigSource(source, configPath);
 
   if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
     throw new Error(`logger config must default-export an object: ${configPath}`);
   }
 
   return candidate as LoggerConfig;
+}
+
+function runConfigSource(source: string, configPath: string): unknown {
+  const runtimeSource = toRuntimeConfigSource(source, configPath);
+
+  try {
+    return Function(
+      "defineConfig",
+      `${runtimeSource}\n//# sourceURL=${pathToFileURL(configPath).href}`,
+    )(defineConfig);
+  }
+  catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`logger config failed to load: ${configPath}: ${reason}`);
+  }
+}
+
+function toRuntimeConfigSource(source: string, configPath: string): string {
+  const withoutImports = source
+  .replace(/^\s*import\s+type\s+[\s\S]*?\s+from\s+["'][^"']+["'];?\s*$/gmu, "")
+  .replace(/^\s*import\s+[\s\S]*?\s+from\s+["'][^"']+["'];?\s*$/gmu, "")
+  .replace(/^\s*import\s+["'][^"']+["'];?\s*$/gmu, "");
+  const runtimeSource = withoutImports.replace(/\bexport\s+default\b/u, "return");
+
+  if (runtimeSource === withoutImports) {
+    throw new Error(`logger config must default-export an object: ${configPath}`);
+  }
+
+  if (/\bexport\b/u.test(runtimeSource)) {
+    throw new Error(`logger config only supports a default export: ${configPath}`);
+  }
+
+  return runtimeSource;
 }
 
 export {

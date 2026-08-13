@@ -4,6 +4,11 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.22
+
+- Fixed `.trebired/logger/config.ts` loading from installed packages under `node_modules` so Node runtimes no longer hit native TypeScript type-stripping limits.
+- Added a Node package-config smoke test for installed package logger configs.
+
 ## 2.5.20
 
 - Added `.trebired/logger/config.ts` loading and normalization helpers through `@trebired/logger/config`.
