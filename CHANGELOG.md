@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.25
+
+- Updated the shared Trebired config dependency to `@trebired/configs@^0.1.2`.
+
 ## 2.5.24
 
 - Added browser runtime package-prefix inference for scoped package sources while keeping unscoped browser/app sources unprefixed.
@@ -25,7 +29,7 @@ This project follows semantic versioning once published.
 
 ## 2.5.18
 
-- Adopted the external `@trebired/code-discipline-config` preset and updated Code Discipline tooling to `@trebired/code-discipline@^6.0.9`.
+- Adopted the external `@trebired/configs` preset and updated Code Discipline tooling to `@trebired/code-discipline@^6.0.9`.
 
 ## 2.5.17
 
