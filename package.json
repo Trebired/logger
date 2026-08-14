@@ -1,6 +1,6 @@
 {
   "name": "@trebired/logger",
-  "version": "2.5.25",
+  "version": "2.5.26",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "type": "module",
   "private": false,
@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@trebired/code-discipline": "^6.0.11",
-    "@trebired/configs": "^0.1.2",
+    "@trebired/configs": "^0.1.4",
     "@types/bun": "^1.3.14",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
