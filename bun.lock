@@ -6,7 +6,7 @@
       "name": "@trebired/logger",
       "dependencies": {
         "@package/result": "npm:@trebired/result@^1.1.6",
-        "@trebired/utils": "^0.4.3",
+        "@trebired/utils": "^0.4.4",
         "fflate": "^0.8.3",
         "tar-stream": "^3.2.0",
       },
@@ -41,7 +41,7 @@
 
     "@trebired/configs": ["@trebired/configs@0.1.5", "", {}, "sha512-BcPOHCdJv0rKjXNbmmFtflBJhiw08GJFQEsMLrCyE82HIh54wUcgWUN1kPgkYbvByZw/unMLixD1qsfsAy87og=="],
 
-    "@trebired/utils": ["@trebired/utils@0.4.3", "", {}, "sha512-KMVzVKCvZme7T2WZttO4cUkj4dAaDT21RQ8V2CeYnmFhBESxx53rNYe56JKCjH3ojXPoZ0XRrj9GDGpOhMy1Ww=="],
+    "@trebired/utils": ["@trebired/utils@0.4.4", "", {}, "sha512-Ro3B9q5o0zGJ4tsEf+RK21njqDnCHft6RtG8Nm23D3hoDXtVfa0iFEgNy+liyKLKVEXrQ/evo4wULrpZuCtyog=="],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 

@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.28
+
+- Updated shared utilities to `@trebired/utils@^0.4.4` so config `forVersion` failures use the compact source-level diagnostic.
+
 ## 2.5.27
 
 - Updated shared utilities to `@trebired/utils@^0.4.3`.
