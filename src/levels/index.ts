@@ -1,6 +1,6 @@
 import { DEFAULT_LEVELS } from "#cuh2x5snaefd";
 import type { LogLevelConfig } from "#e1h3ay0cyhgl";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 
 function assertLevelName(name: string): void {
   if (!/^[a-z0-9_-]+$/.test(name)) throw new Error(`invalid-log-level-name: ${name}`);

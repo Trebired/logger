@@ -1,5 +1,5 @@
 import { TOP_LEVEL } from "./constants.js";
-import { toString } from "./utils/values.js";
+import { toTrimmedString as toString } from "@trebired/utils";
 
 function cleanGroupPart(part: string): string {
   return toString(part).replace(/[^a-zA-Z0-9_-]/g, "-");

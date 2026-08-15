@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { normGroup } from "#8xmnu037caa7";
 import type { LogEntry, LogStats, NormalizedRetentionOptions, NormalizedWriteOptions } from "#e1h3ay0cyhgl";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 import { cleanupLogs } from "./retention.js";
 import { fileStampForEntry, makeLogFileName } from "./names.js";
 import { touchPartitionMarkerSync } from "./partitions.js";

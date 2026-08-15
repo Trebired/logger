@@ -11,7 +11,10 @@ import type {
   LogEntry,
 } from "#e1h3ay0cyhgl";
 import { normalizeTimeZone } from "#0c4ri7nq63zi";
-import { asObject, toString } from "#ycytzc4gr3f7";
+import {
+  toObject as asObject,
+  toTrimmedString as toString,
+} from "@trebired/utils";
 import { createConsoleTransport } from "./console_transport.js";
 
 type RuntimeTransport = {

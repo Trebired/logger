@@ -1,6 +1,11 @@
 import { DEFAULT_SENSITIVE_KEYS, RESERVED_METADATA_KEYS } from "#cuh2x5snaefd";
 import type { RedactOptions } from "#e1h3ay0cyhgl";
-import { asObject, clonePlain, isPlainObject, toString } from "#ycytzc4gr3f7";
+import {
+  clonePlain,
+  isPlainObject,
+  toObject as asObject,
+  toTrimmedString as toString,
+} from "@trebired/utils";
 
 function sanitizeMetadata(input: unknown): Record<string, unknown> {
   const src = asObject(input);

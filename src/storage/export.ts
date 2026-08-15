@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { ExportFormat, ExportManifest, ExportPartitionOptions, ExportPartitionsOptions, ExportResult } from "#e1h3ay0cyhgl";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 import { getStorageBackend } from "./backend/index.js";
 import { collectPartitionRecords } from "./partitions/records.js";
 import { resolveDir } from "./partitions/internal.js";

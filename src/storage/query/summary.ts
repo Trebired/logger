@@ -7,7 +7,7 @@ import type {
   LogQueryResult,
   LogQueryTotals,
 } from "#e1h3ay0cyhgl";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 import type { WalkedLogFile } from "#x2qkmwodgsce";
 import { fileMatchesFilters, partitionKey, type PartitionSummaryState } from "./shared.js";
 import { hydrateRows, sortByRecordedAtAsc } from "./rows.js";

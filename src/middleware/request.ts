@@ -1,5 +1,5 @@
 import type { RequestLoggerOptions } from "#e1h3ay0cyhgl";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 
 function requestId(): string {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;

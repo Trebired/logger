@@ -5,15 +5,30 @@ import type {
   NormalizedLoggerConfig,
 } from "./types.js";
 import { normGroup } from "#8xmnu037caa7";
-import { toString } from "#ycytzc4gr3f7";
+import { PACKAGE_VERSION } from "#qz1iteme01ng";
+import {
+  isRecord,
+  toTrimmedString as toString,
+} from "@trebired/utils";
+import { resolveForVersion } from "@trebired/utils";
+
+type NormalizeOptions = {
+  configPath?: string;
+  requireForVersion?: boolean;
+};
 
 function defineConfig<TConfig extends LoggerConfig>(config: TConfig): TConfig {
   return config;
 }
 
-function normalizeConfig(config: LoggerConfig = {}): NormalizedLoggerConfig {
+function normalizeConfig(
+  config: LoggerConfig = {},
+  options: NormalizeOptions = {},
+): NormalizedLoggerConfig {
+  if (!isRecord(config)) throw new Error("logger config must be an object");
   return {
     defaults: normalizeDefaultOptions(config.defaults),
+    forVersion: normalizeForVersion(config, options),
     prefix: normalizePrefix(config.prefix),
   };
 }
@@ -59,6 +74,19 @@ function normalizePrefix(input: LoggerConfig["prefix"]): false | string {
   const normalized = normGroup(raw).key;
 
   return normalized || false;
+}
+
+function normalizeForVersion(
+  config: LoggerConfig,
+  options: NormalizeOptions,
+): string {
+  return resolveForVersion({
+      configPath: options.configPath,
+      forVersion: config.forVersion,
+      label: "logger",
+      packageVersion: PACKAGE_VERSION,
+      requireForVersion: options.requireForVersion,
+  });
 }
 
 function mergeConsoleOptions(

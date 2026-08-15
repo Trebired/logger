@@ -13,7 +13,7 @@ import { FileWriter } from "#w1cc3mztq3ng";
 import type { CreateLogOptions, LogInstance } from "#e1h3ay0cyhgl";
 import { normalizeTimeZone } from "#0c4ri7nq63zi";
 import { maybeShowNodeRuntimeNotice } from "#nmfh3v2le5vp";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 import { buildPackageLogGroup } from "#qz1iteme01ng";
 import {
   loadCachedConfigSync,

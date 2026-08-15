@@ -1,5 +1,5 @@
 import type { LogQueryOptions, LogQueryResult } from "#e1h3ay0cyhgl";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 import { walkLogFiles } from "./walk.js";
 import { normalizePartitionFilter, scopeMatches } from "./query/shared.js";
 import { readLogRows, sortByRecordedAtAsc } from "./query/rows.js";

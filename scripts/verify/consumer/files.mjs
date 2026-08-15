@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { writeConsumerNodeRuntime } from "./node-runtime.mjs";
+
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const loggerVersion = JSON.parse(await fs.readFile(path.join(rootDir, "package.json"), "utf8")).version;
 
 async function writeConsumerPackageJson(consumerDir, tarballPath, nodeTypesDir) {
   await fs.writeFile(path.join(consumerDir, "package.json"), JSON.stringify({
@@ -31,6 +35,7 @@ async function writeConsumerLoggerConfig(consumerDir) {
   });
   await fs.writeFile(path.join(consumerDir, ".trebired", "logger", "config.ts"), [
       "export default {",
+      `  forVersion: '${loggerVersion}',`,
       "  prefix: 'consumer',",
       "  defaults: {",
       "    console: false,",
@@ -49,7 +54,7 @@ async function writeConsumerTypeSource(consumerDir) {
       "",
       "const serverLog = createLog;",
       "const browserLog = createBrowserLog;",
-      "const loggerConfig = defineConfig({ defaults: { minLevel: 'warn' } });",
+      `const loggerConfig = defineConfig({ forVersion: '${loggerVersion}', defaults: { minLevel: 'warn' } });`,
       "console.log(Boolean(serverLog), Boolean(browserLog), loggerConfig.defaults?.minLevel);",
     ].join("\n"));
 }
@@ -112,6 +117,7 @@ async function writeConsumerPackageLoggerFixture(consumerDir) {
       }, null, 2));
   await fs.writeFile(path.join(fixtureDir, ".trebired", "logger", "config.ts"), [
       "export default {",
+      `  forVersion: '${loggerVersion}',`,
       "  prefix: 'trebired',",
       "  defaults: {",
       "    console: false,",

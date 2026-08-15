@@ -1,5 +1,5 @@
 import type { LogQueryOptions, LogQueryTotals } from "#e1h3ay0cyhgl";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 import { sanitizePartitionName, type WalkedLogFile } from "#x2qkmwodgsce";
 
 type PartitionSummaryState = {

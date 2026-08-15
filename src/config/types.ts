@@ -22,11 +22,13 @@ type LoggerDefaultOptions = {
 
 type LoggerConfig = {
   defaults?: LoggerDefaultOptions;
+  forVersion?: string;
   prefix?: false | string;
 };
 
 type NormalizedLoggerConfig = {
   defaults: LoggerDefaultOptions;
+  forVersion: string;
   prefix: false | string;
 };
 

@@ -4,7 +4,7 @@ import path from "node:path";
 import { PARTITION_MARKER_FILE } from "#cuh2x5snaefd";
 import type { DeleteLogsOptions } from "#e1h3ay0cyhgl";
 import { normGroup } from "#8xmnu037caa7";
-import { toString } from "#ycytzc4gr3f7";
+import { toTrimmedString as toString } from "@trebired/utils";
 import { walkedFileFromPath, type WalkedLogFile } from "#x2qkmwodgsce";
 import { partitionMarkerMap } from "./records.js";
 import { collectPartitionFiles, findAvailableTargetPath, readLogRows, writeLogRows, writePartitionFiles } from "./rewrite.js";

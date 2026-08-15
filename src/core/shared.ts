@@ -2,7 +2,10 @@ import { normGroup } from "#8xmnu037caa7";
 import { minLevelWeight, normalizeLevel } from "#g4tupkl7rvk4";
 import { prepareMetadata } from "#kzmqayr84v3x";
 import type { LogEntry, LogLevelConfig, LogOrigin, RedactOptions } from "#e1h3ay0cyhgl";
-import { asObject, toString } from "#ycytzc4gr3f7";
+import {
+  toObject,
+  toTrimmedString as toString,
+} from "@trebired/utils";
 
 const DEFAULT_GROUP = "default";
 
@@ -22,6 +25,10 @@ type CommonLoggerOptions<TStats> = {
   close: () => Promise<void>;
   getStats: () => TStats;
 };
+
+function asObject(value: unknown): Record<string, unknown> {
+  return toObject<Record<string, unknown>>(value);
+}
 
 function buildOrigin(source: unknown, instance: unknown = null): LogOrigin {
   const src = toString(source) || "app";

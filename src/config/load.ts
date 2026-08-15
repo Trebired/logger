@@ -3,6 +3,7 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { PACKAGE_VERSION } from "#qz1iteme01ng";
 import type {
   LoadLoggerConfigOptions,
   LoadedLoggerConfig,
@@ -13,7 +14,10 @@ import { defineConfig, normalizeConfig } from "./normalize.js";
 
 const WORKSPACE_CONFIG_DIR = ".trebired";
 const LOGGER_PROJECT_CONFIG_PATH = `${WORKSPACE_CONFIG_DIR}/logger/config.ts`;
-const EMPTY_CONFIG = Object.freeze(normalizeConfig({}));
+const EMPTY_CONFIG = Object.freeze(normalizeConfig(
+    { forVersion: PACKAGE_VERSION },
+    { requireForVersion: false },
+));
 
 let cachedConfigs = new Map<string, LoadedLoggerConfig>();
 
@@ -120,7 +124,7 @@ function missingConfig(): LoadedLoggerConfig {
 
 function loadedConfig(configPath: string, config: LoggerConfig): LoadedLoggerConfig {
   return {
-    config: normalizeConfig(config),
+    config: normalizeConfig(config, { configPath, requireForVersion: true }),
     configPath,
     dependencies: [configPath],
   };

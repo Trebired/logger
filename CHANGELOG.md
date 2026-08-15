@@ -4,6 +4,11 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.27
+
+- Updated shared utilities to `@trebired/utils@^0.4.3`.
+- Replaced local value, config normalization, and package metadata helpers with shared utilities.
+
 ## 2.5.25
 
 - Updated the shared Trebired config dependency to `@trebired/configs@^0.1.2`.
