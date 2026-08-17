@@ -5,13 +5,10 @@
       "displayName": "Trebired",
       "name": "trebired",
       "website": "https://trebired.com"
-    },
-    "creator": {
-      "name": "Miroslav Machynka"
     }
   },
   "name": "@trebired/logger",
-  "version": "2.5.30",
+  "version": "2.5.31",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "type": "module",
   "private": false,
@@ -64,7 +61,7 @@
   },
   "dependencies": {
     "@package/result": "npm:@trebired/result@^1.1.6",
-    "@trebired/utils": "^0.4.5",
+    "@trebired/utils": "^0.6.0",
     "fflate": "^0.8.3",
     "tar-stream": "^3.2.0"
   },
