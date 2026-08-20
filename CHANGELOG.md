@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.5.32
+
+- Updated the result dependency range to the current package release so consumers do not retain older nested logger-adapter installs.
+
 ## 2.5.31
 
 - Removed dead `config.creator` from `package.json`.

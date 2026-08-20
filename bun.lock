@@ -5,7 +5,7 @@
     "": {
       "name": "@trebired/logger",
       "dependencies": {
-        "@package/result": "npm:@trebired/result@^1.1.6",
+        "@package/result": "npm:@trebired/result@^1.2.7",
         "@trebired/utils": "^0.6.0",
         "fflate": "^0.8.3",
         "tar-stream": "^3.2.0",
@@ -33,9 +33,9 @@
   "packages": {
     "@package/logger": ["@trebired/logger@2.5.28", "", { "dependencies": { "@package/result": "npm:@trebired/result@^1.1.6", "@trebired/utils": "^0.4.4", "fflate": "^0.8.3", "tar-stream": "^3.2.0" }, "peerDependencies": { "react": ">=18" }, "optionalPeers": ["react"] }, "sha512-6yBgZVmfnl1VrVXPi76wliobeoP1E1L+cVGnsOft7hA7U88wn3DVv4bmNuAboxCS3AvCLgXGnurZQz5GsTYRSw=="],
 
-    "@package/logger-adapter": ["@trebired/logger-adapter@0.2.12", "", {}, "sha512-QW0DpI2Etscx5amJBs2H4qiFKTbZn+bzkUAdQsEL/dDmZVH9lO7uF0s27eXIiwP49lEAroPMAdla8B2tuOJTVA=="],
+    "@package/logger-adapter": ["@trebired/logger-adapter@0.4.17", "", { "dependencies": { "@package/logger": "npm:@trebired/logger@^2.5.28", "@trebired/utils": "^0.6.0" }, "peerDependencies": { "@trebired/logger": "^2.5.29" }, "optionalPeers": ["@trebired/logger"], "bin": { "logger-adapter-bridge": "dist/bridge/server.js" } }, "sha512-yO7j0vttLJiGbadJKpz6bbF43BRtrBNiVgcaOdj/HJIw1qVybwY0GJeHpvZ6a4c8RtF2ieyUFjKiAaoqQ+w9GA=="],
 
-    "@package/result": ["@trebired/result@1.1.6", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.11" } }, "sha512-qRXp1K7q1VhdIXlFEuNSvBMAoHbZljIeCSP5EBVPh0daF7LQ8f6G3+OVkItm5x/xK/L9Xj9dk6XxA5NpsL2saw=="],
+    "@package/result": ["@trebired/result@1.2.7", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.4.17", "@trebired/utils": "^0.6.0" } }, "sha512-84bF8C90s3DsRK3Dkoyv5WUSA8eiqrgScv/jVkBtVc3NyH+TvQNjMauZ7qZ5yZ6M0TjyxAMc+SPgNTNCmqqIDA=="],
 
     "@trebired/code-discipline": ["@trebired/code-discipline@7.0.0", "", { "dependencies": { "@package/logger": "npm:@trebired/logger@^2.5.28", "@package/result": "npm:@trebired/result@^1.1.6", "@trebired/utils": "^0.4.4", "typescript": "^6.0.3" }, "bin": { "code-discipline": "dist/cli.js" } }, "sha512-XhpXW+hWVefUaZuP0q/iOQwmapvhqC+p5l5hLnwaL4aow2Ao9vQMd2mBi9h0vMJyHTD2eEjqElXiSU/QeZuA2w=="],
 
@@ -97,13 +97,21 @@
 
     "undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
 
+    "@package/logger/@package/result": ["@trebired/result@1.1.6", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.11" } }, "sha512-qRXp1K7q1VhdIXlFEuNSvBMAoHbZljIeCSP5EBVPh0daF7LQ8f6G3+OVkItm5x/xK/L9Xj9dk6XxA5NpsL2saw=="],
+
     "@package/logger/@trebired/utils": ["@trebired/utils@0.4.4", "", {}, "sha512-Ro3B9q5o0zGJ4tsEf+RK21njqDnCHft6RtG8Nm23D3hoDXtVfa0iFEgNy+liyKLKVEXrQ/evo4wULrpZuCtyog=="],
+
+    "@trebired/code-discipline/@package/result": ["@trebired/result@1.1.6", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.11" } }, "sha512-qRXp1K7q1VhdIXlFEuNSvBMAoHbZljIeCSP5EBVPh0daF7LQ8f6G3+OVkItm5x/xK/L9Xj9dk6XxA5NpsL2saw=="],
 
     "@trebired/code-discipline/@trebired/utils": ["@trebired/utils@0.4.4", "", {}, "sha512-Ro3B9q5o0zGJ4tsEf+RK21njqDnCHft6RtG8Nm23D3hoDXtVfa0iFEgNy+liyKLKVEXrQ/evo4wULrpZuCtyog=="],
 
     "@types/react-test-renderer/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
     "@types/tar-stream/@types/node": ["@types/node@24.12.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-A1sre26ke7HDIuY/M23nd9gfB+nrmhtYyMINbjI1zHJxYteKR6qSMX56FsmjMcDb3SMcjJg5BiRRgOCC/yBD0g=="],
+
+    "@package/logger/@package/result/@package/logger-adapter": ["@trebired/logger-adapter@0.2.12", "", {}, "sha512-QW0DpI2Etscx5amJBs2H4qiFKTbZn+bzkUAdQsEL/dDmZVH9lO7uF0s27eXIiwP49lEAroPMAdla8B2tuOJTVA=="],
+
+    "@trebired/code-discipline/@package/result/@package/logger-adapter": ["@trebired/logger-adapter@0.2.12", "", {}, "sha512-QW0DpI2Etscx5amJBs2H4qiFKTbZn+bzkUAdQsEL/dDmZVH9lO7uF0s27eXIiwP49lEAroPMAdla8B2tuOJTVA=="],
 
     "@types/tar-stream/@types/node/undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
   }
