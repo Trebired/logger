@@ -91,6 +91,19 @@ function buildTemporaryPartitionName(options: PartitionNameOptions = {}): string
   return sanitizePartitionName(`${prefix}-${preparedSuffix}-tmp-${random}`);
 }
 
+const TEMPORARY_PARTITION_SUFFIX_RE = /-tmp-[0-9a-f]{8}$/u;
+
+/**
+ * Temporary partitions always end in `-tmp-<8 hex>` (see
+ * `buildTemporaryPartitionName`). Callers that only need to know whether a
+ * partition is temporary can test the name instead of reading the partition,
+ * which avoids walking every log file it contains.
+ */
+function isTemporaryPartitionName(input: unknown): boolean {
+  const name = toString(input).trim().toLowerCase();
+  return name ? TEMPORARY_PARTITION_SUFFIX_RE.test(name) : false;
+}
+
 function normalizePartitionKey(input: unknown): string {
   const raw = toString(input).trim();
   if (!raw) return "";
@@ -149,6 +162,7 @@ export {
   buildTemporaryPartitionName,
   fileStampForEntry,
   formatPartitionTimePrefix,
+  isTemporaryPartitionName,
   makeLogFileName,
   normalizePartitionKey,
   nowFileStamp,

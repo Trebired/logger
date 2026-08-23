@@ -13,6 +13,7 @@ export { getPartitionErrorCode, isPartitionError } from "./storage/partitions/er
 export {
   buildPartitionName,
   buildTemporaryPartitionName,
+  isTemporaryPartitionName,
   formatPartitionTimePrefix,
   sanitizePartitionName,
 } from "./storage/names.js";

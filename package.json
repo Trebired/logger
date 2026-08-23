@@ -8,7 +8,7 @@
     }
   },
   "name": "@trebired/logger",
-  "version": "2.5.32",
+  "version": "2.6.0",
   "description": "Local-first JSONL logger with durable writes, partitions, export archives, native storage acceleration, redaction, query helpers, and browser runtimes.",
   "type": "module",
   "private": false,

@@ -4,6 +4,12 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.6.0
+
+### Added
+
+- `isTemporaryPartitionName(name)` tests whether a partition name was produced by `buildTemporaryPartitionName()`, matching the `-tmp-<8 hex>` suffix it appends. Callers that only need to know whether a partition is temporary can now check the name instead of reading the partition through `getPartitionInfo()`, which walks every log file it contains. On a store with 17 partitions and roughly 40,000 files, that distinction is the difference between a few milliseconds and 22 seconds.
+
 ## 2.5.32
 
 - Updated the result dependency range to the current package release so consumers do not retain older nested logger-adapter installs.
