@@ -4,6 +4,13 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.6.1
+
+### Fixed
+
+- Partition scanning is roughly 65x faster. `parse_log_name()` compiled its filename regex on every call, and that call runs once per file, so a store with tens of thousands of small log files spent nearly all of its scan time rebuilding the same pattern. The regex is now compiled once. Scanning a real 18-partition store of 41,128 files went from 23.8s to 0.37s, with identical totals and last-activity timestamps. Anything that reads partition metadata pays this cost — `getPartitionInfo()` triggers a full scan, so application boots that inspect partitions were stalling for tens of seconds.
+- Row counting no longer allocates a `String` per line, walking the bytes in a fixed buffer instead, and the per-file metadata and row-count work inside a partition now runs across the thread pool. Both are minor next to the regex fix but keep large partitions cheap.
+
 ## 2.6.0
 
 ### Added

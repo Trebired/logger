@@ -1,6 +1,7 @@
 use std::fs::{self, File};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -28,11 +29,23 @@ pub struct PartitionFileEntry {
     pub parsed: ParsedLogFile,
 }
 
+/// Compiled once. This runs for every file in a partition, and recompiling the
+/// pattern per call dominated scanning a store with tens of thousands of files.
+static LOG_NAME_REGEX: OnceLock<Regex> = OnceLock::new();
+
+fn log_name_regex() -> Option<&'static Regex> {
+    LOG_NAME_REGEX
+    .get_or_init(|| {
+        Regex::new(
+            r"^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$",
+        )
+        .expect("log file name pattern must compile")
+    })
+    .into()
+}
+
 pub fn parse_log_name(file_name: &str) -> Option<ParsedLogFile> {
-    let regex = Regex::new(
-        r"^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$",
-    )
-    .ok()?;
+    let regex = log_name_regex()?;
     let captures = regex.captures(file_name)?;
     Some(ParsedLogFile {
             day: captures.get(1)?.as_str().to_string(),
@@ -51,29 +64,51 @@ pub fn parse_log_name(file_name: &str) -> Option<ParsedLogFile> {
     })
 }
 
-pub fn count_rows(file_path: &Path, compressed: bool) -> std::io::Result<u64> {
-    if compressed {
-        let file = File::open(file_path)?;
-        let decoder = GzDecoder::new(file);
-        let reader = BufReader::new(decoder);
-        let mut count = 0_u64;
-        for line in reader.lines() {
-            if !line?.trim().is_empty() {
-                count += 1;
+/// Counts non-empty lines without allocating a `String` per line. Log stores
+/// reach hundreds of megabytes, and the per-line allocation dominated partition
+/// scanning; this walks the bytes in a fixed buffer instead.
+fn count_rows_from_reader<R: Read>(reader: R) -> std::io::Result<u64> {
+    let mut reader = BufReader::with_capacity(COUNT_ROWS_BUFFER_BYTES, reader);
+    let mut count = 0_u64;
+    let mut line_has_content = false;
+
+    loop {
+        let chunk_len = {
+            let chunk = reader.fill_buf()?;
+            if chunk.is_empty() {
+                break;
             }
-        }
-        return Ok(count);
+            for byte in chunk {
+                match byte {
+                    b'\n' => {
+                        if line_has_content {
+                            count += 1;
+                        }
+                        line_has_content = false;
+                    }
+                    b' ' | b'\t' | b'\r' => {}
+                    _ => line_has_content = true,
+                }
+            }
+            chunk.len()
+        };
+        reader.consume(chunk_len);
     }
 
-    let file = File::open(file_path)?;
-    let reader = BufReader::new(file);
-    let mut count = 0_u64;
-    for line in reader.lines() {
-        if !line?.trim().is_empty() {
-            count += 1;
-        }
+    if line_has_content {
+        count += 1;
     }
     Ok(count)
+}
+
+const COUNT_ROWS_BUFFER_BYTES: usize = 256 * 1024;
+
+pub fn count_rows(file_path: &Path, compressed: bool) -> std::io::Result<u64> {
+    let file = File::open(file_path)?;
+    if compressed {
+        return count_rows_from_reader(GzDecoder::new(file));
+    }
+    count_rows_from_reader(file)
 }
 
 pub fn group_key_from_dir(rel_dir: &str) -> String {

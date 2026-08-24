@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use napi::Result;
+use rayon::prelude::*;
 use serde::Serialize;
 
 use crate::common::{bytes_to_megabytes, err, to_iso_time, PARTITION_MARKER_FILE};
@@ -117,18 +118,29 @@ fn scan_single_partition(
     let mut logs = 0_u64;
     let mut last_activity: Option<SystemTime> = None;
 
-    for file in collect_partition_files(&root).into_iter() {
-        let logical_path = logical_partition_path(partition, &file.rel_dir, &file.file_name);
+    // A partition is many small files, so the per-file stat and read dominate.
+    // Doing that work across the pool turns a serial walk into a parallel one;
+    // the accumulation below stays sequential so results remain deterministic.
+    let entries = collect_partition_files(&root);
+    let scanned = entries
+    .par_iter()
+    .map(|file| {
         let metadata = fs::metadata(&file.abs_path).map_err(|error| err(error.to_string()))?;
         let row_count = count_rows(&file.abs_path, file.parsed.compressed)
         .map_err(|error| err(error.to_string()))?;
+        Ok((metadata, row_count))
+    })
+    .collect::<Result<Vec<_>>>()?;
+
+    for (file, (metadata, row_count)) in entries.iter().zip(scanned.into_iter()) {
+        let logical_path = logical_partition_path(partition, &file.rel_dir, &file.file_name);
         bytes += metadata.len();
         logs += row_count;
         dirs.insert(scan_dir_key(&file.rel_dir));
         update_last_activity(&mut last_activity, &metadata);
         files.push(to_scan_file(
                 partition,
-                &file,
+                file,
                 logical_path,
                 &metadata,
                 row_count,
