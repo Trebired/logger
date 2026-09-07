@@ -20,6 +20,30 @@ function sanitizeMetadata(input: unknown): Record<string, unknown> {
   return out;
 }
 
+function normalizeErrorValue(error: Error): Record<string, unknown> {
+  const out: Record<string, unknown> = { name: error.name, message: error.message };
+
+  for (const key of Object.keys(error)) {
+    if (key === "name" || key === "message") continue;
+    out[key] = normalizeErrors((error as unknown as Record<string, unknown>)[key]);
+  }
+
+  const cause = (error as { cause?: unknown }).cause;
+  if (cause !== undefined) out.cause = normalizeErrors(cause);
+
+  return out;
+}
+
+function normalizeErrors(value: unknown): unknown {
+  if (value instanceof Error) return normalizeErrorValue(value);
+  if (Array.isArray(value)) return value.map((item) => normalizeErrors(item));
+  if (!isPlainObject(value)) return value;
+
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(value)) out[key] = normalizeErrors(value[key]);
+  return out;
+}
+
 function applySerializers(input: Record<string, unknown>, serializers?: Record<string, (value:unknown)=>unknown>): Record<string, unknown> {
   if (!serializers || typeof serializers !== "object") return input;
   const out = clonePlain(input) as Record<string, unknown>;
@@ -95,8 +119,9 @@ function redactMetadata(input: Record<string, unknown>, options?: RedactOptions)
 
 function prepareMetadata(input: unknown, serializers?: Record<string, (value:unknown)=>unknown>, redact?: RedactOptions): Record<string, unknown> {
   const sanitized = sanitizeMetadata(input);
-  const serialized = applySerializers(sanitized, serializers);
+  const normalized = normalizeErrors(sanitized) as Record<string, unknown>;
+  const serialized = applySerializers(normalized, serializers);
   return redactMetadata(serialized, redact);
 }
 
-export { applySerializers, prepareMetadata, redactMetadata, sanitizeMetadata };
+export { applySerializers, normalizeErrors, prepareMetadata, redactMetadata, sanitizeMetadata };
