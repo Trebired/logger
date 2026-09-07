@@ -4,6 +4,13 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.6.3
+
+### Fixed
+
+- Preserved nested `Error` metadata before console rendering and JSONL writes so logged failures retain
+  their `name`, `message`, `cause`, and enumerable fields such as `code`, `errno`, and `syscall`.
+
 ## 2.6.2
 
 ### Changed
