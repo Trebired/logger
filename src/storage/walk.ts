@@ -5,7 +5,9 @@ import { PARTITION_MARKER_FILE } from "#cuh2x5snaefd";
 import { readPartitionMarkerFromRoot, readPartitionMarkerFromRootSync } from "./partitions.js";
 import { walkedFileFromPath, type WalkedLogFile } from "./names.js";
 
-async function walkTree(baseDir: string, startDir: string, rootDir: string, partition: string | null, out: WalkedLogFile[]): Promise<void> {
+type WalkVisitor = (file: WalkedLogFile) => Promise<void>|void;
+
+async function walkTreeEach(baseDir: string, startDir: string, rootDir: string, partition: string | null, visit: WalkVisitor): Promise<void> {
   const stack = [startDir];
 
   while (stack.length) {
@@ -27,9 +29,15 @@ async function walkTree(baseDir: string, startDir: string, rootDir: string, part
       if (entry.name === PARTITION_MARKER_FILE) continue;
 
       const walked = walkedFileFromPath(baseDir, absPath, partition, rootDir);
-      if (walked) out.push(walked);
+      if (walked) await visit(walked);
     }
   }
+}
+
+async function walkTree(baseDir: string, startDir: string, rootDir: string, partition: string | null, out: WalkedLogFile[]): Promise<void> {
+  await walkTreeEach(baseDir, startDir, rootDir, partition, (file) => {
+      out.push(file);
+  });
 }
 
 function walkTreeSync(baseDir: string, startDir: string, rootDir: string, partition: string | null, out: WalkedLogFile[]): void {
@@ -56,6 +64,30 @@ function walkTreeSync(baseDir: string, startDir: string, rootDir: string, partit
       const walked = walkedFileFromPath(baseDir, absPath, partition, rootDir);
       if (walked) out.push(walked);
     }
+  }
+}
+
+async function walkLogFilesEach(baseDir: string, visit: WalkVisitor): Promise<void> {
+  let entries: fs.Dirent[] = [];
+  try {
+    entries = await fs.promises.readdir(baseDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    const absPath = path.join(baseDir, entry.name);
+    if (entry.isDirectory()) {
+      if (await readPartitionMarkerFromRoot(absPath, entry.name)) {
+        await walkTreeEach(baseDir, absPath, absPath, entry.name, visit);
+        continue;
+      }
+      await walkTreeEach(baseDir, absPath, baseDir, null, visit);
+      continue;
+    }
+    if (!entry.isFile() || entry.name === PARTITION_MARKER_FILE) continue;
+    const walked = walkedFileFromPath(baseDir, absPath, null, baseDir);
+    if (walked) await visit(walked);
   }
 }
 
@@ -119,4 +151,5 @@ function walkLogFilesSync(baseDir: string): WalkedLogFile[] {
   return out;
 }
 
-export { walkLogFiles, walkLogFilesSync, walkPartitionFiles };
+export { walkLogFiles, walkLogFilesEach, walkLogFilesSync, walkPartitionFiles };
+export type { WalkVisitor };

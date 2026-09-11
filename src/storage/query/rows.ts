@@ -53,6 +53,10 @@ function countRowsInText(text: string): number {
   return text.split("\n").filter((line) => line.trim()).length;
 }
 
+function fileStampKey(file: WalkedLogFile): string {
+  return [file.day, file.hour, file.minute, file.second].join("-");
+}
+
 function fileStampOrder(file: WalkedLogFile): string {
   return [file.day, file.hour, file.minute, file.second, String(file.sequence).padStart(6, "0")].join("-");
 }
@@ -80,4 +84,4 @@ async function hydrateRows(file: WalkedLogFile): Promise<LogEntry[]> {
   return rows;
 }
 
-export { countLogRows, fileStampOrder, hydrateRows, readLogRows, sortByRecordedAtAsc };
+export { countLogRows, fileStampKey, fileStampOrder, hydrateRows, readLogRows, sortByRecordedAtAsc };

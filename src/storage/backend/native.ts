@@ -3,12 +3,21 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
-import type { ArchiveCreateInput, StorageBackend, StorageScanSnapshot } from "./types.js";
+import type {
+  ArchiveCreateInput,
+  StorageBackend,
+  StorageCleanupRequest,
+  StorageQueryRequest,
+  StorageQueryResponse,
+  StorageScanSnapshot,
+} from "./types.js";
 
 type NativeBinding = {
   scanPartitions(dir: string, partitions: string[]): string;
   rewritePartitionFiles(requestJson: string): void;
   createArchive(requestJson: string): void;
+  queryLogs ? (requestJson: string) : string;
+  cleanupLogs ? (requestJson: string) : void;
 };
 
 let cachedBinding: NativeBinding | null | undefined;
@@ -84,7 +93,7 @@ function nativeStorageBackend(): StorageBackend | null {
   const binding = loadBinding();
   if (!binding) return null;
 
-  return {
+  const backend: StorageBackend = {
     name: "native",
     async scanPartitions(dir: string, partitions: string[]): Promise<StorageScanSnapshot> {
       return JSON.parse(binding.scanPartitions(dir, partitions)) as StorageScanSnapshot;
@@ -96,6 +105,20 @@ function nativeStorageBackend(): StorageBackend | null {
       binding.createArchive(JSON.stringify(input));
     },
   };
+
+  if (typeof binding.queryLogs === "function") {
+    backend.queryLogs = async(request: StorageQueryRequest): Promise<StorageQueryResponse> => {
+      return JSON.parse(binding.queryLogs!(JSON.stringify(request))) as StorageQueryResponse;
+    };
+  }
+
+  if (typeof binding.cleanupLogs === "function") {
+    backend.cleanupLogs = async(request: StorageCleanupRequest): Promise<void> => {
+      binding.cleanupLogs!(JSON.stringify(request));
+    };
+  }
+
+  return backend;
 }
 
 export {

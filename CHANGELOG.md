@@ -4,6 +4,13 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.7.3
+
+- Moved reading saved logs into the native backend. `getAllLogs()` walked the store in JavaScript and built an object for every file before filtering, so a store with many files needed gigabytes of memory for a query that returns a handful of entries. The walk, row counting and file selection now happen in Rust and only the entries a query actually returns cross into JavaScript. An agent holding 1,683,946 log files went from 1.6-3.5 GB of memory to 105 MB.
+- Moved retention cleanup into the native backend. It listed every file in the store before deleting or compressing anything, which held the whole listing in memory on a timer.
+- Fixed which entries a query with a limit returns. Files are picked newest first and always by whole timestamp groups, so entries recorded in the same hour by different groups or levels can no longer be skipped, and the native and JavaScript paths return identical results.
+- The JavaScript fallback, used when the native addon is missing, no longer reads every file twice: it counts rows by streaming lines and only parses the newest files a limit needs.
+
 ## 2.7.2
 
 - Fixed saved logs creating one file per second. The file name stamp used the entry's second, so every second of logging started a new file instead of appending to the current one; a service logging a few lines a second produced hundreds of thousands of files a day. One agent installation held 1,683,946 files taking 6.5 GB, nearly all of it filesystem overhead for tiny files. The stamp is now the hour, so entries append to one file per hour, group and level, and rotation still happens on `maxFileSize`. The file name format is unchanged, so existing files stay readable.

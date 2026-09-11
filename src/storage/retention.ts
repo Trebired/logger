@@ -5,7 +5,9 @@ import zlib from "node:zlib";
 import type { NormalizedRetentionOptions } from "#e1h3ay0cyhgl";
 import { nowFileStamp } from "./names.js";
 import { readPartitionMarkerFromRoot } from "./partitions.js";
-import { walkLogFiles } from "./walk.js";
+import { getStorageBackend } from "./backend/index.js";
+import { walkLogFilesEach } from "./walk.js";
+import type { WalkedLogFile } from "./names.js";
 
 function currentDayHour(): { day: string; hour: string } {
   const stamp = nowFileStamp();
@@ -50,14 +52,26 @@ async function listPartitionRoots(dir: string): Promise<string[]> {
 
 async function cleanupLogs(dir: string, options: NormalizedRetentionOptions): Promise<void> {
   if (!options.enabled || !dir) return;
-  const files = await walkLogFiles(dir);
-  const cutoff = options.maxAgeDays == null ? null : Date.now() - options.maxAgeDays * 24 * 60 * 60 * 1000;
   const now = currentDayHour();
+  const backend = getStorageBackend();
+  if (typeof backend.cleanupLogs === "function") {
+    await backend.cleanupLogs({
+        compressOldFiles: options.compressOldFiles === true,
+        dir,
+        maxAgeDays: options.maxAgeDays == null ? null : Number(options.maxAgeDays),
+        maxPartitions: options.maxPartitions == null ? null : Number(options.maxPartitions),
+        nowDay: now.day,
+        nowHour: now.hour,
+    });
+    return;
+  }
+
+  const cutoff = options.maxAgeDays == null ? null : Date.now() - options.maxAgeDays * 24 * 60 * 60 * 1000;
   const partitionActivity = new Map<string, number>();
 
-  for (const file of files) {
-    await cleanupLogFile(dir, file, cutoff, now, options, partitionActivity);
-  }
+  await walkLogFilesEach(dir, async(file) => {
+      await cleanupLogFile(dir, file, cutoff, now, options, partitionActivity);
+  });
 
   if (options.maxPartitions == null) return;
 
@@ -84,7 +98,7 @@ async function cleanupLogs(dir: string, options: NormalizedRetentionOptions): Pr
 
 async function cleanupLogFile(
   dir: string,
-  file: Awaited<ReturnType<typeof walkLogFiles>>[number],
+  file: WalkedLogFile,
   cutoff: number | null,
   now: ReturnType<typeof currentDayHour>,
   options: NormalizedRetentionOptions,
@@ -123,7 +137,7 @@ function updatePartitionActivity(
 }
 
 function shouldCompressFile(
-  file: Awaited<ReturnType<typeof walkLogFiles>>[number],
+  file: WalkedLogFile,
   now: ReturnType<typeof currentDayHour>,
   options: NormalizedRetentionOptions,
 ): boolean {

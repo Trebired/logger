@@ -65,15 +65,60 @@ type ArchiveCreateInput = {
   sourceFiles: ArchiveSourceFile[];
 };
 
+type StorageQueryRequest = {
+  dir: string;
+  partition: string | null;
+  acrossPartitions: boolean;
+  level: string;
+  groupKey: string;
+  day: string;
+  hour: string;
+  limit: number;
+};
+
+type StorageQueryTotals = {
+  logs: number;
+  dirs: number;
+  files: number;
+};
+
+type StorageQueryPartitionItem = {
+  partition: string | null;
+  count: number;
+  total: StorageQueryTotals;
+};
+
+type StorageQueryResponse = {
+  logs: Record<string, unknown>[];
+  items: StorageQueryPartitionItem[];
+  scope: StorageQueryTotals;
+};
+
+type StorageCleanupRequest = {
+  dir: string;
+  maxAgeDays: number | null;
+  compressOldFiles: boolean;
+  maxPartitions: number | null;
+  nowDay: string;
+  nowHour: string;
+};
+
 type StorageBackend = {
   name: StorageBackendName;
   scanPartitions(dir: string, partitions: string[]): Promise<StorageScanSnapshot>;
   rewritePartitionFiles(input: PartitionRewriteInput): Promise<void>;
   createArchive(input: ArchiveCreateInput): Promise<void>;
+  queryLogs ? (request: StorageQueryRequest) : Promise<StorageQueryResponse>;
+  cleanupLogs ? (request: StorageCleanupRequest) : Promise<void>;
 };
 
 export type {
   ArchiveCreateInput,
+  StorageCleanupRequest,
+  StorageQueryPartitionItem,
+  StorageQueryRequest,
+  StorageQueryResponse,
+  StorageQueryTotals,
   ArchiveGeneratedFile,
   ArchiveSourceFile,
   PartitionRewriteInput,
