@@ -4,6 +4,12 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.7.2
+
+- Fixed saved logs creating one file per second. The file name stamp used the entry's second, so every second of logging started a new file instead of appending to the current one; a service logging a few lines a second produced hundreds of thousands of files a day. One agent installation held 1,683,946 files taking 6.5 GB, nearly all of it filesystem overhead for tiny files. The stamp is now the hour, so entries append to one file per hour, group and level, and rotation still happens on `maxFileSize`. The file name format is unchanged, so existing files stay readable.
+- Fixed a query reading and parsing every log file twice. `getAllLogs()` parsed every file to summarize it, parsed every matching file again, concatenated all entries and only then applied the limit, so a small `limit` still loaded the whole directory into memory. Reading the logs of that same installation took gigabytes of memory per call. Summaries now count rows by streaming lines instead of parsing them, and a query with a limit reads matching files newest first and stops parsing once it has enough, counting the rest. Results, totals and per-partition counts are unchanged.
+- Fixed summarizing the same files twice when a query covered every partition.
+
 ## 2.7.1
 
 - Updated the shipped `.trebired/logger/config.ts` `forVersion` to `2.7.0` and the `@trebired/code-discipline` / `@trebired/configs` ranges to `^7.2.0` / `^0.4.0`. The logger config named an older release, so under `@trebired/logger` 2.7 the version check threw and this package's log prefix was dropped.

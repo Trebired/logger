@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import zlib from "node:zlib";
+import { createInterface } from "node:readline";
 
 import type { LogEntry } from "#e1h3ay0cyhgl";
 import type { WalkedLogFile } from "#x2qkmwodgsce";
@@ -22,6 +23,38 @@ async function readLogRows(filePath: string, compressed: boolean): Promise<LogEn
   } catch {
     return [];
   }
+}
+
+async function countLogRows(filePath: string, compressed: boolean): Promise<number> {
+  if (compressed) {
+    try {
+      const data = await fs.promises.readFile(filePath);
+      return countRowsInText(zlib.gunzipSync(data).toString("utf8"));
+    } catch {
+      return 0;
+    }
+  }
+
+  return await new Promise<number>((resolve) => {
+      let rows = 0;
+      const stream = fs.createReadStream(filePath, { encoding: "utf8" });
+      const lines = createInterface({ crlfDelay: Infinity, input: stream });
+      lines.on("line", (line) => {
+          if (line.trim()) rows += 1;
+      });
+      lines.on("close", () => resolve(rows));
+      lines.on("error", () => resolve(rows));
+      stream.on("error", () => resolve(rows));
+  });
+}
+
+function countRowsInText(text: string): number {
+  if (!text.trim()) return 0;
+  return text.split("\n").filter((line) => line.trim()).length;
+}
+
+function fileStampOrder(file: WalkedLogFile): string {
+  return [file.day, file.hour, file.minute, file.second, String(file.sequence).padStart(6, "0")].join("-");
 }
 
 function sortByRecordedAtAsc(entries: LogEntry[]): LogEntry[] {
@@ -47,4 +80,4 @@ async function hydrateRows(file: WalkedLogFile): Promise<LogEntry[]> {
   return rows;
 }
 
-export { hydrateRows, readLogRows, sortByRecordedAtAsc };
+export { countLogRows, fileStampOrder, hydrateRows, readLogRows, sortByRecordedAtAsc };

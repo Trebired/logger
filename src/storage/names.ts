@@ -112,7 +112,7 @@ function normalizePartitionKey(input: unknown): string {
 
 function nowFileStamp(date = new Date(), timeZone?: string): string {
   const parts = partitionTimeParts(date, timeZone);
-  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}-${parts.minute}-${parts.second}`;
+  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}-00-00`;
 }
 
 function fileStampForEntry(entry: LogEntry, timeZone?: string): string {

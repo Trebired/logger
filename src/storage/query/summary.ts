@@ -10,7 +10,7 @@ import type {
 import { toTrimmedString as toString } from "@trebired/utils";
 import type { WalkedLogFile } from "#x2qkmwodgsce";
 import { fileMatchesFilters, partitionKey, type PartitionSummaryState } from "./shared.js";
-import { hydrateRows, sortByRecordedAtAsc } from "./rows.js";
+import { countLogRows, fileStampOrder, hydrateRows, sortByRecordedAtAsc } from "./rows.js";
 
 function buildAggregateTotals(items: Map<string, PartitionSummaryState>): LogPartitionTotals {
   let logs = 0;
@@ -86,13 +86,13 @@ async function summarizeFiles(files: WalkedLogFile[]): Promise<Map<string, Parti
 
   for (const file of files) {
     const key = partitionKey(file.partition);
-    const rows = await hydrateRows(file);
+    const rows = await countLogRows(file.absPath, file.compressed);
     const current = items.get(key) || {
       partition: file.partition || null,
       total: { logs: 0, dirs: 0, files: 0 },
     };
 
-    current.total.logs += rows.length;
+    current.total.logs += rows;
     current.total.files += 1;
     items.set(key, current);
 
@@ -110,21 +110,31 @@ async function summarizeFiles(files: WalkedLogFile[]): Promise<Map<string, Parti
 }
 
 async function readFilteredLogs(files: WalkedLogFile[], options: LogQueryOptions): Promise<{logs:LogEntry[];counts:Map<string, number>}> {
-  let logs: LogEntry[] = [];
+  const limit = Number(options.limit) || 0;
+  const bounded = limit > 0 && Number.isFinite(limit);
+  const matching = files.filter((file) => fileMatchesFilters(file, options));
+  const ordered = bounded
+  ? matching.slice().sort((left, right) => fileStampOrder(right).localeCompare(fileStampOrder(left)))
+  : matching;
   const counts = new Map<string, number>();
+  let logs: LogEntry[] = [];
+  let collected = 0;
 
-  for (const file of files) {
-    if (!fileMatchesFilters(file, options)) continue;
-    const rows = await hydrateRows(file);
+  for (const file of ordered) {
     const key = partitionKey(file.partition);
+    if (bounded && collected >= limit) {
+      counts.set(key, (counts.get(key) || 0) + (await countLogRows(file.absPath, file.compressed)));
+      continue;
+    }
+    const rows = await hydrateRows(file);
     counts.set(key, (counts.get(key) || 0) + rows.length);
+    collected += rows.length;
     logs = logs.concat(rows);
   }
 
   sortByRecordedAtAsc(logs);
 
-  const limit = Number(options.limit) || 0;
-  const limitedLogs = limit > 0 && Number.isFinite(limit) ? logs.slice(Math.max(0, logs.length - limit)) : logs;
+  const limitedLogs = bounded ? logs.slice(Math.max(0, logs.length - limit)) : logs;
   return { logs: limitedLogs, counts };
 }
 

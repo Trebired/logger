@@ -18,7 +18,7 @@ async function getLogsForDir(dir: string, options?: LogQueryOptions): Promise<Lo
   const allFiles = await walkLogFiles(baseDir);
   const scopeFiles = allFiles.filter((file) => scopeMatches(file, partition, acrossPartitions));
   const allItems = await summarizeFiles(allFiles);
-  const scopeItems = scopeFiles === allFiles ? allItems : await summarizeFiles(scopeFiles);
+  const scopeItems = scopeFiles.length === allFiles.length ? allItems : await summarizeFiles(scopeFiles);
   const { logs, counts } = await readFilteredLogs(scopeFiles, opts);
 
   return buildQueryResult(
