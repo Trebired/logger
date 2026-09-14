@@ -514,6 +514,14 @@ console.log(recent.levels);
 console.log(recent.metadata.total);
 ```
 
+Queries count the rows of every file in scope so `metadata.total` and the per-partition `count` are exact. That opens every saved file. A caller that only needs the newest entries passes `totals: false`: the query then picks the newest files by name and opens only as many as the limit needs. `metadata.total.files` and `dirs` stay exact; `metadata.total.logs` and the per-partition `count` are `0`.
+
+```ts
+const recent = await log.getAllLogs({ level: "all", limit: 100, totals: false });
+```
+
+With the native backend every query runs off the main thread, so a large store never blocks the event loop.
+
 Pass `partition: null` when you want only unpartitioned logs from a mixed directory tree.
 
 If you use partition folders and want a merged read across every partition:

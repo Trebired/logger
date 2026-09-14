@@ -70,7 +70,11 @@ fn visit_file(
     };
 
     let rel_dir = relative_dir(abs_path, rel_root);
-    let rows = count_rows(abs_path, parsed.compressed).map_err(|error| err(error.to_string()))?;
+    let rows = if request.totals {
+        count_rows(abs_path, parsed.compressed).map_err(|error| err(error.to_string()))?
+    } else {
+        0
+    };
     let group_key = group_key_from_dir(&rel_dir);
     state.record_summary(partition, &rel_dir, rows);
 
@@ -135,7 +139,7 @@ pub fn query_logs_json(request_json: String) -> Result<String> {
     serde_json::from_str(&request_json).map_err(|error| err(error.to_string()))?;
     let base_dir = PathBuf::from(request.dir.clone());
     let limit = request.limit.unwrap_or(0);
-    let mut state = QueryState::new(limit);
+    let mut state = QueryState::new(limit, request.totals);
 
     walk_base_dir(&mut state, &request, &base_dir)?;
 

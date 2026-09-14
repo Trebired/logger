@@ -118,17 +118,14 @@ fn scan_single_partition(
     let mut logs = 0_u64;
     let mut last_activity: Option<SystemTime> = None;
 
-    // A partition is many small files, so the per-file stat and read dominate.
-    // Doing that work across the pool turns a serial walk into a parallel one;
-    // the accumulation below stays sequential so results remain deterministic.
     let entries = collect_partition_files(&root);
     let scanned = entries
     .par_iter()
     .map(|file| {
-        let metadata = fs::metadata(&file.abs_path).map_err(|error| err(error.to_string()))?;
-        let row_count = count_rows(&file.abs_path, file.parsed.compressed)
-        .map_err(|error| err(error.to_string()))?;
-        Ok((metadata, row_count))
+            let metadata = fs::metadata(&file.abs_path).map_err(|error| err(error.to_string()))?;
+            let row_count = count_rows(&file.abs_path, file.parsed.compressed)
+            .map_err(|error| err(error.to_string()))?;
+            Ok((metadata, row_count))
     })
     .collect::<Result<Vec<_>>>()?;
 
@@ -148,21 +145,26 @@ fn scan_single_partition(
     }
 
     files.sort_by(|a, b| a.path.cmp(&b.path));
+    let totals = ScanTotals {
+        logs,
+        dirs: dirs.len() as u64,
+        files: files.len() as u64,
+        bytes,
+        megabytes: bytes_to_megabytes(bytes),
+    };
+    Ok((scan_partition_result(partition, totals, last_activity), files))
+}
 
-    Ok((
-            ScanPartition {
-                name: partition.to_string(),
-                total: ScanTotals {
-                    logs,
-                    dirs: dirs.len() as u64,
-                    files: files.len() as u64,
-                    bytes,
-                    megabytes: bytes_to_megabytes(bytes),
-                },
-                last_activity_at: last_activity.map(to_iso_time),
-            },
-            files,
-    ))
+fn scan_partition_result(
+    partition: &str,
+    total: ScanTotals,
+    last_activity: Option<SystemTime>,
+) -> ScanPartition {
+    ScanPartition {
+        name: partition.to_string(),
+        total,
+        last_activity_at: last_activity.map(to_iso_time),
+    }
 }
 
 pub fn scan_partitions_json(dir: String, partitions: Vec<String>) -> Result<String> {

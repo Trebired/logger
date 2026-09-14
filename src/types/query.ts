@@ -8,6 +8,7 @@ type LogQueryOptions = {
   limit?: number;
   partition?: string | null;
   acrossPartitions?: boolean;
+  totals?: boolean;
   levels?: Record<string, LogLevelConfig>;
 };
 
@@ -43,6 +44,7 @@ type LogQueryResult = {
       limit: number;
       partition: string | null;
       acrossPartitions: boolean;
+      totals: boolean;
     };
     partitions: {
       items: LogPartitionSummary[];

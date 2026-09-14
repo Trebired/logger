@@ -74,6 +74,7 @@ type StorageQueryRequest = {
   day: string;
   hour: string;
   limit: number;
+  totals: boolean;
 };
 
 type StorageQueryTotals = {

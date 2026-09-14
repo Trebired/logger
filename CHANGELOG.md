@@ -4,6 +4,11 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.7.4
+
+- Fixed saved-log queries and retention cleanup blocking the event loop. The native `queryLogs` and `cleanupLogs` ran synchronously on the main thread, so a query over a large store froze the whole process. On an agent holding 1,684,935 files, every sync froze the agent for 12-52 seconds; its socket stopped accepting connections and the platform's 2.5 second readiness probe never got an answer. Both now run on the libuv thread pool. The same query holds the event loop for at most 1 ms.
+- Added the `totals` query option. Queries count the rows of every file in scope to report exact totals, which opens every saved file. `totals: false` picks the newest files by name and opens only as many as the limit needs. On the same store a 100-entry query dropped from 14 seconds to 3.2 seconds. `metadata.total.logs` and the per-partition `count` are `0` when totals are skipped; file and directory counts stay exact. The default is unchanged.
+
 ## 2.7.3
 
 - Moved reading saved logs into the native backend. `getAllLogs()` walked the store in JavaScript and built an object for every file before filtering, so a store with many files needed gigabytes of memory for a query that returns a handful of entries. The walk, row counting and file selection now happen in Rust and only the entries a query actually returns cross into JavaScript. An agent holding 1,683,946 log files went from 1.6-3.5 GB of memory to 105 MB.

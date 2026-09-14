@@ -29,17 +29,15 @@ pub struct PartitionFileEntry {
     pub parsed: ParsedLogFile,
 }
 
-/// Compiled once. This runs for every file in a partition, and recompiling the
-/// pattern per call dominated scanning a store with tens of thousands of files.
 static LOG_NAME_REGEX: OnceLock<Regex> = OnceLock::new();
 
 fn log_name_regex() -> Option<&'static Regex> {
     LOG_NAME_REGEX
     .get_or_init(|| {
-        Regex::new(
-            r"^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$",
-        )
-        .expect("log file name pattern must compile")
+            Regex::new(
+                r"^(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d+)-([a-z0-9._-]+)\.jsonl(\.gz)?$",
+            )
+            .expect("log file name pattern must compile")
     })
     .into()
 }
@@ -64,9 +62,6 @@ pub fn parse_log_name(file_name: &str) -> Option<ParsedLogFile> {
     })
 }
 
-/// Counts non-empty lines without allocating a `String` per line. Log stores
-/// reach hundreds of megabytes, and the per-line allocation dominated partition
-/// scanning; this walks the bytes in a fixed buffer instead.
 fn count_rows_from_reader<R: Read>(reader: R) -> std::io::Result<u64> {
     let mut reader = BufReader::with_capacity(COUNT_ROWS_BUFFER_BYTES, reader);
     let mut count = 0_u64;

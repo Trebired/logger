@@ -17,7 +17,9 @@ type NativeBinding = {
   rewritePartitionFiles(requestJson: string): void;
   createArchive(requestJson: string): void;
   queryLogs ? (requestJson: string) : string;
+  queryLogsAsync ? (requestJson: string) : Promise<string>;
   cleanupLogs ? (requestJson: string) : void;
+  cleanupLogsAsync ? (requestJson: string) : Promise<void>;
 };
 
 let cachedBinding: NativeBinding | null | undefined;
@@ -106,13 +108,21 @@ function nativeStorageBackend(): StorageBackend | null {
     },
   };
 
-  if (typeof binding.queryLogs === "function") {
+  if (typeof binding.queryLogsAsync === "function") {
+    backend.queryLogs = async(request: StorageQueryRequest): Promise<StorageQueryResponse> => {
+      return JSON.parse(await binding.queryLogsAsync!(JSON.stringify(request))) as StorageQueryResponse;
+    };
+  } else if (typeof binding.queryLogs === "function") {
     backend.queryLogs = async(request: StorageQueryRequest): Promise<StorageQueryResponse> => {
       return JSON.parse(binding.queryLogs!(JSON.stringify(request))) as StorageQueryResponse;
     };
   }
 
-  if (typeof binding.cleanupLogs === "function") {
+  if (typeof binding.cleanupLogsAsync === "function") {
+    backend.cleanupLogs = async(request: StorageCleanupRequest): Promise<void> => {
+      await binding.cleanupLogsAsync!(JSON.stringify(request));
+    };
+  } else if (typeof binding.cleanupLogs === "function") {
     backend.cleanupLogs = async(request: StorageCleanupRequest): Promise<void> => {
       binding.cleanupLogs!(JSON.stringify(request));
     };

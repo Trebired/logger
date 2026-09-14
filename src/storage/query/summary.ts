@@ -71,6 +71,7 @@ function buildQueryResult(
         limit: Number.isFinite(limit) ? limit : 0,
         partition: hasExplicitPartition ? partition : null,
         acrossPartitions,
+        totals: opts.totals !== false,
       },
       partitions: {
         items: buildPartitionItems(items, counts),
@@ -80,13 +81,13 @@ function buildQueryResult(
   };
 }
 
-async function summarizeFiles(files: WalkedLogFile[]): Promise<Map<string, PartitionSummaryState>> {
+async function summarizeFiles(files: WalkedLogFile[], countRows = true): Promise<Map<string, PartitionSummaryState>> {
   const items = new Map<string, PartitionSummaryState>();
   const dirSets = new Map<string, Set<string>>();
 
   for (const file of files) {
     const key = partitionKey(file.partition);
-    const rows = await countLogRows(file.absPath, file.compressed);
+    const rows = countRows ? await countLogRows(file.absPath, file.compressed) : 0;
     const current = items.get(key) || {
       partition: file.partition || null,
       total: { logs: 0, dirs: 0, files: 0 },
@@ -120,7 +121,7 @@ async function readFilteredLogs(files: WalkedLogFile[], options: LogQueryOptions
   const counts = new Map<string, number>();
 
   if (!bounded) return { counts, logs: await readAllRows(ascending, counts) };
-  return { counts, logs: await readNewestRows(ascending, counts, limit) };
+  return { counts, logs: await readNewestRows(ascending, counts, limit, options.totals !== false) };
 }
 
 async function readAllRows(files: WalkedLogFile[], counts: Map<string, number>): Promise<LogEntry[]> {
@@ -137,7 +138,12 @@ async function readAllRows(files: WalkedLogFile[], counts: Map<string, number>):
   return logs;
 }
 
-async function readNewestRows(files: WalkedLogFile[], counts: Map<string, number>, limit: number): Promise<LogEntry[]> {
+async function readNewestRows(
+  files: WalkedLogFile[],
+  counts: Map<string, number>,
+  limit: number,
+  countRest: boolean,
+): Promise<LogEntry[]> {
   const selected: LogEntry[][] = [];
   let collected = 0;
 
@@ -147,6 +153,7 @@ async function readNewestRows(files: WalkedLogFile[], counts: Map<string, number
     const file = files[index];
     const key = partitionKey(file.partition);
     if (collected >= limit && fileStampKey(file) !== lastStamp) {
+      if (!countRest) break;
       counts.set(key, (counts.get(key) || 0) + (await countLogRows(file.absPath, file.compressed)));
       continue;
     }

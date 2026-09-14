@@ -27,6 +27,8 @@ pub struct QueryRequest {
     pub hour: Option<String>,
     #[serde(default)]
     pub limit: Option<u64>,
+    #[serde(default = "default_totals")]
+    pub totals: bool,
 }
 
 #[derive(Serialize)]
@@ -64,6 +66,7 @@ struct PartitionSummary {
 }
 
 pub struct QueryState {
+    totals: bool,
     summaries: BTreeMap<String, PartitionSummary>,
     partitions: BTreeMap<String, Option<String>>,
     candidates: Vec<Candidate>,
@@ -71,6 +74,10 @@ pub struct QueryState {
     scope_logs: u64,
     scope_files: u64,
     scope_dirs: BTreeSet<String>,
+}
+
+fn default_totals() -> bool {
+    true
 }
 
 fn partition_key(partition: Option<&str>) -> String {
@@ -133,8 +140,9 @@ pub fn matches_scope(request: &QueryRequest, partition: Option<&str>) -> bool {
 }
 
 impl QueryState {
-    pub fn new(limit: u64) -> Self {
+    pub fn new(limit: u64, totals: bool) -> Self {
         Self {
+            totals,
             summaries: BTreeMap::new(),
             partitions: BTreeMap::new(),
             candidates: Vec::new(),
@@ -178,7 +186,24 @@ impl QueryState {
         .binary_search_by(|item| candidate.order.cmp(&item.order))
         .unwrap_or_else(|index| index);
         self.candidates.insert(position, candidate);
-        self.trim_candidates();
+        if self.totals {
+            self.trim_candidates();
+        } else {
+            self.trim_candidate_files();
+        }
+    }
+
+    fn trim_candidate_files(&mut self) {
+        let limit = self.limit as usize;
+        if self.candidates.len() <= limit {
+            return;
+        }
+        let stamp = self.candidates[limit - 1].stamp.clone();
+        let mut end = limit;
+        while end < self.candidates.len() && self.candidates[end].stamp == stamp {
+            end += 1;
+        }
+        self.candidates.truncate(end);
     }
 
     fn trim_candidates(&mut self) {

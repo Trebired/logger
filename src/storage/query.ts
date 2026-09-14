@@ -25,8 +25,9 @@ async function getLogsForDir(dir: string, options?: LogQueryOptions): Promise<Lo
 
   const allFiles = await walkLogFiles(baseDir);
   const scopeFiles = allFiles.filter((file) => scopeMatches(file, partition, acrossPartitions));
-  const allItems = await summarizeFiles(allFiles);
-  const scopeItems = scopeFiles.length === allFiles.length ? allItems : await summarizeFiles(scopeFiles);
+  const countRows = opts.totals !== false;
+  const allItems = await summarizeFiles(allFiles, countRows);
+  const scopeItems = scopeFiles.length === allFiles.length ? allItems : await summarizeFiles(scopeFiles, countRows);
   const { logs, counts } = await readFilteredLogs(scopeFiles, opts);
 
   return buildQueryResult(
@@ -58,6 +59,7 @@ async function nativeQuery(
       level: toString(opts.level || "all").toLowerCase() || "all",
       limit: Math.max(0, Number(opts.limit) || 0),
       partition,
+      totals: opts.totals !== false,
   });
   const items = new Map<string, PartitionSummaryState>();
   const counts = new Map<string, number>();
