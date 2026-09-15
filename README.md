@@ -1,12 +1,12 @@
 # @trebired/logger
 
-Local-first JSONL logger with human-browsable group folders, durable writes, retention, redaction, query helpers, and more.
+Structured logger for Bun that saves logs to a local SQLite database, with partitions, default retention, redaction, query and export helpers, and browser runtimes.
 
-`@trebired/logger` writes JSONL logs into group-based folders on the server, supports optional partitioned storage, and now ships a framework-neutral browser runtime with an optional React adapter on top.
+On the server, `@trebired/logger` writes to one database per log directory, `<dir>/logs.db`. Writes are batched and queries use indexes. Old entries are deleted by default. The package also ships a framework-neutral browser runtime with an optional React adapter.
 
 ## Install
 
-Runtime support: Bun 1+.
+Runtime support: Bun 1.2+ to save logs. A logger without `dir` (console and live stream only) also runs on Node.js; a logger with `dir` on Node.js prints one notice and keeps logging to the console. The browser entries run in any browser.
 
 ```sh
 bun i @trebired/logger
@@ -24,7 +24,9 @@ const log = createLog({
 });
 
 log.info("app.start", "ready", { port: 3000 });
-await log.flush();
+
+const recent = await log.queryLogs({ limit: 20 });
+console.log(recent.entries);
 ```
 
 Browser entrypoints:
@@ -38,92 +40,39 @@ import { LogProvider, useLog } from "@trebired/logger/browser/react";
 
 ### Why This Logger
 
-Most loggers either write to stdout and expect an external collector, or provide a very broad transport system. This package is intentionally opinionated around a simpler operational workflow:
+Most loggers either write to stdout and expect an external collector, or provide a very broad transport system. This package is built for a simpler operational workflow:
 
-- structured JSONL entries
-- one directory tree per log group
-- optional partition folders above group trees
-- async queued file writes by default
+- structured entries with a group, level, message, origin and metadata
+- one local SQLite file per log directory, no external service
+- batched writes that never touch the filesystem per line
+- indexed queries by partition, group, level, time and message text
+- partitions for deployments, releases, sessions or any other caller-defined bucket
 - custom weighted log levels
-- local querying by group, level, day, and hour
 - built-in redaction for common sensitive fields
-- retention and file-size rolling without a database
+- retention that is on by default, so a busy service cannot fill the disk
 
-The storage layout is meant to stay human-browsable:
+### Storage
+
+A logger with `dir: "/var/log/my-app"` writes to:
 
 ```txt
 /var/log/my-app/
-  app/
-    start/
-      2026-05-03-13-00-00-1-info.jsonl
-  billing/
-    invoice/
-      2026-05-03-13-00-00-1-audit.jsonl
+  logs.db
+  logs.db-wal
+  logs.db-shm
 ```
 
-Each line is a JSON object:
+The database runs in WAL mode. Several loggers in one process can share a directory; they share one connection. A worker thread per store copies the WAL into the database and writes snapshots, so the thread that logs never waits for those disk syncs.
+
+Each entry keeps the same shape as earlier releases:
 
 ```json
-{"recorded_at":"2026-05-03T13:00:00.000Z","level":"info","group":"app.start","message":"ready","origin":{"source":"app","instance":null},"metadata":{"port":3000}}
+{"recorded_at":"2026-05-03T13:00:00.000Z","level":"info","group":"app.start","message":"ready","origin":{"source":"app","instance":null},"partition":null,"metadata":{"port":3000}}
 ```
 
-If you want an extra top-level separation layer, set `partition` and the logger writes one more folder layer. This is useful for deployments, releases, environments, sessions, tenants, workers, import batches, or any other caller-defined bucket:
+The store keeps entry counts and byte totals per partition and per group, updated with every write batch. Partition info and group lists read those counters and never scan entries.
 
-```txt
-/var/log/my-app/
-  blue-2026-05-16/
-    app/
-      start/
-        2026-05-03-13-00-00-1-info.jsonl
-```
-
-Partition names can now be built from a stable time prefix plus any caller-defined suffix:
-
-```ts
-import {
-  buildPartitionName,
-  buildTemporaryPartitionName,
-  createLog,
-} from "@trebired/logger";
-
-const staged = buildTemporaryPartitionName({
-  timeZone: "UTC",
-  sequence: 2,
-  suffix: "deployment-unknown",
-});
-
-const final = buildPartitionName({
-  timeZone: "UTC",
-  suffix: "deployment-42",
-});
-
-const log = createLog({
-  dir: "/var/log/my-app",
-  partition: staged,
-  temporaryPartition: true,
-});
-
-log.info("app.boot", "starting before final ownership is known");
-await log.flush();
-
-await log.promotePartition(final);
-```
-
-If you already have a full custom partition string, pass it directly with `partition`, or normalize it first with `sanitizePartitionName()`.
-
-Temporary partitions are now self-cleaning: once a logger switches away from a temporary partition, promotes it, or closes, any temporary partition in that log directory that is no longer current is deleted automatically.
-
-If you want the logger to own the common "temp first, final later" lifecycle, call `finalizePartition()` instead of open-coding a `promotePartition()` plus fallback sequence:
-
-```ts
-const result = await log.finalizePartition(final, {
-  ifExists: "merge",
-});
-
-if (result.action === "switched") {
-  // optional app-specific warning or telemetry
-}
-```
+Releases before 3.0.0 wrote JSONL files into group folders. 3.0.0 does not read or migrate them. Delete those folders by hand when you no longer need them.
 
 ### Full API Example
 
@@ -147,29 +96,22 @@ const log = createLog({
   timeZone: "America/New_York",
   source: "api",
   levels: {
-    debug: { weight: 10, label: "DEBUG", color: "#94a3b8" },
-    info: { weight: 20, label: "INFO", color: "#38bdf8" },
-    success: { weight: 25, label: "SUCCESS", color: "#22c55e", bold: true },
-    warn: { weight: 30, label: "WARN", color: "#f59e0b", stream: "stderr" },
-    fail: { weight: 40, label: "FAIL", color: "#fb7185", stream: "stderr" },
-    error: { weight: 50, label: "ERROR", color: "#ef4444", stream: "stderr", showStack: true, bold: true },
     audit: { weight: 35, label: "AUDIT", color: "#8b5cf6" },
     panic: { weight: 100, label: "PANIC", color: "#dc2626", stream: "stderr", showStack: true, bold: true },
   },
   minLevel: "debug",
   write: {
     mode: "async",
+    batchSize: 2000,
+    flushIntervalMs: 50,
     maxQueue: 10000,
     overflow: "drop-newest",
   },
   retention: {
-    enabled: true,
-    maxFileSize: "20mb",
-    compressOldFiles: false,
-    cleanupIntervalMs: 60_000,
-    // deletion is opt-in:
-    maxAgeDays: 30,
-    maxPartitions: 5,
+    maxAgeDays: 14,
+    maxSize: "256mb",
+    intervalMs: 10 * 60 * 1000,
+    temporaryMaxIdleHours: 24,
   },
   redact: {
     includeDefaultSensitiveKeys: true,
@@ -178,10 +120,6 @@ const log = createLog({
   },
   serializers: {
     userId: (value) => `user:${String(value)}`,
-    error: (value) =>
-      value instanceof Error
-        ? { name: value.name, message: value.message, stack: value.stack }
-        : value,
   },
   sample: (entry) => entry.level !== "debug" || Math.random() < 0.1,
   request: {
@@ -193,9 +131,7 @@ const log = createLog({
 
 log.info("app.start", "ready", { port: 3000 });
 log.audit("billing.invoice", "created", { invoiceId: "inv_123" });
-log.error("app.start", "failed", { reason: "missing config" });
 
-await log.flush();
 await log.close();
 ```
 
@@ -218,7 +154,7 @@ log.panic("runtime", "unrecoverable");
 
 Built-in levels are `debug`, `info`, `success`, `warn`, `fail`, and `error`. A custom level with the same name overrides the built-in config.
 
-Custom level methods are available at runtime. In TypeScript, the logger exposes dynamic level methods through an index signature, so custom names work but are not exhaustively autocompleted from the `levels` object yet.
+Custom level methods are available at runtime. In TypeScript, the logger exposes dynamic level methods through an index signature, so custom names work but are not autocompleted from the `levels` object.
 
 ### Scoped Loggers
 
@@ -256,25 +192,263 @@ logStream.on("log", (entry, context) => {
 });
 ```
 
-## Runtime
+## Writing
 
-### Install Notes
+### Batched Writes, Flush, and Close
 
-The package can use bundled native binaries for supported Linux and macOS targets to speed up large storage/export workloads. Consumers still install a single package:
+Log calls return immediately. Entries are queued and written in one transaction per batch:
 
-```txt
-@trebired/logger
-  dist/
-  native/
-    linux-x64-gnu.node
-    linux-arm64-gnu.node
-    darwin-arm64.node
-    darwin-x64.node
+- every `flushIntervalMs` (default 50 ms)
+- or as soon as `batchSize` entries (default 2000) are queued; a full batch is written inline, so a synchronous burst of log calls never overflows the queue
+
+```ts
+log.info("queue.example", "queued");
+
+await log.flush();
+await log.close();
 ```
 
-At runtime the JS wrapper always tries the matching `.node` file first when one is bundled for the current platform, and falls back to the built-in JS backend if native loading is unavailable or fails. Bundled native binaries are currently published for Linux GNU (`x64` and `arm64`) and macOS targets. End users do not need Rust installed.
+Every read method on a logger flushes first, so `log.queryLogs()` always sees the entries that logger wrote.
 
-Set `TB_LOGGER_DISABLE_NATIVE=1` only when you explicitly want to force the JS backend.
+`getStats()` exposes write health:
+
+```ts
+const stats = log.getStats();
+// { mode, queued, written, dropped, failed, batches, queueLength, closed }
+```
+
+`maxQueue` and `overflow` (`"drop-newest"`, `"drop-oldest"` or `"throw"`) only matter when writes cannot keep up, for example while the database is locked.
+
+Steady logging does not pause the process for disk work. Measured on a btrfs SSD at 10,000 entries per second with queries running, the longest event-loop pause was 6 ms. Writing the backlog of a sustained burst of about a million entries at full speed has been observed to pause the process once for up to 190 ms.
+
+For scripts or tests, sync writing inserts every entry immediately:
+
+```ts
+const log = createLog({
+  dir: "./logs",
+  write: { mode: "sync" },
+});
+```
+
+`save` defaults to `true` when `dir` is provided. Without a `dir`, the logger still prints to the console and emits live stream events.
+
+## Reading
+
+### Query Saved Logs
+
+Query a directory with `queryLogs()`, or a live logger with `log.queryLogs()`:
+
+```ts
+import { queryLogs } from "@trebired/logger";
+
+const result = await queryLogs("/var/log/my-app", {
+  partition: "*",
+  minLevel: "warn",
+  group: "app.runtime",
+  limit: 100,
+});
+
+console.log(result.entries);
+console.log(result.levels.error.color);
+```
+
+Options:
+
+| Option | Meaning |
+| --- | --- |
+| `partition` | A partition name, `null` for unpartitioned entries, or `"*"` for all. `log.queryLogs()` defaults to the logger's active partition; `queryLogs(dir)` defaults to all. |
+| `level` | One level name or a list of names. |
+| `minLevel` | Only levels with at least this weight. |
+| `group` | A group and its children: `"server"` matches `server` and `server.sync`, not `servers`. |
+| `since`, `until` | ISO string, epoch milliseconds or `Date`, both inclusive. |
+| `search` | Case-insensitive text match on the message. It reads every entry the other filters leave, about 0.2 s per million, so narrow it with a partition, level, group or time range. |
+| `order` | `"desc"` (newest first, default) or `"asc"`. |
+| `limit` | Page size, default 100, capped at 1000. |
+| `cursor` | The `nextCursor` of the previous page. |
+| `offset` | Skip this many entries; ignored when `cursor` is set. |
+| `count` | Also return the exact number of matching entries in `total`. |
+| `levels` | Custom level config used to resolve `minLevel` in `queryLogs(dir)`. |
+
+The result is `{ entries, nextCursor, hasMore, total, levels }`. `total` is `null` unless `count: true` is passed. Counting reads every matching row, so leave it off for "newest entries" views.
+
+`queryLogs(dir)` and the other directory functions keep the database open for 30 seconds after the last call, so repeated reads do not reopen it.
+
+Page through everything with the cursor:
+
+```ts
+let cursor = null;
+do {
+  const page = await log.queryLogs({ partition: "*", order: "asc", limit: 1000, cursor });
+  handle(page.entries);
+  cursor = page.nextCursor;
+} while (cursor);
+```
+
+List the groups with saved entries, with their counts and last write:
+
+```ts
+import { listGroups } from "@trebired/logger";
+
+const groups = await listGroups("/var/log/my-app", { partition: "blue-2026-05-16" });
+// [{ group: "app.start", entries: 12, lastAt: "2026-05-16T10:00:00.000Z" }, ...]
+```
+
+### Export and Snapshot
+
+`exportLogs()` streams matching entries to a file as JSON lines, one entry per line. It accepts the same filters as `queryLogs()`:
+
+```ts
+import { exportLogs, snapshotStore } from "@trebired/logger";
+
+await exportLogs("/var/log/my-app", {
+  partition: "blue-2026-05-16",
+  since: "2026-05-16T00:00:00Z",
+  outputPath: "/tmp/blue.jsonl.gz",
+  format: "jsonl.gz",
+});
+
+await snapshotStore("/var/log/my-app", {
+  outputPath: "/backups/logs.db",
+});
+```
+
+`format` is `"jsonl"` or `"jsonl.gz"`. When it is omitted, a path ending in `.gz` is compressed. `snapshotStore()` writes a consistent, compacted copy of the whole database on the store's worker thread while loggers keep writing. Both refuse to overwrite an existing file unless `overwrite: true` is passed.
+
+## Partitions
+
+A partition labels entries with a caller-defined bucket: a deployment, release, session, tenant, worker or import batch. Entries written without a partition are unpartitioned.
+
+```ts
+import { buildPartitionName, createLog } from "@trebired/logger";
+
+const log = createLog({
+  dir: "/var/log/my-app",
+  partition: buildPartitionName({ timeZone: "UTC", suffix: "staged" }),
+  temporaryPartition: true,
+});
+
+log.info("app.boot", "starting before final ownership is known");
+
+const result = await log.finalizePartition(
+  buildPartitionName({ timeZone: "UTC", suffix: "deployment-42" }),
+  { ifExists: "merge" },
+);
+```
+
+`buildPartitionName()` builds `YYYY-MM-DD-HH-mm-ss-<sequence>[-suffix]` from a time, time zone, sequence and suffix. `sanitizePartitionName()` normalizes a custom name to letters, digits, `-` and `_`.
+
+### Switching and Finalizing
+
+- `log.setPartition(name, { temporary })` flushes and switches the logger to another partition. Pass `null` to write unpartitioned entries.
+- `log.finalizePartition(name, { ifExists })` moves the active partition's entries to `name`, marks `name` permanent and switches the logger to it.
+
+`ifExists` decides what happens when `name` already has entries:
+
+- `"merge"` (default) moves the active partition's entries into it
+- `"error"` throws a `partition-already-exists` error
+- `"replace"` deletes the existing partition first
+
+The result reports what happened:
+
+```ts
+result.action;
+// "renamed" | "merged" | "replaced" | "activated" | "marked-permanent" | "already-final"
+result.movedEntries;
+result.result; // @trebired/result shape: ok, or noop for "already-final"
+```
+
+### Temporary Partitions
+
+A partition created with `temporary: true` stays temporary until it is finalized. Retention deletes a temporary partition once it has had no writes for `temporaryMaxIdleHours` (default 24) and no live logger in the process holds it. A logger that crashed before finalizing therefore leaves its logs readable for a day.
+
+### Managing Partitions
+
+```ts
+import {
+  deletePartitions,
+  getPartitionInfo,
+  getPartitionErrorCode,
+  listPartitions,
+  renamePartition,
+} from "@trebired/logger";
+
+const info = await getPartitionInfo("/var/log/my-app", "blue-2026-05-16");
+// { name, temporary, createdAt, firstAt, lastAt, entries, bytes }
+
+const partitions = await listPartitions("/var/log/my-app");
+// { items: PartitionInfo[], total: { partitions, entries, bytes } }
+
+await renamePartition("/var/log/my-app", { from: "blue", to: "green", ifExists: "error" });
+
+await deletePartitions("/var/log/my-app", {
+  temporary: true,
+  olderThan: Date.now() - 7 * 24 * 60 * 60 * 1000,
+  keep: ["blue-2026-05-16"],
+});
+```
+
+`bytes` counts message and metadata text, not database pages. `deletePartitions()` combines its filters: `names`, `temporary`, `olderThan` (last write before this time) and `keep`.
+
+`getPartitionErrorCode()` and `isPartitionError()` inspect partition errors (`missing-log-dir`, `partition-already-exists`, `partition-not-found`, `partition-not-set`) without parsing messages.
+
+## Retention
+
+Retention is on by default:
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `maxAgeDays` | `14` | Delete entries older than this. `false` keeps entries regardless of age. |
+| `maxSize` | `"256mb"` | Delete the oldest entries while the database is larger than this. `false` removes the cap. |
+| `intervalMs` | `600000` | How often retention runs. The first pass runs one second after the logger opens its store. |
+| `temporaryMaxIdleHours` | `24` | Delete temporary partitions idle this long that no live logger holds. |
+| `enabled` | `true` | `false` stops scheduled passes for this logger. `log.runRetention()` still runs a pass on demand with the logger's limits. |
+
+A pass deletes old entries, then idle temporary partitions, then the oldest entries until the size cap holds. It deletes in chunks of 5,000 rows and yields to the event loop between chunks, so a large pass never blocks the process. Freed pages are returned to the filesystem at the end of the pass.
+
+Run a pass on demand:
+
+```ts
+import { runRetention } from "@trebired/logger";
+
+await log.runRetention();
+await runRetention("/var/log/my-app", { maxAgeDays: 7, maxSize: "64mb" });
+```
+
+## Redaction and Serializers
+
+Common sensitive keys are redacted by default: password, token, secret, authorization, cookie, api_key, and related variants.
+
+```ts
+const log = createLog({
+  redact: {
+    paths: ["user.ssn", /^payment\./],
+    replacement: "[hidden]",
+  },
+  serializers: {
+    userId: (value) => `user:${value}`,
+  },
+});
+
+log.info("account.update", "saved", {
+  userId: 42,
+  password: "secret",
+  user: { ssn: "123-45-6789" },
+});
+```
+
+## Sampling
+
+```ts
+const log = createLog({
+  sample: 0.1,
+});
+
+const selective = createLog({
+  sample: (entry) => entry.level === "error" || entry.group.startsWith("audit."),
+});
+```
+
+## Browser
 
 ### Browser Runtime
 
@@ -295,13 +469,13 @@ log.info("frontend boot");
 await log.flush();
 ```
 
-The first browser release ships with console delivery built in. It also supports custom browser transports with in-memory batching so you can add fetch, beacon, websocket, or other delivery later without changing the logger API.
+The browser runtime ships with console delivery built in. It also supports custom transports with in-memory batching, so you can add fetch, beacon, websocket, or other delivery without changing the logger API.
 
-There is no built-in SSR bootstrap helper in this release. If you want browser correlation data such as `requestId`, `sessionId`, or `deploymentId`, pass it explicitly through `metadata` or per-log metadata.
+There is no built-in SSR bootstrap helper. If you want browser correlation data such as `requestId`, `sessionId`, or `deploymentId`, pass it through `metadata` or per-log metadata.
 
 ### React Adapter
 
-`@trebired/logger/browser/react` is intentionally thin. It does not create a logger for you. It only helps wire an existing browser logger into React context:
+`@trebired/logger/browser/react` does not create a logger for you. It wires an existing browser logger into React context:
 
 ```tsx
 import { createRoot } from "react-dom/client";
@@ -327,280 +501,7 @@ createRoot(document.getElementById("root")!).render(
 
 `LogErrorBoundary` is also available from `@trebired/logger/browser/react` when you want render errors logged with the shared event shape.
 
-### Partition Lifecycle
-
-You can manage partitions either from a live logger or with standalone helpers:
-
-```ts
-import {
-  copyPartition,
-  createPartition,
-  deleteLogs,
-  getPartitionInfo,
-  listPartitions,
-  renamePartition,
-} from "@trebired/logger";
-
-await createPartition("/var/log/my-app", "2026-05-17-12-00-00-1-staged", {
-  temporary: true,
-});
-
-const partitions = await listPartitions("/var/log/my-app");
-console.log(partitions.total.megabytes);
-console.log(partitions[0]?.total.megabytes);
-
-await renamePartition("/var/log/my-app", {
-  from: "2026-05-17-12-00-00-1-staged",
-  to: "2026-05-17-12-00-00-1-final",
-});
-
-await copyPartition({
-  fromDir: "/var/log/my-app",
-  from: "2026-05-17-12-00-00-1-final",
-  toDir: "/var/log/archive",
-  to: "2026-05-17-12-00-00-1-final-copy",
-});
-
-await deleteLogs("/var/log/my-app", {
-  partition: "2026-05-17-12-00-00-1-final",
-  groupKey: "jobs.queue",
-  level: "warn",
-  olderThanDays: 7,
-});
-
-console.log(await getPartitionInfo("/var/log/my-app", "2026-05-17-12-00-00-1-final"));
-```
-
-For live loggers, the package now exposes two layers:
-
-- `promotePartition()` stays the lower-level explicit primitive. By default it still errors on target conflicts unless you pass `merge: true` or `ifExists`.
-- `finalizePartition()` is the higher-level lifecycle helper for idempotent temp-to-final transitions.
-
-`finalizePartition()` returns structured outcomes instead of forcing application code to catch expected conflicts:
-
-```ts
-const result = await log.finalizePartition("2026-05-17-12-00-00-1-final", {
-  ifExists: "switch",
-});
-
-result.action;
-// "renamed" | "merged" | "switched" | "activated-target"
-// "marked-permanent" | "already-finalized"
-```
-
-Conflict policies:
-
-- `ifExists: "error"` keeps strict low-level behavior
-- `ifExists: "merge"` merges the active source partition into the existing target
-- `ifExists: "switch"` activates the existing target without merging the current source
-
-For advanced callers that still use the lower-level primitives directly, `getPartitionErrorCode()` and `isPartitionError()` can inspect partition lifecycle errors without parsing raw message strings.
-
-### Async Writes, Flush, and Close
-
-File writes are async queued by default.
-
-```ts
-const log = createLog({
-  dir: "/var/log/my-app",
-  write: {
-    mode: "async",
-    maxQueue: 10000,
-    overflow: "drop-newest",
-  },
-});
-
-log.info("queue.example", "queued");
-
-await log.flush();
-await log.close();
-```
-
-`getStats()` exposes write health:
-
-```ts
-const stats = log.getStats();
-// { mode, queued, written, dropped, failed, queueLength, closed }
-```
-
-For simple scripts or tests, sync writing is available:
-
-```ts
-const log = createLog({
-  dir: "./logs",
-  write: { mode: "sync" },
-});
-```
-
-### Retention and Rolling
-
-Defaults:
-
-- logs are kept forever unless you set a retention number
-- `maxFileSize: "20mb"`
-- `compressOldFiles: false`
-
-```ts
-const log = createLog({
-  dir: "/var/log/my-app",
-  retention: {
-    // only delete when you set one or both of these:
-    maxAgeDays: 30,
-    maxPartitions: 5,
-    maxFileSize: "100mb",
-    compressOldFiles: true,
-    cleanupIntervalMs: 60 * 60 * 1000,
-  },
-});
-```
-
-`maxAgeDays` deletes old files by age. `maxPartitions` keeps only the newest partition folders by last write time. A partition can represent deployments, sessions, environments, release versions, or any other caller-defined grouping. If you omit both, the logger stores logs indefinitely.
-
-When a file exceeds the configured size, the logger rolls to the next sequence inside the same group and timestamp bucket:
-
-```txt
-2026-05-03-13-00-00-1-info.jsonl
-2026-05-03-13-00-00-2-info.jsonl
-2026-05-03-13-00-00-3-info.jsonl
-```
-
-### Redaction and Serializers
-
-Common sensitive keys are redacted by default: password, token, secret, authorization, cookie, api_key, and related variants.
-
-```ts
-const log = createLog({
-  redact: {
-    paths: ["user.ssn", /^payment\./],
-    replacement: "[hidden]",
-  },
-  serializers: {
-    userId: (value) => `user:${value}`,
-  },
-});
-
-log.info("account.update", "saved", {
-  userId: 42,
-  password: "secret",
-  user: { ssn: "123-45-6789" },
-});
-```
-
-### Query Saved Logs
-
-Old query names are not supported anymore. Use `getLogsForDir()`, `getAllLogs()`, and `getAllLogsAcrossPartitions()`. Do not use `getEntriesForDir()` or `getAll()`.
-
-```ts
-import { getLogsForDir } from "@trebired/logger";
-
-const result = await getLogsForDir("/var/log/my-app", {
-  level: "error",
-  groupKey: "app.runtime",
-  limit: 100,
-});
-
-console.log(result.logs);
-console.log(result.levels.error.color);
-console.log(result.metadata.count);
-console.log(result.metadata.total);
-```
-
-The main instance query method is `getAllLogs()`:
-
-```ts
-const recent = await log.getAllLogs({ groupKey: "billing.invoice", limit: 50 });
-console.log(recent.logs);
-console.log(recent.levels);
-console.log(recent.metadata.total);
-```
-
-Queries count the rows of every file in scope so `metadata.total` and the per-partition `count` are exact. That opens every saved file. A caller that only needs the newest entries passes `totals: false`: the query then picks the newest files by name and opens only as many as the limit needs. `metadata.total.files` and `dirs` stay exact; `metadata.total.logs` and the per-partition `count` are `0`.
-
-```ts
-const recent = await log.getAllLogs({ level: "all", limit: 100, totals: false });
-```
-
-With the native backend every query runs off the main thread, so a large store never blocks the event loop.
-
-Pass `partition: null` when you want only unpartitioned logs from a mixed directory tree.
-
-If you use partition folders and want a merged read across every partition:
-
-```ts
-const merged = await log.getAllLogsAcrossPartitions({
-  groupKey: "billing.invoice",
-  limit: 100,
-});
-
-console.log(merged.logs);
-console.log(merged.metadata.partitions.items);
-```
-
-### Sampling
-
-```ts
-const log = createLog({
-  sample: 0.1,
-});
-
-const selective = createLog({
-  sample: (entry) => entry.level === "error" || entry.group.startsWith("audit."),
-});
-```
-
-### Development
-
-```sh
-bun install
-bun run demo
-bun run typecheck
-bun run build
-```
-
-Committed `*.spec.ts` and `*.spec.tsx` files are banned by Code Discipline, so this package does not expose a test script.
-
-`bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, local querying, and write stats. It writes throwaway logs into the repo under `.demo-logs/dummy`. Microslop Windows is not supported.
-
-The published package exports compiled files from `dist`. Publishing runs `typecheck` and package verification through `prepublishOnly`.
-
-## Public API
-
-### Core API
-
-```ts
-const log = createLog({
-  dir: "/var/log/my-app",
-  save: true,
-  console: true,
-  timeZone: "America/New_York",
-  source: "api",
-});
-
-log.debug("app.boot", "config loaded");
-log.info("app.boot", "ready");
-log.success("job.import", "finished", { rows: 1200 });
-log.warn("http.request", "slow request", { took_ms: 842 });
-log.fail("job.import", "failed validation");
-log.error("app.runtime", "uncaught error");
-```
-
-`save` defaults to `true` when `dir` is provided. If no `dir` is provided, the logger can still emit console output and live stream events.
-
-If you log without passing a group, the logger always uses `"default"`.
-
-`@trebired/logger` runs on both Bun. It may print one-time package notices for runtime-specific guidance or important future package messages. For example, Pass `quiet: true` to suppress package notices:
-
-```ts
-const log = createLog({
-  quiet: true,
-});
-```
-
-When `quiet` is not `true`, the package also prints a one-time startup greeting using the same console logger style as normal entries.
-
-`timeZone` is a top-level logger option because it controls the actual local moment used for saved file names and console timestamps. It defaults to the host timezone, then falls back to `America/New_York`.
-
-Console output is configurable. `level` and `message` are always shown; timestamp, group, and metadata can be hidden. `console.locale` only controls display formatting. When `locale` is omitted or invalid, the logger passes `undefined` to `Intl.DateTimeFormat`, so JavaScript uses the runtime or system default locale:
+## Console and Time Zone
 
 ```ts
 const log = createLog({
@@ -615,14 +516,36 @@ const log = createLog({
 });
 ```
 
-Use `timeZone` for the local hour and `console.locale` for the display style.
+`level` and `message` are always shown; timestamp, group, and metadata can be hidden. `timeZone` controls the local time shown in console output and used by `buildPartitionName()`. It defaults to the host time zone, then falls back to `America/New_York`. Stored timestamps are UTC.
 
-European dot-date locales such as `cs-CZ` and `de-DE` are formatted consistently as `03.05.2026, 15:59:23`.
+`console.locale` only controls display formatting. When it is omitted or invalid, JavaScript uses the runtime default locale. European dot-date locales such as `cs-CZ` and `de-DE` are formatted as `03.05.2026, 15:59:23`.
+
+When `quiet` is not `true`, the package prints a one-time startup greeting in the same console style as normal entries. Pass `quiet: true` to suppress it.
+
+If you log without passing a group, the logger uses `"default"`.
+
+## Development
+
+```sh
+bun install
+bun run demo
+bun run typecheck
+bun run build
+bun ./scripts/verify/store.mjs
+bun ./scripts/verify/perf.mjs
+```
+
+Committed `*.spec.ts` and `*.spec.tsx` files are banned by Code Discipline, so this package does not expose a test script. `scripts/verify/store.mjs` checks the built store end to end: counters, paging, filters, partitions, retention, export and snapshot. `scripts/verify/perf.mjs` asserts write throughput, query latency, event-loop stalls and memory growth.
+
+`bun run demo` starts a small dummy system that keeps logging until interrupted. It exercises grouped and scoped loggers, custom levels, redaction, request middleware, live stream events, querying, and write stats. It writes throwaway logs into the repo under `.demo-logs/dummy`. Microslop Windows is not supported.
+
+The published package exports compiled files from `dist`. Publishing runs `typecheck` and package verification through `prepublishOnly`.
 
 ## What It Does Not Do
 
 This package does not:
 
 - replace a full observability stack
+- ship logs to a remote collector
 - force one transport, server framework, or deployment model
 - infer product-specific redaction policy

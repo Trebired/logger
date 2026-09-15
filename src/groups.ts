@@ -1,24 +1,35 @@
 import { TOP_LEVEL } from "./constants.js";
 import { toTrimmedString as toString } from "@trebired/utils";
 
+const GROUP_KEY_CACHE_LIMIT = 1024;
+const groupKeyCache = new Map<string, string>();
+
 function cleanGroupPart(part: string): string {
   return toString(part).replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 
-function normGroup(input: unknown): { key: string; parts: string[] } {
+function computeGroupKey(input: unknown): string {
   const raw = toString(input) || TOP_LEVEL;
   const parts = raw.split(".").map(cleanGroupPart).filter(Boolean);
-  const safeParts = parts.length ? parts : [TOP_LEVEL];
+  return parts.length ? parts.join(".") : TOP_LEVEL;
+}
+
+function normGroupKey(input: unknown): string {
+  if (typeof input !== "string") return computeGroupKey(input);
+  const cached = groupKeyCache.get(input);
+  if (cached !== undefined) return cached;
+  const key = computeGroupKey(input);
+  if (groupKeyCache.size >= GROUP_KEY_CACHE_LIMIT) groupKeyCache.clear();
+  groupKeyCache.set(input, key);
+  return key;
+}
+
+function normGroup(input: unknown): { key: string; parts: string[] } {
+  const key = normGroupKey(input);
   return {
-    key: safeParts.join("."),
-    parts: safeParts,
+    key,
+    parts: key.split("."),
   };
 }
 
-function groupKeyFromRelDir(relDir: string): string {
-  const trimmed = String(relDir || "").replace(/^[/\\]+|[/\\]+$/g, "");
-  if (!trimmed) return TOP_LEVEL;
-  return trimmed.split(/[\\/]+/).filter(Boolean).join(".");
-}
-
-export { groupKeyFromRelDir, normGroup };
+export { normGroup, normGroupKey };

@@ -9,19 +9,21 @@ import type {
   WriteOptions,
 } from "./common.js";
 import type {
-  ExportPartitionOptions,
-  ExportPartitionsOptions,
-  ExportResult,
-} from "./export.js";
-import type {
+  ExportLogsOptions,
+  ExportLogsResult,
   FinalizePartitionOptions,
   FinalizePartitionResult,
+  ListGroupsOptions,
+  LogGroupSummary,
+  LogQueryOptions,
+  LogQueryResult,
   PartitionInfo,
   PartitionListResult,
-  PromotePartitionOptions,
+  RetentionRunResult,
   SetPartitionOptions,
-} from "./partitions.js";
-import type { LogQueryOptions, LogQueryResult } from "./query.js";
+  SnapshotStoreOptions,
+  SnapshotStoreResult,
+} from "./store.js";
 
 type CreateLogOptions = {
   dir?: string;
@@ -49,6 +51,7 @@ type LogStats = {
   written: number;
   dropped: number;
   failed: number;
+  batches: number;
   queueLength: number;
   closed: boolean;
 };
@@ -72,23 +75,13 @@ type LogInstance = Record<string, any>& {
     partition: string,
     options?: FinalizePartitionOptions,
   ): Promise<FinalizePartitionResult>;
-  promotePartition(
-    partition: string,
-    options?: PromotePartitionOptions,
-  ): Promise<FinalizePartitionResult>;
-  exportPartition(
-    partition?: string,
-    options?: Omit<ExportPartitionOptions, "outputPath">& {
-      outputPath: string;
-    },
-  ): Promise<ExportResult>;
-  exportPartitions(
-    options: Omit<ExportPartitionsOptions, "outputPath">& {
-      outputPath: string;
-    },
-  ): Promise<ExportResult>;
-  listPartitions(): Promise<PartitionListResult>;
   getPartitionInfo(partition?: string): Promise<PartitionInfo|null>;
+  listPartitions(): Promise<PartitionListResult>;
+  queryLogs(options?: LogQueryOptions): Promise<LogQueryResult>;
+  listGroups(options?: ListGroupsOptions): Promise<LogGroupSummary[]>;
+  exportLogs(options: ExportLogsOptions): Promise<ExportLogsResult>;
+  snapshotStore(options: SnapshotStoreOptions): Promise<SnapshotStoreResult>;
+  runRetention(): Promise<RetentionRunResult|null>;
   requestLogger(
     options?: RequestLoggerOptions,
   ): (req: any, res: any, next: () => void) => void;
@@ -97,10 +90,6 @@ type LogInstance = Record<string, any>& {
     metadata?: Record<string, unknown>,
     source?: string,
   ): void;
-  getAllLogs(options?: LogQueryOptions): Promise<LogQueryResult>;
-  getAllLogsAcrossPartitions(
-    options?: LogQueryOptions,
-  ): Promise<LogQueryResult>;
   flush(): Promise<void>;
   close(): Promise<void>;
   getStats(): LogStats;
@@ -117,17 +106,18 @@ type NormalizedConsoleOptions = {
 
 type NormalizedWriteOptions = {
   mode: "async" | "sync";
+  batchSize: number;
+  flushIntervalMs: number;
   maxQueue: number;
   overflow: "drop-newest" | "drop-oldest" | "throw";
 };
 
 type NormalizedRetentionOptions = {
   enabled: boolean;
-  maxAgeDays: number | null;
-  maxPartitions: number | null;
-  maxFileSize: number;
-  compressOldFiles: boolean;
-  cleanupIntervalMs: number;
+  maxAgeMs: number | null;
+  maxSizeBytes: number | null;
+  intervalMs: number;
+  temporaryMaxIdleMs: number;
 };
 
 export type {

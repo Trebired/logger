@@ -9,83 +9,68 @@ export {
 } from "./config/index.js";
 export { createLog } from "./core/create_log.js";
 export { normalizeLevels } from "./levels/index.js";
-export { getPartitionErrorCode, isPartitionError } from "./storage/partitions/errors.js";
+export { getPartitionErrorCode, isPartitionError } from "./store/errors.js";
 export {
   buildPartitionName,
-  buildTemporaryPartitionName,
-  isTemporaryPartitionName,
   formatPartitionTimePrefix,
   sanitizePartitionName,
-} from "./storage/names.js";
+} from "./store/names.js";
 export {
-  copyPartition,
-  createPartition,
-  deleteLogs,
-  deletePartition,
   deletePartitions,
+  exportLogs,
   getPartitionInfo,
+  listGroups,
   listPartitions,
-  mergePartition,
-  movePartition,
+  queryLogs,
   renamePartition,
-} from "./storage/partitions.js";
-export { exportPartition, exportPartitions } from "./storage/export.js";
-export { getLogsForDir } from "./storage/query.js";
+  runRetention,
+  snapshotStore,
+} from "./store/public.js";
 export { logStream } from "./stream/index.js";
 
 export type {
   BrowserLogStreamContext,
   ConsoleOptions,
-  CopyPartitionOptions,
-  CreatePartitionOptions,
   CreateLogOptions,
-  DeleteLogFileSummary,
-  DeleteLogsOptions,
-  DeleteLogsResult,
-  DeletePartitionResult,
   DeletePartitionsOptions,
+  DeletePartitionsResult,
+  ExportFormat,
+  ExportLogsOptions,
+  ExportLogsResult,
   FinalizePartitionAction,
   FinalizePartitionOptions,
   FinalizePartitionResult,
-  ExportFormat,
-  ExportManifest,
-  ExportManifestFile,
-  ExportManifestPartition,
-  ExportPartitionOptions,
-  ExportPartitionsOptions,
-  ExportResult,
+  ListGroupsOptions,
   LogEntry,
+  LogGroupSummary,
   LogInstance,
   LogLevelConfig,
   LogOrigin,
   LogQueryOptions,
   LogQueryResult,
-  LogQueryTotals,
-  LogPartitionTotals,
-  LogPartitionSummary,
   LogStats,
   LogStreamContext,
   LogStreamHandler,
   LogStreamName,
-  MergePartitionOptions,
-  MovePartitionOptions,
-  PartitionAggregateTotals,
+  LogTimeValue,
   PartitionExistsPolicy,
   PartitionInfo,
   PartitionListResult,
   PartitionNameOptions,
   PartitionSanitizeOptions,
   PartitionSanitizer,
+  PartitionScope,
   PartitionTimeValue,
-  PartitionTotals,
-  PromotePartitionOptions,
   RedactOptions,
   RedactTransformArgs,
   RenamePartitionOptions,
   RequestLoggerOptions,
   RetentionOptions,
+  RetentionRunResult,
   ServerLogStreamContext,
   SetPartitionOptions,
+  SnapshotStoreOptions,
+  SnapshotStoreResult,
   WriteOptions,
 } from "./types/index.ts";
 export type {
@@ -95,4 +80,4 @@ export type {
   LoggerDefaultOptions,
   NormalizedLoggerConfig,
 } from "./config/index.js";
-export type { PartitionError, PartitionErrorCode } from "./storage/partitions/errors.js";
+export type { PartitionError, PartitionErrorCode } from "./store/errors.js";

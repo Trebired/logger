@@ -1,0 +1,180 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "#07ua5ujmawby": [
+        "../../../src/store/checkpoint.ts"
+      ],
+      "#0c4ri7nq63zi": [
+        "../../../src/utils/datetime.ts"
+      ],
+      "#0i0og60iksr1": [
+        "../../../src/store/export.ts"
+      ],
+      "#0ns6umc1i7ld": [
+        "../../../src/types/common.ts"
+      ],
+      "#1zuh5t72n3k1": [
+        "../../../examples/dummy.ts"
+      ],
+      "#41i2nrddbcth": [
+        "../../../src/store/options.ts"
+      ],
+      "#4gn2x99lawde": [
+        "../../../src/core/create_log.ts"
+      ],
+      "#4riod1305goy": [
+        "../../../src/types/server.ts"
+      ],
+      "#5k5op6svi3eq": [
+        "../../../src/store/public.ts"
+      ],
+      "#7a5wk73thpcb": [
+        "../../../src/store/rows.ts"
+      ],
+      "#7mf4624svd0t": [
+        "../../../src/types/store.ts"
+      ],
+      "#8xmnu037caa7": [
+        "../../../src/groups.ts"
+      ],
+      "#8y9zkb2bigg2": [
+        "../../../src/middleware/request.ts"
+      ],
+      "#a505p6xv4tf1": [
+        "../../../src/frontend/js/utils/text.ts"
+      ],
+      "#annnhua66vvp": [
+        "../../../scripts/verify/store.mjs"
+      ],
+      "#b2k4pfb67duj": [
+        "../../../src/format/options.ts"
+      ],
+      "#bdil57wh198s": [
+        "../../../src/store/query.ts"
+      ],
+      "#cuh2x5snaefd": [
+        "../../../src/constants.ts"
+      ],
+      "#e1h3ay0cyhgl": [
+        "../../../src/types/index.ts"
+      ],
+      "#eby6kpylfb20": [
+        "../../../src/config/load.ts"
+      ],
+      "#ee9snkkshbj2": [
+        "../../../src/index.ts"
+      ],
+      "#em7qv4n8txzo": [
+        "../../../scripts/verify/publish.mjs"
+      ],
+      "#ftg4rvxidvoj": [
+        "../../../scripts/verify/pack.mjs"
+      ],
+      "#g4tupkl7rvk4": [
+        "../../../src/levels/index.ts"
+      ],
+      "#g50wuco0huop": [
+        "../../../src/core/create_log/api.ts"
+      ],
+      "#gvcc9893bkqo": [
+        "../../../src/browser/index.ts"
+      ],
+      "#iaj6xqns4o0s": [
+        "../../../src/stream/index.ts"
+      ],
+      "#ihh5pdnxanc1": [
+        "../../../scripts/verify/consumer/files.mjs"
+      ],
+      "#iku27pq9hyor": [
+        "../../../scripts/verify/perf.mjs"
+      ],
+      "#iwc4mugilcoy": [
+        "../../../src/core/create_log/partition_state.ts"
+      ],
+      "#kear2obg46d3": [
+        "../../../src/store/retention.ts"
+      ],
+      "#keuo3g4mir79": [
+        "../../../src/store/partitions.ts"
+      ],
+      "#koef894lepm1": [
+        "../../../src/types/browser.ts"
+      ],
+      "#kzmqayr84v3x": [
+        "../../../src/metadata/process.ts"
+      ],
+      "#m0bq23wr639z": [
+        "../../../src/config/types.ts"
+      ],
+      "#mdfld2li9at9": [
+        "../../../src/store/writer.ts"
+      ],
+      "#nkzhn9le2d38": [
+        "../../../src/store/open.ts"
+      ],
+      "#nm6ripurqb56": [
+        "../../../src/store/names.ts"
+      ],
+      "#o520iruia9te": [
+        "../../../src/core/create_log/runtime.ts"
+      ],
+      "#oceupfj37qp3": [
+        "../../../src/browser/react.ts"
+      ],
+      "#onl4813wnswj": [
+        "../../../src/store/checkpoint_worker.ts"
+      ],
+      "#oupu3ud6munp": [
+        "../../../src/config/index.ts"
+      ],
+      "#qkc6be246w9i": [
+        "../../../src/browser/create_log.ts"
+      ],
+      "#qz1iteme01ng": [
+        "../../../src/package-metadata.ts"
+      ],
+      "#rb1c0idcezok": [
+        "../../../src/utils/objects.ts"
+      ],
+      "#s0mrne0yjht8": [
+        "../../../src/config/caller.ts"
+      ],
+      "#s4l4nv1qv1d7": [
+        "../../../scripts/prepare-dist.mjs"
+      ],
+      "#sm5ecc98dtch": [
+        "../../../src/store/groups.ts"
+      ],
+      "#thka022np828": [
+        "../../../src/store/errors.ts"
+      ],
+      "#tqn8io981t6y": [
+        "../../../src/store/schema.ts"
+      ],
+      "#ubetf5s0pfc2": [
+        "../../../src/core/shared.ts"
+      ],
+      "#unnkpg8o07bp": [
+        "../../../src/utils/size.ts"
+      ],
+      "#uryx40c5xldl": [
+        "../../logger/config.ts"
+      ],
+      "#va6txcqwm0gh": [
+        "../../../src/format/console.ts"
+      ],
+      "#vby9asmedx8g": [
+        "../../../src/config/normalize.ts"
+      ],
+      "#x0v4gq61l4rs": [
+        "../../../scripts/build/generated/tsconfig.mjs"
+      ],
+      "#xcylcir2d1qf": [
+        "../../../src/browser/console_transport.ts"
+      ],
+      "#xtaoa1f0kt5w": [
+        "../../../src/core/create_log/finalize.ts"
+      ]
+    }
+  }
+}

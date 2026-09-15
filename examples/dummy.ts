@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createLog, getLogsForDir, logStream } from "#ee9snkkshbj2";
+import { createLog, logStream, queryLogs } from "#ee9snkkshbj2";
 
 type DemoRequest = {
   headers: Record<string, string>;
@@ -70,7 +70,7 @@ function createDemoLog() {
       retention: {
         enabled: true,
         maxAgeDays: 3,
-        maxFileSize: "512kb",
+        maxSize: "64mb",
       },
       redact: {
         includeDefaultSensitiveKeys: true,
@@ -103,16 +103,16 @@ function createQuerySnapshotLogger(log: ReturnType<typeof createLog>) {
     if (querying) return;
     querying = true;
     try {
-      const recent = await log.getAllLogs({ groupKey: "app.heartbeat", limit: 3 });
+      const recent = await log.queryLogs({ group: "app.heartbeat", limit: 3, count: true });
       log.debug("logs.query", "recent heartbeat query", {
-          count: recent.metadata.count,
+          count: recent.total,
           levels: Object.keys(recent.levels),
-          latest: recent.logs.length ? recent.logs[recent.logs.length - 1].message : null,
+          latest: recent.entries.length ? recent.entries[0].message : null,
       });
 
-      const audit = await getLogsForDir(log.getDir(), { level: "audit", limit: 5, levels: recent.levels });
+      const audit = await queryLogs(log.getDir(), { level: "audit", limit: 5, levels: recent.levels });
       log.debug("logs.query", "recent audit query", {
-          count: audit.metadata.count,
+          count: audit.entries.length,
           levelColor: audit.levels.audit.color,
       });
     } finally {

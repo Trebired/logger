@@ -20,17 +20,18 @@ type ConsoleOptions = {
 
 type WriteOptions = {
   mode?: "async" | "sync";
+  batchSize?: number;
+  flushIntervalMs?: number;
   maxQueue?: number;
   overflow?: "drop-newest" | "drop-oldest" | "throw";
 };
 
 type RetentionOptions = {
   enabled?: boolean;
-  maxAgeDays?: number;
-  maxPartitions?: number;
-  maxFileSize?: string | number;
-  compressOldFiles?: boolean;
-  cleanupIntervalMs?: number;
+  maxAgeDays?: number | false;
+  maxSize?: string | number | false;
+  intervalMs?: number;
+  temporaryMaxIdleHours?: number;
 };
 
 type RedactTransformArgs = {

@@ -1,6 +1,7 @@
-import { normGroup } from "#8xmnu037caa7";
+import { normGroup, normGroupKey } from "#8xmnu037caa7";
 import { minLevelWeight, normalizeLevel } from "#g4tupkl7rvk4";
 import { prepareMetadata } from "#kzmqayr84v3x";
+import { hasOwnKeys } from "#rb1c0idcezok";
 import type { LogEntry, LogLevelConfig, LogOrigin, RedactOptions } from "#e1h3ay0cyhgl";
 import {
   toObject,
@@ -40,13 +41,15 @@ function buildOrigin(source: unknown, instance: unknown = null): LogOrigin {
 }
 
 function parseCallArguments(argsLike: IArguments | unknown[], fallbackGroup: string) {
-  const args = Array.isArray(argsLike) ? argsLike : Array.from(argsLike || []);
-  const hasExplicitGroup = typeof args[0] === "string" && typeof args[1] === "string";
+  const first = argsLike ? argsLike[0] : undefined;
+  const second = argsLike ? argsLike[1] : undefined;
+  const third = argsLike ? argsLike[2] : undefined;
+  const hasExplicitGroup = typeof first === "string" && typeof second === "string";
 
   return {
-    group: hasExplicitGroup ? args[0] : fallbackGroup,
-    message: hasExplicitGroup ? args[1] : String(args[0] ?? ""),
-    metadata: hasExplicitGroup ? asObject(args[2]) : asObject(args[1]),
+    group: hasExplicitGroup ? first : fallbackGroup,
+    message: hasExplicitGroup ? second : String(first ?? ""),
+    metadata: hasExplicitGroup ? asObject(third) : asObject(second),
   };
 }
 
@@ -320,11 +323,10 @@ function prepareEntry(args: {
     return null;
   }
 
-  const rawMetadata = {
-    ...args.defaultMetadata,
-    ...asObject(args.metadataInput),
-  };
-  const recordedAt = toString(rawMetadata.__recorded_at) || new Date().toISOString();
+  const rawMetadata = hasOwnKeys(args.defaultMetadata)
+  ? { ...args.defaultMetadata, ...asObject(args.metadataInput) }
+  : asObject(args.metadataInput);
+  const recordedAt = (rawMetadata.__recorded_at !== undefined && toString(rawMetadata.__recorded_at)) || new Date().toISOString();
   const metadata = prepareMetadata(rawMetadata, args.options.serializers, args.options.redact);
   const originSource = args.originInput?.source || args.defaultSource;
   const originInstance = Object.prototype.hasOwnProperty.call(args.originInput || {}, "instance")
@@ -334,7 +336,7 @@ function prepareEntry(args: {
     recorded_at: recordedAt,
     level,
     group: applyGroupPrefix(
-      normGroup(args.groupInput || args.defaultGroup).key,
+      normGroupKey(args.groupInput || args.defaultGroup),
       args.groupPrefix,
     ),
     message: typeof args.messageInput === "string" ? args.messageInput : String(args.messageInput ?? ""),
@@ -345,7 +347,7 @@ function prepareEntry(args: {
     entry.partition = args.options.getPartition() ?? null;
   }
 
-  if (Object.keys(metadata).length) {
+  if (hasOwnKeys(metadata)) {
     entry.metadata = metadata;
   }
 

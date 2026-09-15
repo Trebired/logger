@@ -8,22 +8,22 @@ import {
   attachLogApi,
   maybeShowInitializationNotices,
 } from "./create_log/api.js";
+import { syncPartitionState } from "./create_log/partition_state.js";
 
 const sharedState: CreateLogSharedState = {
   packageGreetingShown: false,
-  storageBackendNoticeShown: false,
   activeTemporaryPartitionsByDir: new Map<string, Set<string>>(),
 };
 
 function resetCreateLogStateForTests(): void {
   sharedState.packageGreetingShown = false;
-  sharedState.storageBackendNoticeShown = false;
   sharedState.activeTemporaryPartitionsByDir.clear();
 }
 
 function createLog(options: CreateLogOptions = {}): LogInstance {
   const runtime = createCreateLogRuntime(options, sharedState);
-  runtime.initializeTemporaryPartitionState();
+  syncPartitionState(runtime);
+  runtime.retention.start();
 
   const api = createBaseLogApi(runtime);
   attachLogApi(api, runtime);

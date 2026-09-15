@@ -4,14 +4,11 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   runConsumerRuntimes,
-} from "./consumer/node-runtime.mjs";
-import {
   writeConsumerPackageJson,
   writeConsumerPackageLoggerFixture,
   writeConsumerSourceFiles,
   writeConsumerTsconfig,
 } from "./consumer/files.mjs";
-import { validateNativeEntries } from "./pack-native.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const tempRoot = path.join(rootDir, ".tmp", "verify-pack");
@@ -30,10 +27,15 @@ async function main() {
   validatePackedEntrypoints(packedPackageJson, tarballEntries);
   validatePackedImports(packedPackageJson, tarballEntries);
   validatePackedLoggerConfig(tarballEntries);
-  validateNativeEntries(tarballEntries);
+  validateNoNativeEntries(tarballEntries);
   await runConsumerSmokeTest(tarballPath);
 
   console.log("Pack verification succeeded.");
+}
+
+function validateNoNativeEntries(tarballEntries) {
+  const stale = [...tarballEntries].filter((entry) => entry.startsWith("package/native/") || entry.endsWith(".node"));
+  if (stale.length) throw new Error(`Packed tarball still contains native artifacts: ${stale.join(", ")}`);
 }
 
 function validatePackedLoggerConfig(tarballEntries) {

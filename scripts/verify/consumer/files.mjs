@@ -1,8 +1,7 @@
+import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
-import { writeConsumerNodeRuntime } from "./node-runtime.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const loggerVersion = JSON.parse(await fs.readFile(path.join(rootDir, "package.json"), "utf8")).version;
@@ -25,7 +24,6 @@ async function writeConsumerSourceFiles(consumerDir) {
   await writeConsumerLoggerConfig(consumerDir);
   await writeConsumerTypeSource(consumerDir);
   await writeConsumerMainRuntime(consumerDir);
-  await writeConsumerNodeRuntime(consumerDir);
   await writeConsumerBrowserRuntime(consumerDir);
 }
 
@@ -61,7 +59,7 @@ async function writeConsumerTypeSource(consumerDir) {
 
 async function writeConsumerMainRuntime(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "runtime-main.ts"), [
-      'import fs from "node:fs/promises";',
+      'import fs from "node:fs";',
       'import * as mod from "@package/logger";',
       'import { loadConfigSync } from "@package/logger/config";',
       "",
@@ -71,30 +69,17 @@ async function writeConsumerMainRuntime(consumerDir) {
       "const log = mod.createLog({ dir: './logs', source: 'consumer' });",
       "log.info('runtime.test', 'skip');",
       "log.error('runtime.test', 'keep');",
-      "await log.flush();",
-      "const files = await Array.fromAsync((async function* walk(dir) {",
-      "  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {",
-      "    const filePath = `${dir}/${entry.name}`;",
-      "    if (entry.isDirectory()) yield* walk(filePath);",
-      "    else if (entry.isFile() && filePath.endsWith('.jsonl')) yield filePath;",
-      "  }",
-      "})('./logs'));",
-      "const lines = (await Promise.all(files.map((file) => fs.readFile(file, 'utf8')))).join('').trim().split('\\n').filter(Boolean);",
-      "if (lines.length !== 1 || !lines[0].includes('keep')) throw new Error('config defaults were not applied');",
-      "const entry = JSON.parse(lines[0]);",
+      "const result = await log.queryLogs({ count: true });",
+      "if (!fs.existsSync('./logs/logs.db')) throw new Error('log store was not created');",
+      "if (result.total !== 1 || result.entries[0]?.message !== 'keep') throw new Error('config defaults were not applied');",
+      "const entry = result.entries[0];",
       "if (entry.group !== 'consumer.runtime.test') throw new Error(`config prefix was not applied: ${entry.group}`);",
+      "await log.close();",
       "const fixture = await import('@fixture/package-logger-user');",
       "await fixture.runPackageLogger();",
-      "const packageFiles = await Array.fromAsync((async function* walk(dir) {",
-      "  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {",
-      "    const filePath = `${dir}/${entry.name}`;",
-      "    if (entry.isDirectory()) yield* walk(filePath);",
-      "    else if (entry.isFile() && filePath.endsWith('.jsonl')) yield filePath;",
-      "  }",
-      "})('./package-logs'));",
-      "const packageLines = (await Promise.all(packageFiles.map((file) => fs.readFile(file, 'utf8')))).join('').trim().split('\\n').filter(Boolean);",
-      "const packageEntry = JSON.parse(packageLines.find((line) => line.includes('package keep')) || '{}');",
-      "if (packageEntry.group !== 'trebired.bundler.build') throw new Error(`package config prefix was not applied: ${packageEntry.group}`);",
+      "const packageResult = await mod.queryLogs('./package-logs', { search: 'package keep' });",
+      "const packageEntry = packageResult.entries[0];",
+      "if (packageEntry?.group !== 'trebired.bundler.build') throw new Error(`package config prefix was not applied: ${packageEntry?.group}`);",
       "console.log(typeof mod.createLog, Object.keys(mod).length > 0);",
     ].join("\n"));
 }
@@ -132,7 +117,7 @@ async function writeConsumerPackageLoggerFixture(consumerDir) {
       "export async function runPackageLogger() {",
       "  const log = createLog({ dir: './package-logs', source: 'fixture' });",
       "  log.error('bundler.build', 'package keep');",
-      "  await log.flush();",
+      "  await log.close();",
       "}",
       "",
     ].join("\n"));
@@ -192,7 +177,17 @@ async function writeConsumerTsconfig(consumerDir) {
       }, null, 2));
 }
 
+function runConsumerRuntimes(consumerDir) {
+  for (const file of ["runtime-main.ts", "runtime-browser.ts"]) {
+    execFileSync("bun", [file], {
+        cwd: consumerDir,
+        stdio: "inherit",
+    });
+  }
+}
+
 export {
+  runConsumerRuntimes,
   writeConsumerPackageJson,
   writeConsumerPackageLoggerFixture,
   writeConsumerSourceFiles,

@@ -25,6 +25,8 @@
   "extends": "./.trebired/code-discipline/generated/tsconfig.paths.json",
   "include": [
     "examples/**/*.ts",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    ".trebired/**/*.ts",
+    "scripts/**/*.ts"
   ]
 }

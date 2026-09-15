@@ -1,4 +1,4 @@
 export default {
-  forVersion: "2.7.0",
+  forVersion: "3.0.0",
   prefix: "trebired.logger",
 };

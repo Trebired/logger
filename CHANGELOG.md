@@ -4,6 +4,53 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.0.0
+
+Saved logs now live in one SQLite database per log directory, `<dir>/logs.db`, instead of a JSONL directory tree. The tree design could not be patched into shape. One agent installation held 1,684,962 files: 6.5 GB on disk for 974 MB of data. Every log line ran a mkdir, a marker write, a stat loop and a separate append, and every query walked the whole tree. 2.7.2-2.7.4 reduced the symptoms; this release replaces the storage layer.
+
+### Breaking changes
+
+- **Saving logs requires Bun.** The store uses `bun:sqlite`, which is loaded only when a logger opens a directory. A logger without `dir` still runs on Node.js. A logger with `dir` on Node.js prints one notice and keeps logging to the console. The Node.js runtime notice is gone. `@trebired/logger/browser` and `@trebired/logger/browser/react` are unchanged.
+- **Existing logs are not read or migrated.** The logger creates `logs.db` next to the old group and partition folders and never touches them. Delete the old folders by hand when you no longer need them.
+- **The native addon is removed.** The package no longer ships `.node` binaries. The `TB_LOGGER_*` environment switches and the `fflate` and `tar-stream` dependencies are gone.
+- **Queries.** `getLogsForDir()`, `getAllLogs()` and `getAllLogsAcrossPartitions()` are replaced by `queryLogs(dir, options)` and `log.queryLogs(options)`.
+  - The result is `{ entries, nextCursor, hasMore, total, levels }`.
+  - `groupKey` is now `group` and matches the group and its children: `server` includes `server.sync`.
+  - `totals` is replaced by `count: true`. Without it `total` is `null` and no rows are counted.
+  - New options: `minLevel`, `since`, `until`, `search`, `cursor`, `offset` and `order`.
+  - `limit` defaults to 100 and is capped at 1000.
+  - `partition: "*"` reads every partition. `partition: null` reads unpartitioned entries.
+  - `log.queryLogs()` defaults to the logger's active partition.
+  - `listGroups()` returns each group with its entry count and last write.
+- **Partitions.**
+  - A partition is now a label on stored entries, not a folder. Finalizing, renaming and merging update rows in chunks instead of rewriting files.
+  - `promotePartition()` is removed. Use `finalizePartition(name, { ifExists })`, where `ifExists` is `"merge"` (default), `"error"` or `"replace"`. The `"switch"` policy is removed.
+  - Finalize actions are `renamed`, `merged`, `replaced`, `activated`, `marked-permanent` and `already-final`. `activated-target` became `activated`, `already-finalized` became `already-final`, and `switched` is gone.
+  - The finalize result reports `movedEntries` instead of `sourceExisted`, `targetExisted`, `temporaryBefore` and `temporaryAfter`.
+  - Removed: `createPartition()`, `copyPartition()`, `movePartition()`, `mergePartition()`, `deletePartition()`, `deleteLogs()`, `buildTemporaryPartitionName()`, `isTemporaryPartitionName()` and partition marker files. Whether a partition is temporary is stored with the partition.
+  - `renamePartition(dir, { from, to, ifExists })` returns the renamed partition's info.
+  - `deletePartitions(dir, { names, temporary, olderThan, keep })` deletes matching partitions and their entries.
+  - `getPartitionInfo()` and `listPartitions()` return `name`, `temporary`, `createdAt`, `firstAt`, `lastAt`, `entries` and `bytes`. These are read from stored counters, never by scanning entries.
+  - Error code `partition-merge-target-same-as-source` is removed and `partition-not-found` is added.
+- **Temporary partitions** are no longer deleted when a logger switches away from them or closes. Retention deletes a temporary partition once it has had no writes for 24 hours and no live logger holds it.
+- **Export.** `exportPartition()` and `exportPartitions()` are replaced by `exportLogs(dir, { outputPath, format, ...filters })`, which streams matching entries as `jsonl` or `jsonl.gz`. `snapshotStore(dir, { outputPath })` writes a consistent copy of the database.
+- **Retention is on by default.**
+  - Defaults: entries older than 14 days are deleted, and the store is capped at 256 MB by deleting the oldest entries. Retention runs one second after a logger opens its store, then every 10 minutes.
+  - Options: `maxAgeDays`, `maxSize`, `intervalMs` and `temporaryMaxIdleHours`. Pass `false` to `maxAgeDays` or `maxSize` to turn that limit off.
+  - Removed options: `maxPartitions`, `maxFileSize`, `compressOldFiles` and `cleanupIntervalMs`.
+  - `runRetention()` runs a pass on demand.
+
+### Changed
+
+- Writes are batched. Entries are queued and written in one transaction per batch, every `flushIntervalMs` (default 50) or as soon as `batchSize` entries (default 2000) are queued. A full batch is written inline, so a synchronous burst of log calls no longer overflows the queue. `getStats()` reports `batches`.
+- SQLite's automatic WAL checkpoint is off on the connection that logs. A worker thread per store copies the WAL into the database and runs `snapshotStore()`, so a commit never waits for a disk sync on the thread that logs.
+- Measured on a btrfs SSD:
+  - 1,000,000 entries are written at about 200,000 entries per second.
+  - The newest 100 entries of a 1,000,000-entry partition are read in 0.25 ms.
+  - Logging 10,000 entries per second while querying pauses the event loop for at most 6 ms.
+  - Writing the backlog of a sustained 1,000,000-entry burst to disk has been observed to pause the process once for up to 190 ms.
+- The configured `timeZone` now only affects console output and `buildPartitionName()`. Stored timestamps are UTC milliseconds.
+
 ## 2.7.4
 
 - Fixed saved-log queries and retention cleanup blocking the event loop. The native `queryLogs` and `cleanupLogs` ran synchronously on the main thread, so a query over a large store froze the whole process. On an agent holding 1,684,935 files, every sync froze the agent for 12-52 seconds; its socket stopped accepting connections and the platform's 2.5 second readiness probe never got an answer. Both now run on the libuv thread pool. The same query holds the event loop for at most 1 ms.

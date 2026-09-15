@@ -12,12 +12,9 @@ coverage/
 .tmp/
 .demo-logs/
 cd-report-*.txt
-# Native build output
-native/*/target/
-native/*.node
 
 # Local environment
 .env
 .env.*
 !.env.example
-.trebired/code-discipline/generated/
+.trebired/code-discipline/generated/reports/

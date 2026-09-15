@@ -5,23 +5,19 @@ import { formatConsole, writeConsole } from "#va6txcqwm0gh";
 import { normalizeConsoleOptions } from "#b2k4pfb67duj";
 import { normalizeLevels } from "#g4tupkl7rvk4";
 import { logStream } from "#iaj6xqns4o0s";
-import { normalizePartitionKey } from "#x2qkmwodgsce";
-import { deleteNonCurrentTemporaryPartitions } from "#qqlp8cyr3105";
-import { touchPartitionMarkerSync } from "#76iooq23kphm";
-import { normalizeRetentionOptions, normalizeWriteOptions } from "#pngx4lcsdjmx";
-import { FileWriter } from "#w1cc3mztq3ng";
 import type { CreateLogOptions, LogInstance } from "#e1h3ay0cyhgl";
 import { normalizeTimeZone } from "#0c4ri7nq63zi";
-import { maybeShowNodeRuntimeNotice } from "#nmfh3v2le5vp";
 import { toTrimmedString as toString } from "@trebired/utils";
-import { buildPackageLogGroup } from "#qz1iteme01ng";
 import {
   loadCachedConfigSync,
   mergeCreateLogOptions,
 } from "#oupu3ud6munp";
 import { resolveCallerConfigStart } from "#s0mrne0yjht8";
-
-const LOGGER_LOG_GROUP = buildPackageLogGroup();
+import { normalizePartitionKey } from "#nm6ripurqb56";
+import { normalizeRetentionOptions, normalizeWriteOptions } from "#41i2nrddbcth";
+import { createRetentionScheduler, type RetentionScheduler } from "#kear2obg46d3";
+import { StoreWriter } from "#mdfld2li9at9";
+import { keepTemporaryPartitions } from "./partition_state.js";
 
 type TemporaryPartitionRegistration = {
   dir: string;
@@ -34,27 +30,20 @@ type CreateLogRuntimeState = {
   registeredTemporaryPartition: TemporaryPartitionRegistration | null;
 };
 
-type CreateLogRuntime = {
-  cfg: CreateLogOptions;
-  writer: FileWriter;
-  state: CreateLogRuntimeState;
-  levels: ReturnType<typeof normalizeLevels>;
-  consoleOptions: ReturnType<typeof normalizeConsoleOptions>;
-  timeZone: string;
-  registerTemporaryPartition: () => void;
-  unregisterTemporaryPartition: () => void;
-  cleanupTemporaryPartitions: (dir?: string) => Promise<void>;
-  scheduleTemporaryPartitionCleanup: (dir?: string) => void;
-  applyActivePartition: (partition: string | null, temporary: boolean) => Promise<void>;
-  syncTemporaryPartitionMarker: () => void;
-  initializeTemporaryPartitionState: () => void;
-  safeResolveDir: (value: unknown) => string;
-};
-
 type CreateLogSharedState = {
   activeTemporaryPartitionsByDir: Map<string, Set<string>>;
   packageGreetingShown: boolean;
-  storageBackendNoticeShown: boolean;
+};
+
+type CreateLogRuntime = {
+  cfg: CreateLogOptions;
+  writer: StoreWriter;
+  retention: RetentionScheduler;
+  state: CreateLogRuntimeState;
+  sharedState: CreateLogSharedState;
+  levels: ReturnType<typeof normalizeLevels>;
+  consoleOptions: ReturnType<typeof normalizeConsoleOptions>;
+  timeZone: string;
 };
 
 function safeResolveDir(value: unknown): string {
@@ -62,199 +51,51 @@ function safeResolveDir(value: unknown): string {
   return raw ? path.resolve(raw) : "";
 }
 
-function cleanupErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function createRuntimeState(cfg: CreateLogOptions): CreateLogRuntimeState {
+function resolveRuntimeConfig(options: CreateLogOptions): CreateLogOptions {
+  const input = options && typeof options === "object" ? options : {};
+  const loggerConfig = loadCachedConfigSync(resolveCallerConfigStart());
+  const prefix = Object.prototype.hasOwnProperty.call(input, "prefix") ? input.prefix : loggerConfig.prefix;
   return {
-    activePartition: normalizePartitionKey(cfg.partition) || null,
-    activeTemporary: cfg.temporaryPartition === true,
-    registeredTemporaryPartition: null,
+    ...mergeCreateLogOptions(loggerConfig.defaults, input),
+    prefix,
   };
 }
 
-function createFileWriter(cfg: CreateLogOptions, timeZone: string): FileWriter {
-  return new FileWriter({
+function createStoreWriter(cfg: CreateLogOptions): StoreWriter {
+  return new StoreWriter({
       dir: safeResolveDir(cfg.dir),
       save: typeof cfg.save === "boolean" ? cfg.save : Boolean(toString(cfg.dir)),
       write: normalizeWriteOptions(cfg.write),
-      retention: normalizeRetentionOptions(cfg.retention),
-      timeZone,
       onError: (message) => writeConsole("stderr", message),
   });
-}
-
-function createTemporaryPartitionCleaner(sharedState: CreateLogSharedState) {
-  return function keepTemporaryPartitions(dir: string): string[] {
-    return Array.from(sharedState.activeTemporaryPartitionsByDir.get(dir) || []);
-  };
-}
-
-function unregisterTemporaryPartition(
-  runtime: Pick<CreateLogRuntime, "state">,
-  sharedState: CreateLogSharedState,
-): void {
-  const registered = runtime.state.registeredTemporaryPartition;
-  if (!registered) {
-    return;
-  }
-
-  const current = sharedState.activeTemporaryPartitionsByDir.get(registered.dir);
-  if (current) {
-    current.delete(registered.partition);
-    if (current.size === 0) {
-      sharedState.activeTemporaryPartitionsByDir.delete(registered.dir);
-    }
-  }
-
-  runtime.state.registeredTemporaryPartition = null;
-}
-
-function registerTemporaryPartition(
-  runtime: Pick<CreateLogRuntime, "state"|"writer">,
-  sharedState: CreateLogSharedState,
-): void {
-  unregisterTemporaryPartition(runtime, sharedState);
-
-  if (!runtime.state.activeTemporary || !runtime.state.activePartition) {
-    return;
-  }
-
-  if (!runtime.writer.isSavingEnabled() || !runtime.writer.getDir()) {
-    return;
-  }
-
-  const dir = runtime.writer.getDir();
-  const current = sharedState.activeTemporaryPartitionsByDir.get(dir) || new Set<string>();
-  current.add(runtime.state.activePartition);
-  sharedState.activeTemporaryPartitionsByDir.set(dir, current);
-  runtime.state.registeredTemporaryPartition = {
-    dir,
-    partition: runtime.state.activePartition,
-  };
-}
-
-async function cleanupTemporaryPartitions(
-  runtime: Pick<CreateLogRuntime, "writer">,
-  sharedState: CreateLogSharedState,
-  dir = runtime.writer.getDir(),
-): Promise<void> {
-  if (!runtime.writer.isSavingEnabled() || !dir) {
-    return;
-  }
-
-  const keepTemporaryPartitions = createTemporaryPartitionCleaner(sharedState);
-  await deleteNonCurrentTemporaryPartitions(dir, keepTemporaryPartitions(dir));
-}
-
-function scheduleTemporaryPartitionCleanup(
-  runtime: Pick<CreateLogRuntime, "writer">,
-  sharedState: CreateLogSharedState,
-  dir = runtime.writer.getDir(),
-): void {
-  if (!runtime.writer.isSavingEnabled() || !dir) {
-    return;
-  }
-
-  void cleanupTemporaryPartitions(runtime, sharedState, dir).catch ((error) => {
-      writeConsole(
-        "stderr",
-        `[${LOGGER_LOG_GROUP}] temporary partition cleanup failed: ${cleanupErrorMessage(error)}`,
-      );
-  });
-}
-
-function createApplyActivePartition(runtime: Pick<CreateLogRuntime, "state"|"writer">, actions: {
-    unregisterTemporaryPartition: () => void;
-    registerTemporaryPartition: () => void;
-    cleanupTemporaryPartitions: () => Promise<void>;
-}) {
-  return async function applyActivePartition(
-    nextPartition: string | null,
-    nextTemporary: boolean,
-  ): Promise<void> {
-    actions.unregisterTemporaryPartition();
-    runtime.state.activePartition = nextPartition;
-    runtime.state.activeTemporary = nextTemporary;
-
-    if (runtime.state.activePartition && runtime.writer.isSavingEnabled() && runtime.writer.getDir()) {
-      touchPartitionMarkerSync(runtime.writer.getDir(), runtime.state.activePartition, {
-          temporary: runtime.state.activeTemporary,
-      });
-    }
-
-    actions.registerTemporaryPartition();
-    await actions.cleanupTemporaryPartitions();
-  };
-}
-
-function createTemporaryRuntime(
-  cfg: CreateLogOptions,
-) {
-  const writer = createFileWriter(cfg, normalizeTimeZone(cfg.timeZone));
-  const state = createRuntimeState(cfg);
-  const tempRuntime = { state, writer };
-
-  return {
-    state,
-    writer,
-    tempRuntime,
-  };
 }
 
 function createCreateLogRuntime(
   options: CreateLogOptions = {},
   sharedState: CreateLogSharedState,
 ): CreateLogRuntime {
-  const input = options && typeof options === "object" ? options : {};
-  const loggerConfig = loadCachedConfigSync(resolveCallerConfigStart());
-  const groupPrefix = Object.prototype.hasOwnProperty.call(input, "prefix")
-  ? input.prefix
-  : loggerConfig.prefix;
-  const cfg = {
-    ...mergeCreateLogOptions(loggerConfig.defaults, input),
-    prefix: groupPrefix,
-  };
-  maybeShowNodeRuntimeNotice(cfg.quiet);
-  const levels = normalizeLevels(cfg.levels);
-  const consoleOptions = normalizeConsoleOptions(cfg.console);
-  const timeZone = normalizeTimeZone(cfg.timeZone);
-  const { state, writer, tempRuntime } = createTemporaryRuntime(cfg);
-  const applyActivePartition = createApplyActivePartition(tempRuntime, {
-      unregisterTemporaryPartition: () => unregisterTemporaryPartition(tempRuntime, sharedState),
-      registerTemporaryPartition: () => registerTemporaryPartition(tempRuntime, sharedState),
-      cleanupTemporaryPartitions: () => cleanupTemporaryPartitions(tempRuntime, sharedState),
+  const cfg = resolveRuntimeConfig(options);
+  const writer = createStoreWriter(cfg);
+  const retention = createRetentionScheduler({
+      getStore: () => writer.getStore(),
+      options: normalizeRetentionOptions(cfg.retention),
+      keepTemporary: () => keepTemporaryPartitions(sharedState, writer.getDir()),
+      onError: (message) => writeConsole("stderr", message),
   });
 
   return {
     cfg,
     writer,
-    state,
-    levels,
-    consoleOptions,
-    timeZone,
-    safeResolveDir,
-    applyActivePartition,
-    syncTemporaryPartitionMarker() {
-      if (state.activePartition && state.activeTemporary && writer.isSavingEnabled() && writer.getDir()) {
-        touchPartitionMarkerSync(writer.getDir(), state.activePartition, {
-            temporary: true,
-        });
-      }
+    retention,
+    sharedState,
+    state: {
+      activePartition: normalizePartitionKey(cfg.partition) || null,
+      activeTemporary: cfg.temporaryPartition === true && Boolean(normalizePartitionKey(cfg.partition)),
+      registeredTemporaryPartition: null,
     },
-    initializeTemporaryPartitionState() {
-      this.syncTemporaryPartitionMarker();
-      registerTemporaryPartition(tempRuntime, sharedState);
-      if (writer.isSavingEnabled() && writer.getDir()) {
-        scheduleTemporaryPartitionCleanup(tempRuntime, sharedState);
-      }
-    },
-    unregisterTemporaryPartition: () => unregisterTemporaryPartition(tempRuntime, sharedState),
-    registerTemporaryPartition: () => registerTemporaryPartition(tempRuntime, sharedState),
-    cleanupTemporaryPartitions: (dir) => cleanupTemporaryPartitions(tempRuntime, sharedState, dir),
-    scheduleTemporaryPartitionCleanup: (dir) =>
-    scheduleTemporaryPartitionCleanup(tempRuntime, sharedState, dir),
+    levels: normalizeLevels(cfg.levels),
+    consoleOptions: normalizeConsoleOptions(cfg.console),
+    timeZone: normalizeTimeZone(cfg.timeZone),
   };
 }
 
@@ -276,7 +117,7 @@ function createBaseLogApi(runtime: CreateLogRuntime): LogInstance {
           );
         }
 
-        runtime.writer.write(entry);
+        runtime.writer.write(entry, runtime.state.activeTemporary);
 
         try {
           logStream.emit("log", entry, {
@@ -299,6 +140,5 @@ function createBaseLogApi(runtime: CreateLogRuntime): LogInstance {
   return api as LogInstance;
 }
 
-export { createBaseLogApi, createCreateLogRuntime };
-export type { CreateLogSharedState };
-export type { CreateLogRuntime };
+export { createBaseLogApi, createCreateLogRuntime, safeResolveDir };
+export type { CreateLogRuntime, CreateLogSharedState };

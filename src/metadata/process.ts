@@ -7,17 +7,21 @@ import {
   toTrimmedString as toString,
 } from "@trebired/utils";
 
-function sanitizeMetadata(input: unknown): Record<string, unknown> {
+function copyMetadata(input: unknown, mapValue: (value: unknown) => unknown): Record<string, unknown> {
   const src = asObject(input);
   const out: Record<string, unknown> = {};
 
   for (const key of Object.keys(src)) {
     if (RESERVED_METADATA_KEYS.has(key)) continue;
     if (src[key] === undefined) continue;
-    out[key] = src[key];
+    out[key] = mapValue(src[key]);
   }
 
   return out;
+}
+
+function sanitizeMetadata(input: unknown): Record<string, unknown> {
+  return copyMetadata(input, (value) => value);
 }
 
 function normalizeErrorValue(error: Error): Record<string, unknown> {
@@ -90,9 +94,10 @@ function redactMetadata(input: Record<string, unknown>, options?: RedactOptions)
   const cfg = options || {};
   const replacement = toString(cfg.replacement) || "[REDACTED]";
   const includeDefaultSensitiveKeys = cfg.includeDefaultSensitiveKeys !== false;
+  const redactOptions = { ...cfg, includeDefaultSensitiveKeys };
 
   function visit(value: unknown, path: string, key: string): unknown {
-    if (shouldRedact(path, key, { ...cfg, includeDefaultSensitiveKeys })) {
+    if (shouldRedact(path, key, redactOptions)) {
       if (typeof cfg.transform === "function") {
         try {
           return cfg.transform({ path, key, value, replacement });
@@ -118,8 +123,7 @@ function redactMetadata(input: Record<string, unknown>, options?: RedactOptions)
 }
 
 function prepareMetadata(input: unknown, serializers?: Record<string, (value:unknown)=>unknown>, redact?: RedactOptions): Record<string, unknown> {
-  const sanitized = sanitizeMetadata(input);
-  const normalized = normalizeErrors(sanitized) as Record<string, unknown>;
+  const normalized = copyMetadata(input, normalizeErrors);
   const serialized = applySerializers(normalized, serializers);
   return redactMetadata(serialized, redact);
 }
