@@ -8,7 +8,7 @@
     }
   },
   "name": "@trebired/logger",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Local-first structured logger for Bun with an indexed SQLite store, partitions, default retention, redaction, query and export helpers, and browser runtimes.",
   "type": "module",
   "private": false,

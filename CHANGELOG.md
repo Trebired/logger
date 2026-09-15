@@ -4,6 +4,10 @@ All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.0.1
+
+- One checkpoint worker thread now serves every store in a process instead of one thread per log directory. A process that logs into many directories, such as the platform writing one store per deployment, opened a thread and a database connection for each of them.
+
 ## 3.0.0
 
 Saved logs now live in one SQLite database per log directory, `<dir>/logs.db`, instead of a JSONL directory tree. The tree design could not be patched into shape. One agent installation held 1,684,962 files: 6.5 GB on disk for 974 MB of data. Every log line ran a mkdir, a marker write, a stat loop and a separate append, and every query walked the whole tree. 2.7.2-2.7.4 reduced the symptoms; this release replaces the storage layer.

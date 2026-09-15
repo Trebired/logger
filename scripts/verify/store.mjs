@@ -194,6 +194,28 @@ async function verifySnapshot() {
   assert(rows === await countOf({ partition: "*" }), "snapshot opens and matches the store");
 }
 
+function threadCount() {
+  try {
+    return fs.readdirSync("/proc/self/task").length;
+  } catch {
+    return 0;
+  }
+}
+
+async function verifySharedCheckpointWorker() {
+  const before = threadCount();
+  const loggers = [];
+  for (let index = 0; index < 8; index += 1) {
+    const log = openLogger({ dir: path.join(workDir, `shared-${index}`) });
+    log.info("svc.shared", `entry ${index}`);
+    await log.flush();
+    loggers.push(log);
+  }
+  const after = threadCount();
+  for (const log of loggers) await log.close();
+  assert(after - before <= 2, `8 stores share one checkpoint worker (threads ${before} to ${after})`);
+}
+
 async function verifySizeCap() {
   const file = path.join(logDir, "logs.db");
   const sizeBefore = fs.statSync(file).size;
@@ -216,6 +238,7 @@ async function main() {
   await verifyAgeRetention(log);
   await verifyExport();
   await verifySnapshot();
+  await verifySharedCheckpointWorker();
   await log.close();
   await verifySizeCap();
   fs.rmSync(workDir, { recursive: true, force: true });

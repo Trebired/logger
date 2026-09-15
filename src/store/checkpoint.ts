@@ -22,9 +22,42 @@ type PendingRequest = {
   reject: (error: Error) => void;
 };
 
+const pending = new Map<number, PendingRequest>();
+let sharedWorker: Worker | null = null;
+let workerUsers = 0;
+let nextRequestId = 1;
+
 function workerUrl(): string {
   const entry = import.meta.url.endsWith(".ts") ? "./checkpoint_worker.ts" : "./checkpoint_worker.js";
   return new URL(entry, import.meta.url).href;
+}
+
+function settleReply(reply: WorkerReply): void {
+  if (reply.type === "closed") {
+    if (sharedWorker) sharedWorker.terminate();
+    sharedWorker = null;
+    return;
+  }
+  const request = pending.get(reply.id);
+  if (!request) return;
+  pending.delete(reply.id);
+  if (reply.error) request.reject(new Error(reply.error));
+  else request.resolve();
+}
+
+function ensureWorker(): Worker {
+  if (sharedWorker) return sharedWorker;
+  const worker = new Worker(workerUrl());
+  worker.onmessage = (event: MessageEvent<WorkerReply>) => settleReply(event.data);
+  worker.unref();
+  sharedWorker = worker;
+  return worker;
+}
+
+function releaseWorker(): void {
+  workerUsers = Math.max(0, workerUsers - 1);
+  if (workerUsers > 0 || !sharedWorker) return;
+  sharedWorker.postMessage({ type: "shutdown" });
 }
 
 function walBytes(file: string): number {
@@ -37,22 +70,22 @@ function walBytes(file: string): number {
 
 class StoreCheckpointer {
   private file: string;
-  private worker: Worker | null = null;
+  private opened = false;
+  private closed = false;
   private lastPassiveAt = 0;
   private lastSizeCheckAt = performance.now();
   private idleTimer: ReturnType<typeof setTimeout>|null = null;
-  private nextRequestId = 1;
-  private pending = new Map<number, PendingRequest>();
 
   constructor(file: string) {
     this.file = file;
   }
 
   noteWrite(): void {
+    if (this.closed) return;
     const now = performance.now();
     if (now - this.lastPassiveAt >= PASSIVE_INTERVAL_MS) {
       this.lastPassiveAt = now;
-      this.ensureWorker().postMessage({ type: "checkpoint", mode: "PASSIVE" });
+      this.post({ type: "checkpoint", mode: "PASSIVE" });
     }
     this.truncateLargeWal(now);
     this.scheduleIdleTruncate();
@@ -69,17 +102,35 @@ class StoreCheckpointer {
   close(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = null;
-    for (const request of this.pending.values()) request.reject(new Error("log-store-closed"));
-    this.pending.clear();
-    if (this.worker) this.worker.postMessage({ type: "close" });
+    if (this.closed) return;
+    this.closed = true;
+    if (!this.opened) return;
+    ensureWorker().postMessage({ type: "close", file: this.file });
+    releaseWorker();
+  }
+
+  private connect(): Worker {
+    const worker = ensureWorker();
+    if (!this.opened) {
+      this.opened = true;
+      workerUsers += 1;
+      worker.postMessage({ type: "open", file: this.file });
+    }
+    return worker;
+  }
+
+  private post(message: Record<string, unknown>): void {
+    if (this.closed) return;
+    this.connect().postMessage({ ...message, file: this.file });
   }
 
   private request(message: Record<string, unknown>): Promise<void> {
-    const id = this.nextRequestId;
-    this.nextRequestId += 1;
+    if (this.closed) return Promise.reject(new Error("log-store-closed"));
+    const id = nextRequestId;
+    nextRequestId += 1;
     return new Promise<void>((resolve, reject) => {
-        this.pending.set(id, { resolve, reject });
-        this.ensureWorker().postMessage({ ...message, id });
+        pending.set(id, { resolve, reject });
+        this.connect().postMessage({ ...message, file: this.file, id });
     });
   }
 
@@ -87,7 +138,7 @@ class StoreCheckpointer {
     if (now - this.lastSizeCheckAt < WAL_SIZE_CHECK_MS) return;
     this.lastSizeCheckAt = now;
     if (walBytes(this.file) > WAL_TRUNCATE_BYTES) {
-      this.ensureWorker().postMessage({ type: "checkpoint", mode: "TRUNCATE" });
+      this.post({ type: "checkpoint", mode: "TRUNCATE" });
     }
   }
 
@@ -95,32 +146,9 @@ class StoreCheckpointer {
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => {
         this.idleTimer = null;
-        if (this.worker) this.worker.postMessage({ type: "checkpoint", mode: "TRUNCATE" });
+        this.post({ type: "checkpoint", mode: "TRUNCATE" });
       }, IDLE_TRUNCATE_MS);
     if (typeof this.idleTimer.unref === "function") this.idleTimer.unref();
-  }
-
-  private ensureWorker(): Worker {
-    if (this.worker) return this.worker;
-    const worker = new Worker(workerUrl());
-    worker.onmessage = (event: MessageEvent<WorkerReply>) => this.handleReply(worker, event.data);
-    worker.unref();
-    worker.postMessage({ type: "open", file: this.file });
-    this.worker = worker;
-    return worker;
-  }
-
-  private handleReply(worker: Worker, reply: WorkerReply): void {
-    if (reply.type === "closed") {
-      worker.terminate();
-      if (this.worker === worker) this.worker = null;
-      return;
-    }
-    const request = this.pending.get(reply.id);
-    if (!request) return;
-    this.pending.delete(reply.id);
-    if (reply.error) request.reject(new Error(reply.error));
-    else request.resolve();
   }
 }
 
