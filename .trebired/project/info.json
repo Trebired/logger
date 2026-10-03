@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "category": "package",
+  "subcategory": "runtime",
+  "status": "active",
+  "npm": "@trebired/logger",
+  "description": {
+    "en": "Local-first structured logging with an indexed SQLite store and retention.",
+    "cs": "Strukturované logování ukládané lokálně do indexované SQLite databáze, včetně retence."
+  }
+}
