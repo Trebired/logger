@@ -1,4 +1,6 @@
 import { normGroup, normGroupKey } from "#8xmnu037caa7";
+import { runLogGroupGuard } from "./../guard.js";
+import { applyGroupPrefix, normalizeGroupPrefix, packageGroupPrefixFromSource } from "./group-prefix.js";
 import { minLevelWeight, normalizeLevel } from "#g4tupkl7rvk4";
 import { prepareMetadata } from "#kzmqayr84v3x";
 import { hasOwnKeys } from "#rb1c0idcezok";
@@ -343,6 +345,8 @@ function prepareEntry(args: {
     origin: buildOrigin(originSource, originInstance),
   };
 
+  runLogGroupGuard(entry);
+
   if (typeof args.options.getPartition === "function") {
     entry.partition = args.options.getPartition() ?? null;
   }
@@ -355,27 +359,6 @@ function prepareEntry(args: {
     entry,
     levelConfig,
   };
-}
-
-function normalizeGroupPrefix(input: false | string | undefined): false | string {
-  if (input === false) return false;
-  const rawPrefix = toString(input);
-  if (!rawPrefix) return false;
-  return normGroup(rawPrefix).key || false;
-}
-
-function applyGroupPrefix(group: string, prefix: false | string): string {
-  if (!prefix) return group;
-  if (group === prefix || group.startsWith(`${prefix}.`)) return group;
-  return `${prefix}.${group}`;
-}
-
-function packageGroupPrefixFromSource(input: unknown): false | string {
-  const source = toString(input);
-  const scoped = new RegExp("^@([^/]+)/(.+)$", "u").exec(source);
-  if (!scoped) return false;
-  const name = scoped[2].replace(new RegExp("[/@]+", "g"), ".");
-  return normGroup(`${scoped[1]}.${name}`).key || false;
 }
 
 export { DEFAULT_GROUP, buildOrigin, createCommonLogger, packageGroupPrefixFromSource, parseCallArguments, shouldKeepSample };

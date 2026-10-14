@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.2
+
+- A log group can be guarded. `registerLogGroupGuard({ prefixes, check })` installs one guard, and every record on both runtimes passes it once its group is final, in `prepareEntry`, so a group assembled at runtime is read exactly like a literal one. The guard sees `{ group, level, source }` and either returns or throws; the package holds the registry and no policy of its own. With no guard registered the behaviour is unchanged, at the cost of one string test per record.
+
+- `applyGroupPrefix`, `normalizeGroupPrefix` and `packageGroupPrefixFromSource` moved to `src/core/group-prefix.ts`. Nothing changed in what they do; `packageGroupPrefixFromSource` is exported from the same place as before.
+
+  This lands as a patch on purpose. The addition is additive and the config contract is unchanged, and `forVersion` compatibility is major and minor, so a minor would invalidate the `.trebired/logger/config.ts` shipped by every other package and strip the prefix they log under until each one republished.
+
 All notable changes to `@trebired/logger` will be documented here.
 
 This project follows semantic versioning once published.

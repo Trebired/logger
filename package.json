@@ -8,7 +8,7 @@
     }
   },
   "name": "@trebired/logger",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Local-first structured logger for Bun with an indexed SQLite store, partitions, default retention, redaction, query and export helpers, and browser runtimes.",
   "type": "module",
   "private": false,
@@ -49,10 +49,11 @@
     "demo": "bun run examples/dummy.ts",
     "postpack": "bun ./scripts/prepare-dist.mjs postpack",
     "prepack": "bun run build && bun ./scripts/prepare-dist.mjs prepack",
+    "prepare:generated": "bun ./scripts/build/generated/tsconfig.mjs",
     "prepublishOnly": "bun run typecheck && bun ./scripts/verify/publish.mjs",
     "publish:package": "bun publish",
-    "prepare:generated": "bun ./scripts/build/generated/tsconfig.mjs",
     "typecheck": "bun run prepare:generated && tsc --noEmit",
+    "verify:guard": "bun ./scripts/verify/guard.mjs",
     "verify:pack": "bun ./scripts/verify/pack.mjs"
   },
   "dependencies": {

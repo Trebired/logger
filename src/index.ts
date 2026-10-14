@@ -27,6 +27,8 @@ export {
   snapshotStore,
 } from "./store/public.js";
 export { logStream } from "./stream/index.js";
+export { registerLogGroupGuard, resetLogGroupGuardForTests } from "./guard.js";
+export type { LogGroupClaim, LogGroupGuard } from "./guard.js";
 
 export type {
   BrowserLogStreamContext,

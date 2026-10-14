@@ -166,6 +166,31 @@ const worker = log.withScope("worker", "jobs.queue", 2);
 worker.error("failed", { jobId: "job_1" });
 ```
 
+### Log Group Guards
+
+One guard may watch the groups a process emits:
+
+```ts
+import { registerLogGroupGuard } from "@trebired/logger";
+
+registerLogGroupGuard({
+  prefixes: ["acme"],
+  check: ({ group, level, source }) => {
+    if (!allowed(source)) throw new Error(`${source} may not log under ${group}`);
+  },
+});
+```
+
+The guard runs inside `prepareEntry`, where a record's group is final, so a group assembled
+at runtime from pieces is read exactly like a literal one. `prefixes` is matched against the
+group's first segment, so records outside it never reach the guard. Returning allows the
+record; throwing stops the call at the site that made it. The registry holds one guard,
+registering returns a function that releases it, and with no guard registered a record costs
+one string test.
+
+The package owns the registry and no policy: what makes a claim legitimate is for the code
+that registers the guard to decide.
+
 ### Express-Style Middleware
 
 `requestLogger()` is compatible with Express-style middleware and attaches `req.log` by default.

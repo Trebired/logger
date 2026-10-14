@@ -19,6 +19,9 @@
       "#41i2nrddbcth": [
         "../../../src/store/options.ts"
       ],
+      "#4fiygsgq091r": [
+        "../../../src/core/group-prefix.ts"
+      ],
       "#4gn2x99lawde": [
         "../../../src/core/create_log.ts"
       ],
@@ -85,6 +88,9 @@
       "#ihh5pdnxanc1": [
         "../../../scripts/verify/consumer/files.mjs"
       ],
+      "#ikm1qwclbnht": [
+        "../../../src/guard.ts"
+      ],
       "#iku27pq9hyor": [
         "../../../scripts/verify/perf.mjs"
       ],
@@ -102,6 +108,9 @@
       ],
       "#kzmqayr84v3x": [
         "../../../src/metadata/process.ts"
+      ],
+      "#lr2dlzrams98": [
+        "../../../scripts/verify/guard.mjs"
       ],
       "#m0bq23wr639z": [
         "../../../src/config/types.ts"
