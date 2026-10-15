@@ -64,9 +64,9 @@ function loadConfigSync(
   return loadedConfig(configPath, readSourceConfig(fs.readFileSync(configPath, "utf8"), configPath));
 }
 
-function loadCachedConfigSync(projectRoot = process.cwd()): NormalizedLoggerConfig {
+function loadCachedConfigSync(projectRoot = process.cwd(), boundaryDir?: string): NormalizedLoggerConfig {
   const root = path.resolve(projectRoot);
-  const configPath = findConfigSync(root);
+  const configPath = findConfigSync(root, boundaryDir);
   const cacheKey = configPath || `missing:${root}`;
   const cachedConfig = cachedConfigs.get(cacheKey);
   if (cachedConfig) return cachedConfig.config;

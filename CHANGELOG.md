@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.3
+
+- `loadCachedConfigSync` takes the boundary directory `findConfigSync` already accepted, so a caller can say where the search for `.trebired/logger/config.ts` stops. Without one the search still walks to the filesystem root, which lets a package that carries no config of its own inherit the prefix of whatever sits above it on disk.
+
 ## 3.0.2
 
 - A log group can be guarded. `registerLogGroupGuard({ prefixes, check })` installs one guard, and every record on both runtimes passes it once its group is final, in `prepareEntry`, so a group assembled at runtime is read exactly like a literal one. The guard sees `{ group, level, source }` and either returns or throws; the package holds the registry and no policy of its own. With no guard registered the behaviour is unchanged, at the cost of one string test per record.
